@@ -10,25 +10,25 @@
           "style": "sass"
         }
       },
-      "root": "",
-      "sourceRoot": "src",
+      "root": "frontend",
+      "sourceRoot": "frontend/src",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "outputPath": "../priv/static",
-            "index": "src/index.html",
-            "main": "src/main.ts",
-            "polyfills": "src/polyfills.ts",
-            "tsConfig": "tsconfig.app.json",
+            "outputPath": "../priv/static/frontend",
+            "index": "frontend/src/index.html",
+            "main": "frontend/src/main.ts",
+            "polyfills": "frontend/src/polyfills.ts",
+            "tsConfig": "frontend/tsconfig.app.json",
             "aot": true,
             "assets": [
-              "src/favicon.ico",
-              "src/assets"
+              "frontend/src/favicon.ico",
+              "frontend/src/assets"
             ],
             "styles": [
-              "src/styles.sass"
+              "frontend/src/styles.sass"
             ],
             "scripts": []
           },
@@ -36,8 +36,8 @@
             "production": {
               "fileReplacements": [
                 {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.prod.ts"
+                  "replace": "frontend/src/environments/environment.ts",
+                  "with": "frontend/src/environments/environment.prod.ts"
                 }
               ],
               "optimization": true,

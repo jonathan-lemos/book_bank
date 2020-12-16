@@ -24,7 +24,7 @@ defmodule BookBankWeb.Endpoint do
     at: "/",
     from: :book_bank,
     gzip: false,
-    only: ~w(css fonts images js favicon.ico robots.txt)
+    only: ~w(css fonts images js map favicon.ico robots.txt frontend)
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.

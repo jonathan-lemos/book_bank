@@ -5,15 +5,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>BookBank · Phoenix Framework</title>
-    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
-    <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+	<base href="/">
   </head>
   <body>
 	<app-root></app-root>
-	<script src="<%= Routes.static_path(@conn, "/runtime.js") %>" defer></script>
-	<script src="<%= Routes.static_path(@conn, "/polyfills.js") %>" defer></script>
-	<script src="<%= Routes.static_path(@conn, "/styles.js") %>" defer></script>
-	<script src="<%= Routes.static_path(@conn, "/vendor.js") %>" defer></script>
-	<script src="<%= Routes.static_path(@conn, "/main.js") %>" defer></script>
+	<script src="<%= Routes.static_path(@conn, "/frontend/runtime.js") %>" defer></script>
+	<script src="<%= Routes.static_path(@conn, "/frontend/polyfills.js") %>" defer></script>
+	<script src="<%= Routes.static_path(@conn, "/frontend/styles.js") %>" defer></script>
+	<script src="<%= Routes.static_path(@conn, "/frontend/vendor.js") %>" defer></script>
+	<script src="<%= Routes.static_path(@conn, "/frontend/main.js") %>" defer></script>
   </body>
 </html>
