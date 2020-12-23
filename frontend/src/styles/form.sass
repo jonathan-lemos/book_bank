@@ -1,0 +1,39 @@
+@import "color"
+@import "spacing"
+
+input[type=text], input[type=password]
+  @extend .mx-s
+  @extend .my-m
+  @extend .p-s
+  @extend .border
+
+  &:focus
+    @extend .accent
+    @extend .glow
+
+  &:disabled
+    background-color: $color-bg-muted
+    cursor: not-allowed
+
+button
+  @extend .p-s
+  border: none
+  text-align: center
+
+  &:focus
+    outline: none
+
+  &:hover
+    cursor: pointer
+
+  &.hover-accent:hover
+    @extend .glow-accent
+    @extend .border
+    @extend .accent
+
+hr
+  @extend .w-100
+  @extend .my-s
+  @extend .mx-none
+  height: 1px
+  color: $color-fg-muted
