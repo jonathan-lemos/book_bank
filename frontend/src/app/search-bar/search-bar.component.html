@@ -1,0 +1,16 @@
+<div class="searchbar">
+  <div class="input">
+    <label>
+      <input type="text" placeholder="Search" [(ngModel)]="searchText" (keyup)="onKeyUp($event)">
+    </label>
+    <button (click)="submit.emit(searchText)">
+      <fa-icon [icon]="['fas', 'search']"></fa-icon>
+    </button>
+  </div>
+  <div *ngIf="this.suggestions.length > 0" class="suggestions">
+    <div *ngFor="let suggestion of suggestions" class="suggestion">
+      <div class="text">{{suggestion.text}}</div>
+      <div class="type">{{suggestion.tag}}</div>
+    </div>
+  </div>
+</div>

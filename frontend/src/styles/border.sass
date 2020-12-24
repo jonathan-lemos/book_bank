@@ -1,0 +1,37 @@
+@import "color"
+
+
+=border($dir)
+  .border-#{$dir}
+    border-#{$dir}: 1px solid $color-fg-muted
+
+    &.accent
+      border-#{$dir}-color: $color-accent
+
+    &.red
+      border-#{$dir}-color: $red
+
+
++border('left')
++border('right')
++border('top')
++border('bottom')
+
+.border-y
+  @extend .border-bottom
+  @extend .border-top
+
+.border-x
+  @extend .border-left
+  @extend .border-right
+
+.border
+  @extend .border-y
+  @extend .border-x
+
+.glow
+  &.accent
+    box-shadow: 0 0 0.2em $color-accent, 0 0 0.5em $color-accent
+
+  &.red
+    box-shadow: 0 0 0.2em $red, 0 0 0.5em $red

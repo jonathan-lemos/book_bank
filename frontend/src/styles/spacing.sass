@@ -1,0 +1,47 @@
+=base-size($prefix, $type, $name, $size)
+  .#{$prefix}l-#{$name}
+    #{$type}-left: $size
+
+  .#{$prefix}r-#{$name}
+    #{$type}-right: $size
+
+  .#{$prefix}t-#{$name}
+    #{$type}-top: $size
+
+  .#{$prefix}b-#{$name}
+    #{$type}-bottom: $size
+
+  .#{$prefix}x-#{$name}
+    #{$type}-left: $size
+    #{$type}-right: $size
+
+  .#{$prefix}y-#{$name}
+    #{$type}-top: $size
+    #{$type}-bottom: $size
+
+  .#{$prefix}-#{$name}
+    #{$type}: $size
+
+=m-size($name, $size)
+  +base-size('m', 'margin', $name, $size)
+
+=p-size($name, $size)
+  +base-size('p', 'padding', $name, $size)
+
+=size($name, $size)
+  +m-size($name, $size)
+  +p-size($name, $size)
+
+$size-none: 0em
+$size-xs: 0.25em
+$size-s: 0.5em
+$size-m: 1em
+$size-l: 2em
+$size-xl: 4em
+
++size('none', $size-none)
++size('xs', $size-xs)
++size('s', $size-s)
++size('m', $size-m)
++size('l', $size-l)
++size('xl', $size-xl)

@@ -1,0 +1,46 @@
+@import "../../styles/color"
+@import "../../styles/container"
+@import "../../styles/sizing"
+
+div.searchbar
+  @extend .col
+  @extend .w-100
+  position: relative
+
+  & > div.input
+    @extend .row
+    @extend .w-100
+
+    & input[type=text]
+      @extend .grow
+      @extend .mx-none
+
+    & button
+      @extend .hover-accent
+
+
+  & > div.suggestions
+    @extend .col
+    @extend .w-100
+    position: absolute
+
+    & > div.suggestion
+      @extend .w-100
+      @extend .row
+      @extend .p-m
+
+      &:after
+        height: 1px
+        color: $color-fg-muted
+
+      &:hover
+        background-color: $color-bg-muted
+        cursor: pointer
+
+      & > .text
+        @extend .grow
+        text-overflow: ellipsis
+
+      & > .type
+        font-weight: 300
+        color: $color-fg-muted

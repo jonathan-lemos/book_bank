@@ -1,0 +1,18 @@
+.bold
+  font-weight: 700
+
+.monospace, .monospace > *
+  font-family: 'Source Code Pro', monospace
+
+.no-decoration
+  text-decoration: none
+
+.pre
+  white-space: pre
+
+.text-center
+  text-align: center
+
+@each $i in (25 50 75 100 125 150 175 200 225 250 275 300 325 350 375 400)
+  .size-#{$i}
+    font-size: percentage($i / 100)
