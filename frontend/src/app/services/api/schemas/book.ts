@@ -1,4 +1,4 @@
-import {Schema} from "../../../utils/validator";
+import validate, {Schema} from "../../../../utils/validator";
 
 export default interface Book {
   id: string,
@@ -12,5 +12,7 @@ export const BookSchema: Schema = {
   id: "string",
   title: "string",
   isbn: ["string", null],
-  authors:
+  authors: ["string"],
+  tags: ["string"]
 }
+
