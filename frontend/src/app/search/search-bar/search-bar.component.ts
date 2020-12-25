@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {ApiService} from "../services/api/api.service";
-import Suggestion from "../services/api/schemas/suggestion";
-import {AuthService} from "../services/auth.service";
+import {ApiService} from "../../services/api/api.service";
+import Suggestion from "../../services/api/schemas/suggestion";
+import {AuthService} from "../../services/auth.service";
 
 @Component({
   selector: 'app-search-bar',

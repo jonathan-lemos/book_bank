@@ -28,7 +28,7 @@
               "frontend/src/assets"
             ],
             "styles": [
-              "frontend/src/styles.sass"
+              "frontend/src/styles/style.sass"
             ],
             "scripts": []
           },
