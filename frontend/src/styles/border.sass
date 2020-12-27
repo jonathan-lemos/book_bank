@@ -29,9 +29,15 @@
   @extend .border-y
   @extend .border-x
 
+=glow-shadow($col)
+  box-shadow: 0 0 0.2em $col, 0 0 0.5em $col
+
 .glow
+  &.fg
+    +glow-shadow($color-fg)
+
   &.accent
-    box-shadow: 0 0 0.2em $color-accent, 0 0 0.5em $color-accent
+    +glow-shadow($color-accent)
 
   &.red
-    box-shadow: 0 0 0.2em $red, 0 0 0.5em $red
+    +glow-shadow($red)

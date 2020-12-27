@@ -1,0 +1,17 @@
+@import "../../../styles/color"
+@import "../../../styles/spacing"
+@import "../../../styles/text"
+
+a
+  @extend .no-decoration
+  @extend .px-xs
+  @extend .mx-s
+  color: $color-fg-muted
+
+  &:hover
+    @extend .glow
+    @extend .fg
+    color: $color-fg
+
+  &.active
+    color: $color-fg

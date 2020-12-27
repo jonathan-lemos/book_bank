@@ -1,0 +1,10 @@
+<nav class="w-100 col nowrap mb-m">
+    <div class="spacer"></div>
+    <div class="w-100 row nowrap px-m align-center">
+        <a [routerLink]="['home']" class="title">book_bank</a>
+        <app-link *ngFor="let link of links" [href]="link.path" [title]="link.name" [active]="this.router.url.endsWith(link.path)"></app-link>
+        <div class="grow"></div>
+        <app-link *ngIf="this.auth.isAuthenticated()" href="login" title="Logout" [active]="false" (click)="this.auth.logout()"></app-link>
+    </div>
+    <div class="spacer"></div>
+</nav>

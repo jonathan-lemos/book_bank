@@ -4,6 +4,6 @@
   </div>
   <div class="w-100 grow col">
     <b>{{this.book.title}}</b>
-    <b></b>
+    <span *ngFor="let kvp of this.book.metadata">{{kvp.key}}: {{kvp.value}}</span>
   </div>
 </div>

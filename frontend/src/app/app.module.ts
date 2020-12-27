@@ -12,18 +12,26 @@ import { HomeComponent } from './home/home.component';
 import { SearchComponent } from './search/search/search.component';
 import { BookListingComponent } from './search/book-listing/book-listing.component';
 import { BookComponent } from './book/book.component';
+import { IntersectionObserverDirective } from './intersection-observer.directive';
+import {IntersectionObserverDirective} from "./directives/intersection-observer.directive";
+import { NavbarComponent } from './navbar/navbar.component';
+import { LinkComponent } from './navbar/link/link.component';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    TitleBarComponent,
-    LoginComponent,
-    SearchBarComponent,
-    HomeComponent,
-    SearchComponent,
-    BookListingComponent,
-    BookComponent
-  ],
+    declarations: [
+        AppComponent,
+        TitleBarComponent,
+        LoginComponent,
+        SearchBarComponent,
+        HomeComponent,
+        SearchComponent,
+        BookListingComponent,
+        BookComponent,
+        IntersectionObserverDirective,
+        IntersectionObserverDirective,
+        NavbarComponent,
+        LinkComponent
+    ],
     imports: [
         BrowserModule,
         AppRoutingModule,

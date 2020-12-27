@@ -1,0 +1,69 @@
+POST /api/accounts/login
+	input: { username: string, password: string }
+	output: { status: number, response: string, token: string | null }
+		"Set-Cookie" -- token cookie
+
+POST /api/accounts/create
+	requires: admin
+	input: { username: string, password?: string }
+	output: { status: number, response: string, password: string | null }
+
+GET /api/accounts/roles
+	requires: admin
+	output: string[]
+
+GET /api/accounts/roles/:role
+	requires: admin
+	output: string[]
+
+GET /api/accounts/users/:username
+	requires: admin
+	output: { roles: string[] }
+
+PUT /api/accounts/users/:username
+	requires: admin
+	input: { [key]: string }
+	output: { status: number, response: string }
+
+PATCH /api/accounts/users/:username
+	requires: admin
+	input: { [key]: string | null }
+	output: { status: number, response: string }
+
+DELETE /api/accounts/:username
+	requires: admin
+	input: none
+	output: { status: number, response: string }
+
+GET /api/books/:id
+	output: { id: string, title: string, metadata: [string, string][] }
+
+POST /api/books
+	requires: librarian
+	input: multipart-formdata:
+		title: string
+		body: [[ binary pdf content ]]
+		output: { status: number, response: string, id: string | null }
+
+PUT /api/books/:id
+	requires: librarian
+	input: { [key]: string | null }
+	output: { status: number, response: string }
+
+PATCH /api/books/:id
+	requires: librarian
+	input: { [key]: string | null }
+	output: { status: number, response: string }
+
+DELETE /api/books/:id
+	requires: librarian
+	output: { status: number, response: string }
+
+GET /api/search/:query?count=num&page=num
+	output: { id: string, title: string, metadata: [string, string][] }[]
+
+GET /api/search_count
+	output: number
+
+GET /api/suggestions/:query/:count
+	output: { id: string, text: string, tag: string }[]

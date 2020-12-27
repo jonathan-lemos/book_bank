@@ -1,0 +1,31 @@
+@import "../../sass/border"
+@import "../../sass/sizing"
+@import "../../sass/spacing"
+@import "../../sass/text"
+
+div.spacer
+    height: 1em
+
+nav
+    background-color: #FFFFFF
+
+    .title
+        @extend .size-150
+        @extend .no-decoration
+        @extend .bold
+        @extend .pr-s
+        @extend .mr-s
+        @extend .pl-xs
+        @extend .ml-xs
+
+    .menu-item
+        @extend .no-decoration
+        @extend .px-xs
+        @extend .mx-s
+        color: gray
+        
+        &:hover
+            color: black
+        
+        &.active
+            color: black

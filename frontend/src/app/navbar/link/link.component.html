@@ -1,0 +1,3 @@
+<a [routerLink]="[this.href]" class="menu-item" [ngClass]="{'active': this.active}" (click)="this.click.emit(this.href)">
+    {{this.title}}
+</a>

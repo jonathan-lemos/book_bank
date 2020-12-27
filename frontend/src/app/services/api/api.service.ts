@@ -6,87 +6,107 @@ import AuthenticateResponse, {
 import AuthenticateRequest from "./schemas/authenticate-request";
 import validate from "../../../utils/validator";
 import Suggestion, {SuggestionSchema} from "./schemas/suggestion";
-import RefreshRequest from "./schemas/refresh-request";
-import {RefreshResponseSchema} from "./schemas/refresh-response";
+import RefreshResponse, {RefreshResponseSchema} from "./schemas/refresh-response";
 import Book, {BookSchema} from "./schemas/book";
-import {CanActivate, Router} from "@angular/router";
+import UnauthorizedResponse, {UnauthorizedResponseSchema} from "./schemas/unauthorized-response";
+import {AuthService} from "../auth.service";
 
 type ApiResponse = {type: "no response", reason: string} |
   {type: "json response", status: number, response: any} |
   {type: "non json response", status: number, response: string};
 
-const apiFetch = async (url: string, params: RequestInit): Promise<ApiResponse> => {
-  url = `${window.location.origin}/${url.replace(/^\/+/, "")}`;
-  try {
-    const res1 = await fetch(url, params);
-
-    const text = await res1.text();
-    try {
-      const res2 = text.trim() !== "" ? JSON.parse(text) : "";
-      return {type: "json response", status: res1.status, response: res2};
-    }
-    catch (e) {
-      return {type: "non json response", status: res1.status, response: text};
-    }
-  }
-  catch (e) {
-    return {type: "no response", reason: e.message ?? e};
-  }
-}
-
-function postProcess<T>(f: (s: {status: number, response: any}) => Result<T, string>): (a: ApiResponse) => Result<T, string> {
-  return (a: ApiResponse) => {
-    if (a.type !== "json response") {
-      return new Failure(JSON.stringify({...a, error: "Expected a JSON response"}, null, 2));
-    }
-
-    if (Math.floor(a.status / 100) !== 2) {
-      return new Failure(JSON.stringify({...a, error: "Response status was not 2XX."}, null, 2));
-    }
-
-    return f(a);
-  }
-}
-
-const ajax = (method: string) => async (url: string, auth?: string) =>
-  apiFetch(url, {
-    method: method,
-    credentials: "include",
-    headers: {
-      "Authorization": auth ? `Bearer ${auth}` : undefined
-    }
-  });
-
-const ajaxBody = (method: string) => async (url: string, body: any, auth?: string) =>
-  apiFetch(url, {
-    method: method,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": auth ? `Bearer ${auth}` : undefined,
-    },
-    body: JSON.stringify(body)
-  });
-
-const get = this.ajax("GET");
-const del = this.ajax("DELETE");
-const post = this.ajaxBody("POST");
-const patch = this.ajaxBody("PATCH");
-
 
 @Injectable({
   providedIn: 'root'
 })
-export class ApiService implements CanActivate {
-  private auth_ctx: AuthenticationContext | null = null;
+export class ApiService {
+  private readonly apiFetch = async (url: string, params: RequestInit, auth?: AuthService, retryUnauthorized = true): Promise<ApiResponse> => {
+    url = `${window.location.origin}/${url.replace(/^\/+/, "")}`;
+    try {
+      let res1 = await fetch(url, params);
+
+      const text = await res1.text();
+      try {
+        const res2 = text.trim() !== "" ? JSON.parse(text) : "";
+
+        const check = validate<UnauthorizedResponse>(res2, UnauthorizedResponseSchema);
+
+        if (retryUnauthorized && res1.status === 401 && check.isSuccess() && auth !== undefined) {
+          if (check.value.reason === "expired token") {
+            const res = await this.refresh(auth);
+            if (res.isError()) {
+              console.log(`Failed to refresh token: ${res.value}`);
+            }
+            else {
+              return await this.apiFetch(url, params, auth, false);
+            }
+          }
+          return await this.apiFetch(url, params, auth, false);
+        }
+
+        return {type: "json response", status: res1.status, response: res2};
+      }
+      catch (e) {
+        return {type: "non json response", status: res1.status, response: text};
+      }
+    }
+    catch (e) {
+      return {type: "no response", reason: e.message ?? e};
+    }
+  }
+
+  private postProcess<T>(f: (s: {status: number, response: any}) => Result<T, string>): (a: ApiResponse) => Result<T, string> {
+    return (a: ApiResponse) => {
+      if (a.type !== "json response") {
+        return new Failure(JSON.stringify({...a, error: "Expected a JSON response"}, null, 2));
+      }
+
+      if (Math.floor(a.status / 100) !== 2) {
+        return new Failure(JSON.stringify({...a, error: "Response status was not 2XX."}, null, 2));
+      }
+
+      return f(a);
+    }
+  }
+
+  private readonly ajax = (method: string) => async (url: string, auth?: AuthService) =>
+    this.apiFetch(url, {
+      method: method,
+      credentials: "include"
+    }, auth);
+
+  private readonly ajaxBody = (method: string) => async (url: string, body: any, auth?: AuthService) =>
+    this.apiFetch(url, {
+      method: method,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body)
+    }, auth);
+
+  private readonly get = this.ajax("GET");
+  private readonly del = this.ajax("DELETE");
+  private readonly post = this.ajaxBody("POST");
+  private readonly patch = this.ajaxBody("PATCH");
 
   constructor() { }
 
-  async authenticate(username: string, password: string): Promise<Result<AuthenticationContext, string>> {
-    const token = await this.post("/api/login", { username, password } as AuthenticateRequest).then(this.postProcess(res => {
-      return validate(res, AuthenticateResponseSchema);
+  async authenticate(username: string, password: string, auth: AuthService): Promise<Result<void, string>> {
+    const resp = await this.post("/api/login", { username, password } as AuthenticateRequest).then(this.postProcess(res => {
+      return validate<AuthenticateResponse>(res, AuthenticateResponseSchema);
     }));
 
+    if (resp.isSuccess()) {
+      if (resp.value.token === null) {
+        return new Failure("The authentication response did not contain an access token.");
+      }
+
+      return auth.authenticate(resp.value.token).map_val(() => {});
+    }
+    else {
+      return resp.map_val(() => {});
+    }
 
   }
 
@@ -95,28 +115,53 @@ export class ApiService implements CanActivate {
       return new Failure("The id cannot be blank.");
     }
 
-    return await this.get(`/api/book/${id}`).then(this.postProcess(res => {
+    return await this.get(`/api/books/${id}`).then(this.postProcess(res => {
       return validate(res, BookSchema);
     }))
   }
 
-  async refresh(auth: string): Promise<Result<AuthenticateResponse, string>> {
-    return await this.post("/api/login/refresh", {old_token: auth} as RefreshRequest).then(this.postProcess(res => {
-      return validate(res, RefreshResponseSchema);
+  async refresh(auth: AuthService): Promise<Result<void, string>> {
+    const resp = await this.post("/api/login/refresh", {}).then(this.postProcess(res => {
+      return validate<RefreshResponse>(res, RefreshResponseSchema);
     }));
+
+    if (resp.isSuccess()) {
+      if (resp.value.token === null) {
+        return new Failure("The authentication response did not contain an access token.");
+      }
+
+      return auth.authenticate(resp.value.token).map_val(() => {});
+    }
+    else {
+      return resp.map_val(() => {});
+    }
   }
 
-  async search(query: string, auth: string, count?: number, page?: number): Promise<Result<Book[], string>> {
+  async search(query: string, auth: AuthService, count?: number, page?: number): Promise<Result<Book[], string>> {
     if (query === "") {
       return new Success([]);
     }
 
-    return await this.get(`/api/search/${query}`, auth).then(this.postProcess(res => {
+    return await this.get(`/api/search/${query}?count=${count}&page=${page}`, auth).then(this.postProcess(res => {
       return validate(res, [BookSchema]);
     }));
   }
 
-  async suggestions(query: string, auth: string, count?: number): Promise<Result<Suggestion[], string>> {
+  async search_count(query: string, auth: AuthService): Promise<Result<number, string>> {
+    if (query === "") {
+      return new Success(0);
+    }
+
+    return await this.get(`/api/search_count/${query}`, auth).then(this.postProcess(res => {
+      const r = validate<number>(res, "number");
+      if (r.isSuccess() && r.value < 0) {
+        return new Failure(`Search count cannot be below 0 (was ${r.value}).`);
+      }
+      return r;
+    }))
+  }
+
+  async suggestions(query: string, auth: AuthService, count?: number): Promise<Result<Suggestion[], string>> {
     if (query === "") {
       return new Success([]);
     }
@@ -124,103 +169,5 @@ export class ApiService implements CanActivate {
     return await this.get(`/api/suggestions/${encodeURIComponent(query)}/${count ?? 5}`, auth).then(this.postProcess(res => {
       return validate(res, [SuggestionSchema])
     }));
-  }
-}
-
-export class AuthenticationContext {
-  _token: string;
-  _sub: string;
-  _iat: Date;
-  _exp: Date;
-
-  public static tryCreate(token: string): Result<AuthenticationContext, string> {
-    const components = token.split(".");
-    if (components.length !== 3) {
-      return new Failure(`Malformed JWT. Expected 3 components, got ${components.length}.`);
-    }
-
-    let object;
-    try {
-      object = atob(components[1]);
-    }
-    catch (e) {
-      return new Failure("Malformed JWT. Expected a base64 body.");
-    }
-
-    if (!object.hasOwnProperty("sub")) {
-      return new Failure("Malformed JWT. Expected a 'sub' field in the body.");
-    }
-    const sub = object.sub;
-    if (typeof sub !== "string") {
-      return new Failure("Malformed JWT. Expected 'sub' to be a string.");
-    }
-
-
-    if (!object.hasOwnProperty("iat")) {
-      return new Failure("Malformed JWT. Expected a 'iat' field in the body.");
-    }
-    const iat_num = object.iat;
-    if (typeof iat_num !== "number") {
-      return new Failure("Malformed JWT. Expected 'iat' to be a number.");
-    }
-
-    let iat: Date;
-    try {
-      iat = new Date(iat_num * 1000);
-    }
-    catch (e) {
-      return new Failure(`Malformed JWT. 'iat' of ${iat_num} does not represent a valid UNIX time.`);
-    }
-    if (iat.getTime() > Date.now()) {
-      return new Failure(`Malformed JWT. 'iat' of ${iat} is in the future.`);
-    }
-
-
-    if (!object.hasOwnProperty("exp")) {
-      return new Failure("Malformed JWT. Expected a 'exp' field in the body.");
-    }
-    const exp_num = object.exp;
-    if (typeof exp_num !== "number") {
-      return new Failure("Malformed JWT. Expected 'exp' to be a number.");
-    }
-
-    let exp: Date;
-    try {
-      exp = new Date(exp_num * 1000);
-    }
-    catch (e) {
-      return new Failure(`Malformed JWT. 'exp' of ${exp_num} does not represent a valid UNIX time.`);
-    }
-    if (exp.getTime() <= Date.now()) {
-      return new Failure(`Malformed JWT. 'exp' of ${exp} is in the past. The token has expired.`);
-    }
-
-    return new Success(new AuthenticationContext(token, sub, iat, exp));
-  }
-
-  private constructor(sub: string, iat: Date, exp: Date) {
-    this._sub = sub;
-    this._iat = iat;
-    this._exp = exp
-  }
-
-  get token() {
-    return this._token;
-  }
-
-  get sub() {
-    return this._sub;
-  }
-
-  get iat() {
-    return this._iat;
-  }
-
-  get exp() {
-    return this._exp;
-  }
-
-  isExpired() {
-    return Date.now() >= this._exp.getTime();
   }
 }
