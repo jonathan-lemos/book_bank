@@ -35,8 +35,17 @@ DELETE /api/accounts/:username
 	input: none
 	output: { status: number, response: string }
 
-GET /api/books/:id
-	output: { id: string, title: string, metadata: [string, string][] }
+GET /api/books/cover/:id
+    output: image
+
+GET /api/books/metadata/:id
+	output: { id: string, title: string, size: number, metadata: [string, string][] }
+
+GET /api/books/thumbnail/:id
+    output: image
+
+GET /api/books/download/:id
+    output: file
 
 POST /api/books
 	requires: librarian
@@ -45,12 +54,12 @@ POST /api/books
 		body: [[ binary pdf content ]]
 		output: { status: number, response: string, id: string | null }
 
-PUT /api/books/:id
+PUT /api/books/metadata/:id
 	requires: librarian
 	input: { [key]: string | null }
 	output: { status: number, response: string }
 
-PATCH /api/books/:id
+PATCH /api/books/metadata/:id
 	requires: librarian
 	input: { [key]: string | null }
 	output: { status: number, response: string }

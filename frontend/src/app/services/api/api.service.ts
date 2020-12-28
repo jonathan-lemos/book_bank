@@ -99,7 +99,7 @@ export class ApiService {
 
     if (resp.isSuccess()) {
       if (resp.value.token === null) {
-        return new Failure("The authentication response did not contain an access token.");
+        return new Failure(`The authentication response did not contain an access token. Was ${JSON.stringify(resp.value)}`);
       }
 
       return auth.authenticate(resp.value.token).map_val(() => {});
@@ -107,7 +107,6 @@ export class ApiService {
     else {
       return resp.map_val(() => {});
     }
-
   }
 
   async book(id: string): Promise<Result<Book, string>> {
@@ -115,7 +114,7 @@ export class ApiService {
       return new Failure("The id cannot be blank.");
     }
 
-    return await this.get(`/api/books/${id}`).then(this.postProcess(res => {
+    return await this.get(`/api/books/metadata/${id}`).then(this.postProcess(res => {
       return validate(res, BookSchema);
     }))
   }

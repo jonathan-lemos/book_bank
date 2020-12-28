@@ -43,3 +43,18 @@
 
 .row > .grow, .col > .grow
   flex-grow: 1
+
+.img-container
+  display: flex
+  align-items: center
+  justify-content: center
+
+  &.fill-height
+    img
+      max-width: 100%
+      height: auto
+
+  &.fill-width
+    img
+      max-width: 100%
+      height: auto
