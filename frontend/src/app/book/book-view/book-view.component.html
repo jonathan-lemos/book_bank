@@ -1,0 +1,26 @@
+<div class="w-80 col">
+  <div class="w-100 row">
+    <div class="img-container fill-height fluid grow">
+      <img [src]="this.cover_url()" alt="Book Cover">
+    </div>
+    <div class="w-80 col">
+      <b class="size-150 m-m">{{this.book.title}}</b>
+      <table>
+        <tr *ngFor="let kvp of this.book.metadata">
+          <td>{{kvp.key}}</td>
+          <td>{{kvp.value}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  <div class="w-100 row">
+    <button class="hover-accent glow">
+      <fa-icon class="mr-xs" [icon]="['fas', 'download']"></fa-icon>
+      Download ({{this.size_string}})
+    </button>
+    <button class="hover-red glow" *ngIf="this.auth.hasRole('librarian', 'admin')" (click)="this.edit.emit()">
+      <fa-icon class="mr-xs" [icon]="['fas', 'edit']"></fa-icon>
+      Edit
+    </button>
+  </div>
+</div>

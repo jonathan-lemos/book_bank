@@ -16,8 +16,9 @@ import { LinkComponent } from './navbar/link/link.component';
 import { BookViewComponent } from './book/book-view/book-view.component';
 import { BookEditComponent } from './book/book-edit/book-edit.component';
 import { BookComponent } from './book/book.component';
-import { DialogComponent } from './dialog/dialog.component';
 import { LoadingComponent } from './loading/loading.component';
+import { UploadComponent } from './upload/upload.component';
+import { FileUploaderComponent } from './upload/file-uploader/file-uploader.component';
 
 @NgModule({
     declarations: [
@@ -36,6 +37,8 @@ import { LoadingComponent } from './loading/loading.component';
         BookComponent,
         DialogComponent,
         LoadingComponent,
+        UploadComponent,
+        FileUploaderComponent,
     ],
     imports: [
         BrowserModule,

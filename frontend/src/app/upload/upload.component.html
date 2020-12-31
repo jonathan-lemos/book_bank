@@ -1,0 +1,7 @@
+<form class="w-50 h-100 col center" method="post" enctype="multipart/form-data" [action]="this.url">
+  <label class="w-100">
+    Title
+    <input class="w-100" type="text" name="title" placeholder="Title" [(ngModel)]="this.title">
+  </label>
+  <app-file-uploader></app-file-uploader>
+</form>

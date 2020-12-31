@@ -1,0 +1,4 @@
+<app-loading class="fluid" [promise]="this.promise" (closed)="this.onClose()">
+  <app-book-view *ngIf="!this.editing" [book]="this.book" (edit)="this.editing = true"></app-book-view>
+  <app-book-edit *ngIf="this.editing" [book]="this.book" (cancel)="this.editing = false"></app-book-edit>
+</app-loading>

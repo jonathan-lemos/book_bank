@@ -1,0 +1,53 @@
+<div class="w-80 col">
+  <div class="w-100 row">
+    <div class="img-container fill-height fluid grow">
+      <img [src]="this.coverUrl()" alt="Book Cover">
+    </div>
+    <div class="w-80 col">
+      <label class="w-100">
+        <input type="text" class="w-100" [placeholder]="this.book.title" [(ngModel)]="this.book.title">
+      </label>
+      <div class="row w-100" *ngFor="let elem of this.new_meta; let i = index;">
+        <label class="grow">
+          <input type="text" class="w-100" [placeholder]="elem.number !== null ? this.book.metadata[elem.number] : '[key]'" [(ngModel)]="elem.key">
+        </label>
+        <label class="grow">
+          <input type="text" class="w-100" [placeholder]="elem.number !== null ? this.book.metadata[elem.number] : '[value]'" [(ngModel)]="elem.value">
+        </label>
+        <button class="hover-red" (click)="this.deleteRow(i)">Delete</button>
+      </div>
+      <div class="row w-100">
+        <label class="grow">
+          <input type="text" class="w-100" (focus)="addRow()">
+        </label>
+        <label class="grow">
+          <input type="text" class="w-100" (focus)="addRow()">
+        </label>
+      </div>
+    </div>
+  </div>
+  <div class="w-100 row" *ngIf="!this.confirm_delete">
+    <button class="hover-accent glow" (click)="this.cancel.emit()">
+      <fa-icon class="mr-xs" [icon]="['fas', 'ban']"></fa-icon>
+      Cancel
+    </button>
+    <button class="hover-green glow" (click)="this.handleSubmit()">
+      <fa-icon class="mr-xs" [icon]="['fas', 'save']"></fa-icon>
+      Save
+    </button>
+    <button class="hover-red glow" (click)="this.confirm_delete = true" *ngIf="this.auth.hasRole('admin')">
+      <fa-icon class="mr-xs" [icon]="['fas', 'trash']"></fa-icon>
+      Delete
+    </button>
+  </div>
+  <div class="w-100 row" *ngIf="this.confirm_delete">
+    <button class="hover-red glow" (click)="this.del.emit()">
+      <fa-icon class="mr-xs" [icon]="['fas', 'trash']"></fa-icon>
+      Confirm Delete
+    </button>
+    <button class="hover-accent glow" (click)="this.confirm_delete = false">
+      <fa-icon class="mr-xs" [icon]="['fas', 'ban']"></fa-icon>
+      Cancel
+    </button>
+  </div>
+</div>
