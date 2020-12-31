@@ -11,6 +11,9 @@
     &.red
       border-#{$dir}-color: $red
 
+    &.green
+      border-#{$dir}-color: $green
+
 
 +border('left')
 +border('right')
@@ -41,3 +44,6 @@
 
   &.red
     +glow-shadow($red)
+
+  &.green
+    +glow-shadow($green)

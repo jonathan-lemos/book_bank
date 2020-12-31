@@ -119,6 +119,14 @@ export class ApiService {
     }))
   }
 
+  async deleteBook(id: string, auth: AuthService): Promise<Result<void, string>> {
+    if (id === "") {
+      return new Failure("The id cannot be blank.");
+    }
+
+    return await this.del(`/api/books/${id}`).then(this.postProcess(_ => new Success(null)));
+  }
+
   async refresh(auth: AuthService): Promise<Result<void, string>> {
     const resp = await this.post("/api/login/refresh", {}).then(this.postProcess(res => {
       return validate<RefreshResponse>(res, RefreshResponseSchema);
@@ -168,5 +176,12 @@ export class ApiService {
     return await this.get(`/api/suggestions/${encodeURIComponent(query)}/${count ?? 5}`, auth).then(this.postProcess(res => {
       return validate(res, [SuggestionSchema])
     }));
+  }
+
+  async updateBookMetadata(bookId: string, title: string, metadata: {key: string, value: string}[], auth: AuthService): Promise<Result<void, string>> {
+    if (bookId === "") {
+      return new Failure("The book id cannot be blank");
+    }
+    return await this.post(`/api/books/metadata/${bookId}`, {title, metadata}, auth).then(this.postProcess(_ => new Success(null)))
   }
 }

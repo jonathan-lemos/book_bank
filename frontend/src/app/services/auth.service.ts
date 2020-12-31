@@ -18,6 +18,7 @@ export class AuthService implements CanActivate {
       localStorage.setItem("Auth-sub", res.value.sub);
       localStorage.setItem("Auth-iat", res.value.iat.toISOString());
       localStorage.setItem("Auth-exp", res.value.exp.toISOString());
+      localStorage.setItem("Auth-roles", res.value.roles.join(","));
     }
     return res;
   }
@@ -40,11 +41,20 @@ export class AuthService implements CanActivate {
       if (exp.getTime() <= Date.now()) {
         return null;
       }
-      return new AuthenticationContext(sub, iat, exp);
+      const roles = localStorage.getItem("Auth-roles").split(",");
+      return new AuthenticationContext(sub, iat, exp, roles);
     }
     catch (e) {
       return null;
     }
+  }
+
+  hasRole(...roles: string[]): boolean {
+    const ctx = this.context();
+    if (ctx === null) {
+      return false;
+    }
+    return roles.some(r => ctx.roles.includes(r));
   }
 
   isAuthenticated(): boolean {
@@ -55,6 +65,7 @@ export class AuthService implements CanActivate {
     window.localStorage.removeItem("Auth-sub");
     window.localStorage.removeItem("Auth-iat");
     window.localStorage.removeItem("Auth-exp");
+    window.localStorage.removeItem("Auth-roles");
     this.router.navigate(["login"]);
   }
 }
@@ -63,6 +74,7 @@ export class AuthenticationContext {
   private _sub: string;
   private _iat: Date;
   private _exp: Date;
+  private _roles: string[];
 
   public static tryCreate(token: string): Result<AuthenticationContext, string> {
     const components = token.split(".");
@@ -126,13 +138,21 @@ export class AuthenticationContext {
       return new Failure(`Malformed JWT. 'exp' of ${exp} is in the past. The token has expired.`);
     }
 
-    return new Success(new AuthenticationContext(sub, iat, exp));
+    if (!object.hasOwnProperty("roles")) {
+      return new Failure("Malformed JWT. Expected a 'roles' field in the body.");
+    }
+    if (!Array.isArray(object.roles)) {
+      return new Failure("Malformed JWT. Expected the 'roles' field to be an array of strings.");
+    }
+
+    return new Success(new AuthenticationContext(sub, iat, exp, object.roles.map(x => x.toString())));
   }
 
-  constructor(sub: string, iat: Date, exp: Date) {
+  constructor(sub: string, iat: Date, exp: Date, roles: string[]) {
     this._sub = sub;
     this._iat = iat;
-    this._exp = exp
+    this._exp = exp;
+    this._roles = roles;
   }
 
   get sub() {
@@ -145,6 +165,10 @@ export class AuthenticationContext {
 
   get exp() {
     return this._exp;
+  }
+
+  get roles() {
+    return this._roles;
   }
 
   isExpired() {

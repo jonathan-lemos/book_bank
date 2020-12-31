@@ -1,11 +1,11 @@
 POST /api/accounts/login
 	input: { username: string, password: string }
 	output: { status: number, response: string, token: string | null }
-		"Set-Cookie" -- token cookie
+		"Set-Cookie" -- token cookie { iat: number, exp: number, sub: string, roles: string[] }
 
 POST /api/accounts/create
 	requires: admin
-	input: { username: string, password?: string }
+	input: { username: string, password?: string, roles?: { [key]: string } }
 	output: { status: number, response: string, password: string | null }
 
 GET /api/accounts/roles
@@ -16,21 +16,26 @@ GET /api/accounts/roles/:role
 	requires: admin
 	output: string[]
 
-GET /api/accounts/users/:username
-	requires: admin
+GET /api/accounts/users/roles/:username
+	requires: admin or current user
 	output: { roles: string[] }
 
-PUT /api/accounts/users/:username
-	requires: admin
-	input: { [key]: string }
+PUT /api/accounts/users/roles/:username
+	requires: admin or current user
+	input: string[]
 	output: { status: number, response: string }
 
-PATCH /api/accounts/users/:username
+PATCH /api/accounts/users/roles/:username
 	requires: admin
-	input: { [key]: string | null }
+	input: { role: string, enable: boolean }[]
 	output: { status: number, response: string }
 
-DELETE /api/accounts/:username
+PUT /api/accounts/users/password/:username
+    requires: admin or current user
+    input: string
+    output: { status: number, response: string }
+
+DELETE /api/accounts/users/:username
 	requires: admin
 	input: none
 	output: { status: number, response: string }
@@ -56,12 +61,12 @@ POST /api/books
 
 PUT /api/books/metadata/:id
 	requires: librarian
-	input: { [key]: string | null }
+	input: { title: string, metadata: { key: string, value: string }[] }
 	output: { status: number, response: string }
 
 PATCH /api/books/metadata/:id
 	requires: librarian
-	input: { [key]: string | null }
+	input: { title: string | null, metadata: { key: string, value: string | null }[] }
 	output: { status: number, response: string }
 
 DELETE /api/books/:id
@@ -71,7 +76,7 @@ DELETE /api/books/:id
 GET /api/search/:query?count=num&page=num
 	output: { id: string, title: string, metadata: [string, string][] }[]
 
-GET /api/search_count
+GET /api/search_count/:query
 	output: number
 
 GET /api/suggestions/:query/:count

@@ -16,6 +16,8 @@ import { LinkComponent } from './navbar/link/link.component';
 import { BookViewComponent } from './book/book-view/book-view.component';
 import { BookEditComponent } from './book/book-edit/book-edit.component';
 import { BookComponent } from './book/book.component';
+import { DialogComponent } from './dialog/dialog.component';
+import { LoadingComponent } from './loading/loading.component';
 
 @NgModule({
     declarations: [
@@ -32,6 +34,8 @@ import { BookComponent } from './book/book.component';
         BookViewComponent,
         BookEditComponent,
         BookComponent,
+        DialogComponent,
+        LoadingComponent,
     ],
     imports: [
         BrowserModule,
