@@ -5,6 +5,7 @@ defmodule BookBank.Application do
 
   use Application
 
+  @spec start(any, any) :: no_return
   def start(_type, _args) do
     children = [
       # Start the Telemetry supervisor
@@ -15,7 +16,7 @@ defmodule BookBank.Application do
       BookBankWeb.Endpoint,
       # Start a worker by calling: BookBank.Worker.start_link(arg)
       # {BookBank.Worker, arg}
-      {Mongo, [[name: :mongo, database: System.get_env("DB_NAME") || "book_bank", pool_size: 16]]}
+      {Mongo, [[database: System.get_env("DB_NAME") || "book_bank", pool_size: 16]], name: :mongo}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

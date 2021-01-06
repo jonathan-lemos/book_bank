@@ -35,6 +35,14 @@
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/phoenix_live_dashboard" />
       <excludeFolder url="file://$MODULE_DIR$/dist" />
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/elixir_make" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/connection" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/decimal" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/db_connection" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/typed_struct" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/mongodb_driver" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/comeonin" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/argon2_elixir" />
     </content>
     <orderEntry type="jdk" jdkName="Elixir 1.11.0" jdkType="Elixir SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -83,5 +91,6 @@
     <orderEntry type="library" name="argon2_elixir" level="project" />
     <orderEntry type="library" name="comeonin" level="project" />
     <orderEntry type="library" name="elixir_make" level="project" />
+    <orderEntry type="library" name="mox" level="project" />
   </component>
 </module>
