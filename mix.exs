@@ -20,7 +20,10 @@ defmodule BookBank.MixProject do
   def application do
     [
       mod: {BookBank.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools],
+      env: [
+        db_connection_url: System.get_env("DB_CONNECTION_URL") || "mongodb://localhost:27017/book_bank"
+      ]
     ]
   end
 
@@ -41,7 +44,10 @@ defmodule BookBank.MixProject do
       {:telemetry_poller, "~> 0.4"},
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0"}
+      {:plug_cowboy, "~> 2.0"},
+      {:typed_struct, "~> 0.2.1", runtime: false},
+      {:mongodb_driver, "~> 0.6"},
+      {:argon2_elixir, "~> 2.0"}
     ]
   end
 

@@ -69,5 +69,19 @@
     <orderEntry type="library" name="x509" level="project" />
     <orderEntry type="library" name="mime" level="project" />
     <orderEntry type="library" name="html_entities" level="project" />
+    <orderEntry type="library" name="typed_struct" level="project" />
+    <orderEntry type="library" name="mongodb_driver" level="project" />
+    <orderEntry type="library" name="ex_check" level="project" />
+    <orderEntry type="library" name="credo" level="project" />
+    <orderEntry type="library" name="mix_test_watch" level="project" />
+    <orderEntry type="library" name="ex_unit_notifier" level="project" />
+    <orderEntry type="library" name="db_connection" level="project" />
+    <orderEntry type="library" name="decimal" level="project" />
+    <orderEntry type="library" name="benchee" level="project" />
+    <orderEntry type="library" name="earmark" level="project" />
+    <orderEntry type="library" name="connection" level="project" />
+    <orderEntry type="library" name="argon2_elixir" level="project" />
+    <orderEntry type="library" name="comeonin" level="project" />
+    <orderEntry type="library" name="elixir_make" level="project" />
   </component>
 </module>

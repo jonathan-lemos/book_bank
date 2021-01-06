@@ -12,9 +12,10 @@ defmodule BookBank.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: BookBank.PubSub},
       # Start the Endpoint (http/https)
-      BookBankWeb.Endpoint
+      BookBankWeb.Endpoint,
       # Start a worker by calling: BookBank.Worker.start_link(arg)
       # {BookBank.Worker, arg}
+      {Mongo, [[name: :mongo, database: System.get_env("DB_NAME") || "book_bank", pool_size: 16]]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

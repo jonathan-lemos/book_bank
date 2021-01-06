@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
-import { NavigationEnd, Router } from '@angular/router';
-import { routes } from '../app-routing.module';
-import { AuthService } from '../services/auth.service';
+import {Component, OnInit} from '@angular/core';
+import {Router} from '@angular/router';
+import {routes} from '../app-routing.module';
+import {AuthService} from '../services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -9,22 +9,16 @@ import { AuthService } from '../services/auth.service';
   styleUrls: ['./navbar.component.sass']
 })
 export class NavbarComponent implements OnInit {
-  links = routes.filter(x => x.putInNavbar && (x.canActivate == null || this.auth.isAuthenticated()));
-
-  active: string;
+  links: {path: string, name: string}[];
 
   constructor(public auth: AuthService, public router: Router) {
-    auth.subscribe(ev => this.links = routes.filter(x => x.putInNavbar && (auth.isAuthenticated() || x.canActivate == null)));
+  }
+
+  private updateState(): void {
+    this.links = routes.filter(x => x.putInNavbar && this.auth.allowed(x.roles));
   }
 
   ngOnInit(): void {
-    this.active = this.router.url;
-
-    this.router.events.subscribe(val => {
-      if (!(val instanceof NavigationEnd)) {
-        return;
-      }
-      this.active = val.urlAfterRedirects;
-    });
+    this.updateState();
   }
 }

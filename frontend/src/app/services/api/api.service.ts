@@ -1,8 +1,6 @@
-import { EventEmitter, Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {Failure, Result, Success} from "../../../utils/functional/result";
-import AuthenticateResponse, {
-  AuthenticateResponseSchema,
-} from "./schemas/authenticate-response";
+import AuthenticateResponse, {AuthenticateResponseSchema,} from "./schemas/authenticate-response";
 import AuthenticateRequest from "./schemas/authenticate-request";
 import validate from "../../../utils/validator";
 import Suggestion, {SuggestionSchema} from "./schemas/suggestion";
@@ -36,12 +34,16 @@ export class ApiService {
             const res = await this.refresh(auth);
             if (res.isError()) {
               console.log(`Failed to refresh token: ${res.value}`);
+              auth.logout();
             }
             else {
               return await this.apiFetch(url, params, auth, false);
             }
           }
           return await this.apiFetch(url, params, auth, false);
+        }
+        else if (res1.status === 401) {
+          auth?.logout();
         }
 
         return {type: "json response", status: res1.status, response: res2};

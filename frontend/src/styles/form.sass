@@ -15,11 +15,16 @@ input[type=text], input[type=password]
     background-color: $color-bg-muted
     cursor: not-allowed
 
-=hover($name)
-  &.hover-#{$name}:hover
-    @extend .glow-#{$name}
+=color($name)
+  &.#{$name}
     @extend .border
     @extend .#{$name}
+
+  &.hover-glow:hover
+    @extend .glow-#{$name}
+
+  &:disabled, &:disabled *
+    color: $color-fg-muted
 
 button
   @extend .p-s
@@ -32,9 +37,9 @@ button
   &:hover
     cursor: pointer
 
-  +hover('accent')
-  +hover('red')
-  +hover('green')
+  +color('accent')
+  +color('red')
+  +color('green')
 
 hr
   @extend .w-100

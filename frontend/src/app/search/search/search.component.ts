@@ -1,4 +1,4 @@
-import {Component, OnInit, QueryList, ViewChildren} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import Book from "../../services/api/schemas/book";
 import {ApiService} from "../../services/api/api.service";
 import {AuthService} from "../../services/auth.service";

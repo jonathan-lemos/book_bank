@@ -1,4 +1,4 @@
-import validate, {Schema} from "../../../../utils/validator";
+import {Schema} from "../../../../utils/validator";
 
 export default interface Book {
   id: string,

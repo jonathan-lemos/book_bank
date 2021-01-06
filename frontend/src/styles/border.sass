@@ -14,6 +14,9 @@
     &.green
       border-#{$dir}-color: $green
 
+    &:disabled
+      border-#{$dir}-color: $color-fg-muted
+
 
 +border('left')
 +border('right')
@@ -34,6 +37,9 @@
 
 =glow-shadow($col)
   box-shadow: 0 0 0.2em $col, 0 0 0.5em $col
+
+  &:disabled
+    box-shadow: none
 
 .glow
   &.fg

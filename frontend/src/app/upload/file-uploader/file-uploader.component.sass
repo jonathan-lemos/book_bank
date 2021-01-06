@@ -1,0 +1,41 @@
+@import "../../../styles/color"
+@import "../../../styles/container"
+@import "../../../styles/sizing"
+
+.outer
+  @extend .w-50
+  min-height: 6em
+  cursor: pointer
+  border: 0.2em dashed $color-fg-muted
+  position: relative
+
+  .text
+    @extend .col
+    @extend .center
+    position: absolute
+    top: 0
+    bottom: 0
+    left: 0
+    right: 0
+
+  &:hover
+    z-index: 2
+    background-color: scale-color($color-bg-muted, $alpha: -50%)
+
+  &.empty
+    &:hover
+      background-color: $color-bg-muted
+
+input[type=file]
+  position: absolute
+  top: 0
+  bottom: 0
+  left: 0
+  right: 0
+  opacity: 0
+  z-index: 3
+
+canvas
+  @extend .fluid
+  position: relative
+  z-index: 1

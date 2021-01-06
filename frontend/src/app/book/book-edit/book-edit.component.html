@@ -27,25 +27,25 @@
     </div>
   </div>
   <div class="w-100 row" *ngIf="!this.confirm_delete">
-    <button class="hover-accent glow" (click)="this.cancel.emit()">
+    <button class="accent border hover-glow" (click)="this.cancel.emit()">
       <fa-icon class="mr-xs" [icon]="['fas', 'ban']"></fa-icon>
       Cancel
     </button>
-    <button class="hover-green glow" (click)="this.handleSubmit()">
+    <button class="green border hover-glow" (click)="this.handleSubmit()">
       <fa-icon class="mr-xs" [icon]="['fas', 'save']"></fa-icon>
       Save
     </button>
-    <button class="hover-red glow" (click)="this.confirm_delete = true" *ngIf="this.auth.hasRole('admin')">
+    <button class="red border hover-glow" (click)="this.confirm_delete = true" *ngIf="this.auth.hasRole('admin')">
       <fa-icon class="mr-xs" [icon]="['fas', 'trash']"></fa-icon>
       Delete
     </button>
   </div>
   <div class="w-100 row" *ngIf="this.confirm_delete">
-    <button class="hover-red glow" (click)="this.del.emit()">
+    <button class="red border hover-glow" (click)="this.del.emit()">
       <fa-icon class="mr-xs" [icon]="['fas', 'trash']"></fa-icon>
       Confirm Delete
     </button>
-    <button class="hover-accent glow" (click)="this.confirm_delete = false">
+    <button class="accent border hover-glow" (click)="this.confirm_delete = false">
       <fa-icon class="mr-xs" [icon]="['fas', 'ban']"></fa-icon>
       Cancel
     </button>

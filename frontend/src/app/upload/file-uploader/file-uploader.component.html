@@ -1,3 +1,12 @@
 <div class="outer">
-  <input type="file" name="book">
+  <div class="text" *ngIf="this.filename">
+    <p>Click here or drag a pdf.</p>
+  </div>
+  <input #file_input type="file" name="book">
+  <input type="hidden" name="filename" accept="application/pdf">
+  <canvas #pdf_preview></canvas>
 </div>
+<button class="accent border hover-glow w-100 mt-m" [disabled]="this.filename === null" (click)="this.tryUpload()">
+  <fa-icon class="mr-xs" [icon]="['fas', 'upload']"></fa-icon>
+  {{this.uploadText}}
+</button>

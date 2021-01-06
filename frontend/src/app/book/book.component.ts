@@ -3,7 +3,6 @@ import Book from "../services/api/schemas/book";
 import {AuthService} from "../services/auth.service";
 import {ApiService} from "../services/api/api.service";
 import {Result} from "../../utils/functional/result";
-import {sleep} from "../../utils/misc";
 import {Router} from "@angular/router";
 
 @Component({

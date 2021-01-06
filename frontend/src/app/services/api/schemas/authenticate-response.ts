@@ -1,4 +1,4 @@
-import validate, {Schema} from "../../../../utils/validator";
+import {Schema} from "../../../../utils/validator";
 
 export type AuthenticateResponse = {
   status: number,

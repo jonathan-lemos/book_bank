@@ -1,9 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import Book from "../../services/api/schemas/book";
 import {cover} from "../../../utils/routing";
-import {size_unit} from "../../../utils/size";
-import {round} from "../../../utils/format";
-import {enumerate, flatten} from "../../../utils/functional/linq";
 import {AuthService} from "../../services/auth.service";
 
 @Component({

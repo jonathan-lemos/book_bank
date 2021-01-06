@@ -1,15 +1,26 @@
-import { Injectable } from '@angular/core';
-import {
-  CanActivate,
-  Router,
-} from '@angular/router';
+import {Injectable} from '@angular/core';
+import {ActivatedRouteSnapshot, CanActivate, Router,} from '@angular/router';
 import {Failure, Result, Success} from '../../utils/functional/result';
+import {Roles} from "../app-routing.module";
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService implements CanActivate {
   constructor(private router: Router) {
+  }
+
+  allowed(roles: Roles): boolean {
+    if (roles === "*") {
+      return true;
+    }
+    if (roles === "no-auth") {
+      return !this.isAuthenticated();
+    }
+    if (roles === "auth") {
+      return this.isAuthenticated();
+    }
+    return this.hasRole(...roles);
   }
 
   authenticate(token: string): Result<AuthenticationContext, string> {
@@ -23,8 +34,21 @@ export class AuthService implements CanActivate {
     return res;
   }
 
-  canActivate() {
-    return this.isAuthenticated();
+  canActivate(av: ActivatedRouteSnapshot) {
+    if (av.data?.roles == null) {
+      return true;
+    }
+
+    const roles: Roles = av.data.roles;
+    if (this.allowed(roles)) {
+      return true;
+    }
+    if (this.isAuthenticated()) {
+      return this.router.parseUrl("/home");
+    }
+    else {
+      return this.router.parseUrl("/login");
+    }
   }
 
   context(): AuthenticationContext | null {
@@ -71,10 +95,10 @@ export class AuthService implements CanActivate {
 }
 
 export class AuthenticationContext {
-  private _sub: string;
-  private _iat: Date;
-  private _exp: Date;
-  private _roles: string[];
+  public readonly sub: string;
+  public readonly iat: Date;
+  public readonly exp: Date;
+  public readonly roles: string[];
 
   public static tryCreate(token: string): Result<AuthenticationContext, string> {
     const components = token.split(".");
@@ -149,29 +173,13 @@ export class AuthenticationContext {
   }
 
   constructor(sub: string, iat: Date, exp: Date, roles: string[]) {
-    this._sub = sub;
-    this._iat = iat;
-    this._exp = exp;
-    this._roles = roles;
-  }
-
-  get sub() {
-    return this._sub;
-  }
-
-  get iat() {
-    return this._iat;
-  }
-
-  get exp() {
-    return this._exp;
-  }
-
-  get roles() {
-    return this._roles;
+    this.sub = sub;
+    this.iat = iat;
+    this.exp = exp;
+    this.roles = roles;
   }
 
   isExpired() {
-    return Date.now() >= this._exp.getTime();
+    return Date.now() >= this.exp.getTime();
   }
 }

@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import Book from "../../services/api/schemas/book";
 import {cover} from "../../../utils/routing";
-import {size_unit} from "../../../utils/size";
+import {sizeUnit} from "../../../utils/size";
 import {round} from "../../../utils/format";
 import {AuthService} from "../../services/auth.service";
 
@@ -24,7 +24,7 @@ export class BookViewComponent implements OnInit {
   }
 
   get size_string(): string {
-    let [num, unit] = size_unit(this.book.size);
+    let [num, unit] = sizeUnit(this.book.size);
     return [round(num, 2), unit].join(" ");
   }
 }
