@@ -2,57 +2,14 @@ defmodule BookBank.MongoAuth do
   @behaviour BookBank.Auth
   @moduledoc false
 
-  use GenServer
-
-  def init(_) do
-    # the server doesn't need any state, so we use nil
-    {:ok, nil}
-  end
-
-  @spec authenticate_user?(String.t(), String.t()) :: boolean
   def authenticate_user?(username, password) do
-    GenServer.call(__MODULE__, {:auth, username, password})
+    case Mongo.find_one(:mongo, "users", %{username: username}) do
+      %{username: _, password: pw} -> Argon2.verify_pass(password, pw)
+      _ -> false
+    end
   end
 
-  @spec create_user(String.t(), String.t(), list(String.t())) ::
-          {:ok, BookBank.User}
-          | {
-              :error,
-              :user_exists | String.t()
-            }
   def create_user(username, password, roles) do
-    GenServer.call(__MODULE__, {:create, {username, password, roles}})
-  end
-
-  @spec read_user(String.t()) :: {:ok, BookBank.User} | {:error, :does_not_exist | String.t()}
-  def read_user(username) do
-    GenServer.call(__MODULE__, {:read, username})
-  end
-
-  @spec update_user(
-          String.t(),
-          list({:password, String.t()} | {:add_role, String.t()} | {:remove_role, String.t()})
-        ) :: :ok | {:error, :does_not_exist | String.t()}
-  def update_user(username, updates) do
-    GenServer.call(__MODULE__, {:update, username, updates})
-  end
-
-  @spec delete_user(username :: String.t()) :: :ok | {:error, :does_not_exist | String.t()}
-  def delete_user(username) do
-    GenServer.call(__MODULE__, {:delete, username})
-  end
-
-  def handle_call({:auth, username, password}, _from, state) do
-    b =
-      case Mongo.find_one(:mongo, "users", %{username: username}) do
-        %{username: _, password: pw} -> Argon2.verify_pass(password, pw)
-        _ -> false
-      end
-
-    {:reply, b, state}
-  end
-
-  def handle_call({:create, {username, password, roles}}, _from, state) do
     user = %{
       username: username,
       password: password,
@@ -61,78 +18,90 @@ defmodule BookBank.MongoAuth do
 
     case Mongo.insert_one(:mongo, "users", user) do
       {:ok, %Mongo.InsertOneResult{acknowledged: true, inserted_id: _}} ->
-        {:reply, {:ok, %BookBank.User{username: username, roles: roles}}, state}
+        {:ok, %BookBank.User{username: username, roles: roles}}
 
       {:error, error} ->
-        {:reply, {:error, error}}
+        {:error, error}
     end
   end
 
-  def handle_call({:read, username}, _from, state) do
+  def read_user(username) do
     case Mongo.find_one(:mongo, "users", %{username: username}) do
       %{username: un, password: _, roles: r} ->
-        {:reply, {:ok, %BookBank.User{username: un, roles: r}}, state}
+        {:ok, %BookBank.User{username: un, roles: r}}
 
       nil ->
-        {:reply, {:error, :does_not_exist}}
+        {:error, :does_not_exist}
     end
   end
 
-  @spec handle_call(
-          {:update, String.t(),
-           list({:password, String.t()} | {:add_role, String.t()} | {:remove_role, String.t()})},
-          term,
-          term
-        ) :: {:reply, term, term}
-  def handle_call({:update, username, updates}, _from, state) do
-    groups =
-      updates
-      |> Enum.group_by(fn x -> elem(x, 0) end)
+  defp update(obj, []) do
+    obj
+  end
 
-    obj = %{}
+  defp update(obj, [head | tail]) do
+    # the func takes obj[key][selector] and outputs its new value
+    obj_mutate_selector = fn selector, key, default, func ->
+      selector_map = Map.get(obj, selector, %{})
+      key_obj = Map.get(selector_map, key, default)
 
-    obj =
-      case groups do
-        %{password: [pw | _]} -> obj |> Map.put("$set", %{password: pw})
-        _ -> obj
-      end
+      new_key_obj = func.(key_obj)
+      new_selector_map = Map.put(selector_map, key, new_key_obj)
 
-    obj =
-      case groups do
-        %{remove_roles: roles} -> obj |> Map.put("$pullAll", %{"roles" => roles})
-        _ -> obj
-      end
+      Map.put(obj, selector, new_selector_map)
+    end
 
-    obj =
-      case groups do
-        %{update_role: roles} -> obj |> Map.put("$addToSet", %{"roles" => roles})
-        _ -> obj
-      end
+    new_obj = case head do
+      {:set_roles, roles} ->
+        obj_mutate_selector.("$set", "roles", [], fn _ -> roles end)
+
+      {:add_role, role} ->
+        obj_mutate_selector.("$addToSet", "roles", [], &([role | &1]))
+
+      {:add_roles, roles} ->
+        obj_mutate_selector.("$addToSet", "roles", [], &(roles ++ &1))
+
+      {:remove_role, role} ->
+        obj_mutate_selector.("$pullAll", "roles", [], &([role | &1]))
+
+      {:remove_roles, roles} ->
+        obj_mutate_selector.("$pullAll", "roles", [], &(roles ++ &1))
+
+      {:password, pw} ->
+        obj_mutate_selector.("$set", "password", "", fn _ -> Argon2.hash_pwd_salt(pw) end)
+    end
+
+    update(new_obj, tail)
+  end
+
+  defp update(updates) do
+    update(%{}, updates)
+  end
+
+  def update_user(username, updates) do
+    obj = update(updates)
 
     case Mongo.update_one(:mongo, "users", %{username: username}, obj) do
       {:ok, %Mongo.UpdateResult{acknowledged: true, matched_count: n}} ->
         if n > 0 do
-          {:reply, :ok, state}
+          :ok
         else
-          {:reply, {:error, :does_not_exist}, state}
+          {:error, :does_not_exist}
         end
 
       {:ok, %Mongo.UpdateResult{acknowledged: false}} ->
-        {:reply, {:error, "The update request was not acknowledged."}, state}
+        {:error, "The update request was not acknowledged."}
 
       {:error, error} ->
-        {:reply, {:error, error}, state}
+        {:error, error}
     end
   end
 
-  def handle_call({:delete, username}, _from, state) do
-    r =
-      case Mongo.delete_many(:mongo, "users", %{username: username}) do
-        {:ok, %Mongo.DeleteResult{acknowledged: true}} -> :ok
-        {:ok, _} -> {:error, "The delete was not acknowledged by the server"}
-        {:error, error} -> {:error, error}
-      end
-
-    {:reply, r, state}
+  def delete_user(username) do
+    case Mongo.delete_many(:mongo, "users", %{username: username}) do
+      {:ok, %Mongo.DeleteResult{acknowledged: true}} -> :ok
+      {:ok, _} -> {:error, "The delete was not acknowledged by the server"}
+      {:error, error} -> {:error, error}
+    end
   end
 end

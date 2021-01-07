@@ -12,7 +12,10 @@ defmodule BookBank.Auth do
                 list(
                   {:password, String.t()}
                   | {:add_role, String.t()}
+                  | {:add_roles, list(String.t())}
                   | {:remove_role, String.t()}
+                  | {:remove_roles, list(String.t())}
+                  | {:set_roles, list(String.t())}
                 )
             ) :: :ok | {:error, :does_not_exist | String.t()}
   @callback delete_user(username :: String.t()) :: :ok | {:error, :does_not_exist | String.t()}
