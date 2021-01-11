@@ -22,7 +22,8 @@ defmodule BookBank.MixProject do
       mod: {BookBank.Application, []},
       extra_applications: [:logger, :runtime_tools],
       env: [
-        db_connection_url: System.get_env("DB_CONNECTION_URL") || "mongodb://localhost:27017/book_bank"
+        db_connection_url: System.get_env("DB_CONNECTION_URL") || "mongodb://localhost:27017/book_bank",
+        secret: System.get_env("AUTH_SECRET") || "hunter2"
       ]
     ]
   end
@@ -48,7 +49,8 @@ defmodule BookBank.MixProject do
       {:typed_struct, "~> 0.2.1", runtime: false},
       {:mongodb_driver, "~> 0.6"},
       {:argon2_elixir, "~> 2.0"},
-      {:mox, "~> 1.0", only: :test}
+      {:mox, "~> 1.0", only: :test},
+      {:joken, "~> 2.0"}
     ]
   end
 

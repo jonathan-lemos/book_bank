@@ -18,6 +18,11 @@ config :book_bank, BookBankWeb.Endpoint,
   ],
   secret_key_base: secret_key_base
 
+config :book_bank, BookBankWeb.Auth,
+  secret: System.get_env("AUTH_SECRET") || raise """
+  environment variable AUTH_SECRET is missing.
+  """
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix

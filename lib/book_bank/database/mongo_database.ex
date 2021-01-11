@@ -34,25 +34,105 @@ defmodule BookBank.MongoDatabase do
     end
   end
 
-  def read_book(id) do
-    case Mongo.find_one(:mongo, "books", %{_id: BSON.ObjectId.decode!(id)}) do
-      %{_id: id, title: title, metadata: metadata, body: body_id} ->
-        bucket = Mongo.GridFs.Bucket.new(:mongo)
-        {:ok, stream} = Mongo.GridFs.Download.open_download_stream(bucket, body_id)
-
-        {:ok,
-         %BookBank.Book{
-           id: BSON.ObjectId.encode!(id),
-           title: title,
-           metadata: metadata,
-           body: stream
-         }}
-
-      %{} ->
-        {:error, "Malformed data"}
-
-      nil ->
-        {:error, :does_not_exist}
+  defp with_object_id(id_string, func) do
+    case BSON.ObjectId.decode(id_string) do
+      {:ok, id} -> func.(id)
+      :error -> {:error, :does_not_exist}
     end
+  end
+
+  def read_book(id_string) do
+    with_object_id(id_string, fn id ->
+      case Mongo.find_one(:mongo, "books", %{_id: id}) do
+        %{_id: id, title: title, metadata: metadata, body: body_id} ->
+          bucket = Mongo.GridFs.Bucket.new(:mongo)
+          {:ok, stream} = Mongo.GridFs.Download.open_download_stream(bucket, body_id)
+
+          {:ok,
+           %BookBank.Book{
+             id: BSON.ObjectId.encode!(id),
+             title: title,
+             metadata: metadata,
+             body: stream
+           }}
+
+        %{} ->
+          {:error, "Malformed data"}
+
+        nil ->
+          {:error, :does_not_exist}
+      end
+    end)
+  end
+
+  def update(set, push, pull, []) do
+    {set, push, pull}
+  end
+
+  def update(set, push, pull, [head | tail]) do
+    case head do
+      {:remove, k} ->
+        update(set, push, [k | pull], tail)
+
+      {:update, k, v} ->
+        update(set, [[k, v] | push], pull, tail)
+
+      {:replace_metadata, m} ->
+        update(m, push, pull, tail)
+    end
+  end
+
+  def update(updates) do
+    update(nil, [], [], updates)
+  end
+
+  def update_book(id_string, updates) do
+    with_object_id(id_string, fn id ->
+      {set, push, pull} = update(updates)
+
+      obj = %{
+        "$addToSet": %{
+          metadata: push
+        },
+        "$pull": %{
+          metadata: pull
+        }
+      }
+
+      obj =
+        case set do
+          %{} = m -> Map.put(obj, "$set", %{metadata: m})
+          nil -> obj
+        end
+
+      case Mongo.update_many(:mongo, "books", %{_id: BSON.ObjectId.decode!(id)}, obj) do
+        {:ok, %Mongo.UpdateResult{acknowledged: true}} ->
+          :ok
+
+        {:ok, %Mongo.UpdateResult{}} ->
+          {:error, "The update was not acknowledged"}
+
+        {:error, error} ->
+          {:error, error.message}
+      end
+    end)
+  end
+
+  def delete_book(id_string) do
+    with_object_id(id_string, fn id ->
+      case Mongo.delete_one(:mongo, "books", %{_id: id}) do
+        {:ok, %Mongo.DeleteResult{acknowledged: true, deleted_count: n}} when n > 0 ->
+          :ok
+
+        {:ok, %Mongo.DeleteResult{acknowledged: true}} ->
+          {:error, :does_not_exist}
+
+        {:ok, %Mongo.DeleteResult{}} ->
+          {:error, "The deletion was not acknowledged"}
+
+        {:error, error} ->
+          {:error, error.message}
+      end
+    end)
   end
 end

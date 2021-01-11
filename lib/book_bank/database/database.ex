@@ -12,13 +12,11 @@ defmodule BookBank.Database do
               id :: String.t(),
               update ::
                 list(
-                  {:body, Stream.t()}
-                  | {:replace_metadata,
-                     %{String.t() => String.t()}
-                     | {:remove, String.t()}
-                     | {:update, String.t(), String.t()}}
+                  {:replace_metadata,
+                   %{String.t() => String.t()}
+                   | {:remove, String.t()}
+                   | {:update, String.t(), String.t()}}
                 )
             ) :: :ok | {:error, :does_not_exist | String.t()}
-  @callback delete_book(pid :: atom, id :: String.t()) ::
-              :ok | {:error, :does_not_exist | String.t()}
+  @callback delete_book(id :: String.t()) :: :ok | {:error, :does_not_exist | String.t()}
 end

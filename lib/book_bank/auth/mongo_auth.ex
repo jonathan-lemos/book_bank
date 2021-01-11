@@ -20,8 +20,8 @@ defmodule BookBank.MongoAuth do
       {:ok, %Mongo.InsertOneResult{acknowledged: true, inserted_id: _}} ->
         {:ok, %BookBank.User{username: username, roles: roles}}
 
-      {:error, error} ->
-        {:error, error}
+      {:error, %{message: msg}} ->
+        {:error, msg}
     end
   end
 
@@ -51,25 +51,26 @@ defmodule BookBank.MongoAuth do
       Map.put(obj, selector, new_selector_map)
     end
 
-    new_obj = case head do
-      {:set_roles, roles} ->
-        obj_mutate_selector.("$set", "roles", [], fn _ -> roles end)
+    new_obj =
+      case head do
+        {:set_roles, roles} ->
+          obj_mutate_selector.("$set", "roles", [], fn _ -> roles end)
 
-      {:add_role, role} ->
-        obj_mutate_selector.("$addToSet", "roles", [], &([role | &1]))
+        {:add_role, role} ->
+          obj_mutate_selector.("$addToSet", "roles", [], &[role | &1])
 
-      {:add_roles, roles} ->
-        obj_mutate_selector.("$addToSet", "roles", [], &(roles ++ &1))
+        {:add_roles, roles} ->
+          obj_mutate_selector.("$addToSet", "roles", [], &(roles ++ &1))
 
-      {:remove_role, role} ->
-        obj_mutate_selector.("$pullAll", "roles", [], &([role | &1]))
+        {:remove_role, role} ->
+          obj_mutate_selector.("$pullAll", "roles", [], &[role | &1])
 
-      {:remove_roles, roles} ->
-        obj_mutate_selector.("$pullAll", "roles", [], &(roles ++ &1))
+        {:remove_roles, roles} ->
+          obj_mutate_selector.("$pullAll", "roles", [], &(roles ++ &1))
 
-      {:password, pw} ->
-        obj_mutate_selector.("$set", "password", "", fn _ -> Argon2.hash_pwd_salt(pw) end)
-    end
+        {:password, pw} ->
+          obj_mutate_selector.("$set", "password", "", fn _ -> Argon2.hash_pwd_salt(pw) end)
+      end
 
     update(new_obj, tail)
   end
@@ -82,12 +83,11 @@ defmodule BookBank.MongoAuth do
     obj = update(updates)
 
     case Mongo.update_one(:mongo, "users", %{username: username}, obj) do
-      {:ok, %Mongo.UpdateResult{acknowledged: true, matched_count: n}} ->
-        if n > 0 do
-          :ok
-        else
-          {:error, :does_not_exist}
-        end
+      {:ok, %Mongo.UpdateResult{acknowledged: true, matched_count: n}} when n > 0 ->
+        :ok
+
+      {:ok, %Mongo.UpdateResult{acknowledged: true}} ->
+        {:error, :does_not_exist}
 
       {:ok, %Mongo.UpdateResult{acknowledged: false}} ->
         {:error, "The update request was not acknowledged."}
