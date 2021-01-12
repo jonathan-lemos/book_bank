@@ -1,4 +1,4 @@
-defmodule BookBank.Auth.UserBlacklist do
+defmodule BookBank.Auth.UserWhitelist do
   @moduledoc """
     Stores the list of users that are not allowed to authenticate with a JWT.
     An entry will live at least as long as the ttl_seconds specified in start_link/1.

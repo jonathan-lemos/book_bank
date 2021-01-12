@@ -43,6 +43,8 @@
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/mongodb_driver" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/comeonin" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/argon2_elixir" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/jose" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/joken" />
     </content>
     <orderEntry type="jdk" jdkName="Elixir 1.11.0" jdkType="Elixir SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

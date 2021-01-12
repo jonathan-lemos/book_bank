@@ -26,14 +26,14 @@ defmodule BookBankWeb.Utils.Auth do
     end
   end
 
-  @spec verify_token(binary) :: {:error, binary}
+  @spec verify_token(binary) :: {:ok, term()} | {:error, String.t()}
   def verify_token(jwt) do
     case Token.verify_and_validate(jwt, make_signer()) do
       {:ok, %{"sub" => user, "roles" => []} = claims} ->
-        if BookBank.Auth.UserBlacklist.check(user) do
-          {:error, "This JWT cannot be used."}
-        else
+        if BookBank.Auth.UserWhitelist.check(user) do
           {:ok, claims}
+        else
+          {:error, "This JWT cannot be used."}
         end
       {:error, error} -> {:error, to_string(error)}
     end
