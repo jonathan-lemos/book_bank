@@ -5,8 +5,8 @@ POST /api/accounts/login
 
 POST /api/accounts/create
 	requires: admin
-	input: { username: string, password?: string, roles?: { [key]: string } }
-	output: { status: number, response: string, password: string | null }
+	input: { username: string, password: string, roles?: { [key]: string } }
+	output: { status: number, response: string }
 
 GET /api/accounts/roles
 	requires: admin
@@ -21,13 +21,13 @@ GET /api/accounts/users/roles/:username
 	output: { roles: string[] }
 
 PUT /api/accounts/users/roles/:username
-	requires: admin or current user
-	input: string[]
+	requires: admin
+	input: { roles: string[] }
 	output: { status: number, response: string }
 
 PATCH /api/accounts/users/roles/:username
 	requires: admin
-	input: { role: string, enable: boolean }[]
+	input: { remove?: string[], add?: string[] }
 	output: { status: number, response: string }
 
 PUT /api/accounts/users/password/:username

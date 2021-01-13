@@ -1,9 +1,14 @@
 defmodule BookBankWeb.Utils.Auth.Token do
   use Joken.Config
 
+  @spec token_lifetime_seconds :: 7200
+  def token_lifetime_seconds do
+    2 * 60 * 60
+  end
+
   @impl true
   def token_config do
-    default_claims()
+    default_claims(default_exp: token_lifetime_seconds())
     |> add_claim("sub", nil, &is_binary/1)
     |> add_claim("roles", nil, &is_list/1)
   end
@@ -29,8 +34,8 @@ defmodule BookBankWeb.Utils.Auth do
   @spec verify_token(binary) :: {:ok, term()} | {:error, String.t()}
   def verify_token(jwt) do
     case Token.verify_and_validate(jwt, make_signer()) do
-      {:ok, %{"sub" => user, "roles" => []} = claims} ->
-        if BookBank.Auth.UserWhitelist.check(user) do
+      {:ok, %{"iat" => iat, "sub" => user, "roles" => []} = claims} ->
+        if BookBank.Auth.UserWhitelist.check(user, iat) do
           {:ok, claims}
         else
           {:error, "This JWT cannot be used."}

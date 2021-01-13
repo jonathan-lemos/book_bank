@@ -1,7 +1,12 @@
 defmodule BookBankWeb.Utils do
   @type ok_status :: :ok | :created
   @type error_status ::
-          :bad_request | :internal_server_error | :conflict | :unauthorized | :forbidden
+          :bad_request
+          | :internal_server_error
+          | :conflict
+          | :unauthorized
+          | :forbidden
+          | :not_found
   @type status :: ok_status() | error_status()
 
   @spec status_to_string(status()) :: String.t()
@@ -14,10 +19,11 @@ defmodule BookBankWeb.Utils do
       :conflict -> "Conflict"
       :unauthorized -> "Unauthorized"
       :forbidden -> "Forbidden"
+      :not_found -> "Not Found"
     end
   end
 
-  @spec status_to_string(status()) :: integer()
+  @spec status_to_number(status()) :: integer()
   def status_to_number(s) do
     case s do
       :ok -> 200
@@ -27,11 +33,8 @@ defmodule BookBankWeb.Utils do
       :conflict -> 409
       :unauthorized -> 401
       :forbidden -> 403
+      :not_found -> 404
     end
-  end
-
-  defp process_opts(conn, [], extra) do
-    {:ok, conn, extra}
   end
 
   defp get_jwt(conn) do
@@ -45,6 +48,24 @@ defmodule BookBankWeb.Utils do
     end
   end
 
+  defp verify_claims_list(username, roles, [head | tail]) do
+    matched =
+      case head do
+        {:current_user, expected_username} -> username == expected_username
+        role when is_binary(role) -> role in roles
+      end
+
+    if matched do
+      true
+    else
+      verify_claims_list(username, roles, tail)
+    end
+  end
+
+  defp verify_claims_list(_, _, []) do
+    false
+  end
+
   defp verify_token(jwt, type) do
     case BookBankWeb.Utils.Auth.verify_token(jwt) do
       {:ok, claims} ->
@@ -52,19 +73,24 @@ defmodule BookBankWeb.Utils do
           :any ->
             {:ok, claims}
 
-          list = [] ->
-            %{"roles" => actual = []} = claims
+          auth_list when is_list(auth_list) ->
+            %{"username" => username, "roles" => roles} = claims
 
-            if Enum.any?(list, fn x -> x in actual end) do
+            if verify_claims_list(username, roles, auth_list) do
               {:ok, claims}
             else
-              {:error, :forbidden, "The user does not have any of the following roles: #{list}."}
+              {:error, :forbidden,
+               "The user does not have any of the following roles: #{auth_list}."}
             end
         end
 
       {:error, error} ->
         {:error, :unauthorized, error}
     end
+  end
+
+  defp process_opts(conn, [], extra) do
+    {:ok, conn, extra}
   end
 
   defp process_opts(conn, [{:authentication, type} | tail], extra) do
@@ -93,39 +119,47 @@ defmodule BookBankWeb.Utils do
     process_opts(conn, list, %{})
   end
 
-  defp with_valid_opts({:ok, conn, extra}, params, func) do
+  defp with_valid_opts({:ok, conn, extra}, func) do
+    default_map = fn status ->
+      %{status: status_to_number(status), response: status_to_string(status)}
+    end
+
     try do
-      case func.(conn, params, extra) do
-        {:ok, status, %{} = map} ->
+      case func.(conn, extra) do
+        {conn, {:ok, status, map}} when is_map(map) ->
           conn
           |> Plug.Conn.put_status(status)
-          |> Phoenix.Controller.json(map)
+          |> Phoenix.Controller.json(Map.merge(default_map.(status), map))
 
-        {:ok, status} ->
+        {conn, {:ok, status, str}} when is_binary(str) ->
           conn
           |> Plug.Conn.put_status(status)
-          |> Phoenix.Controller.json(%{
-            status: status_to_number(status),
-            response: status_to_string(status)
-          })
+          |> Phoenix.Controller.json(Map.put(default_map.(status), "response", str))
 
-        :ok ->
+        {conn, {:ok, status}} ->
+          conn
+          |> Plug.Conn.put_status(status)
+          |> Phoenix.Controller.json(default_map.(status))
+
+        {conn, :ok} ->
           conn
           |> Plug.Conn.put_status(:ok)
-          |> Phoenix.Controller.json(%{status: 200, response: status_to_string(:ok)})
+          |> Phoenix.Controller.json(default_map.(:ok))
 
-        {:error, status, %{} = map} ->
+        {conn, {:error, status, map}} when is_map(map) ->
           conn
           |> Plug.Conn.put_status(status)
-          |> Phoenix.Controller.json(map)
+          |> Phoenix.Controller.json(Map.merge(default_map.(status), map))
 
-        {:error, status} ->
+        {conn, {:error, status, str}} when is_binary(str) ->
           conn
           |> Plug.Conn.put_status(status)
-          |> Phoenix.Controller.json(%{
-            status: status_to_number(status),
-            response: status_to_string(status)
-          })
+          |> Phoenix.Controller.json(Map.put(default_map.(status), "response", str))
+
+        {conn, {:error, status}} ->
+          conn
+          |> Plug.Conn.put_status(status)
+          |> Phoenix.Controller.json(default_map.(status))
       end
     rescue
       e ->
@@ -139,21 +173,22 @@ defmodule BookBankWeb.Utils do
     end
   end
 
-  defp with_valid_opts({:error, status, error}, _, _) do
+  defp with_valid_opts({:error, status, error}, _) do
     {:error, status, error}
   end
 
   @spec with(
           Plug.Conn.t(),
-          %{String.t() => term()},
-          list({:authentication, list(String.t()) | :any}),
-          (() -> {:error, error_status(), %{String.t() => String.t()}}
-                 | {:error, error_status()}
-                 | {:ok, ok_status(), %{String.t() => String.t()}}
-                 | {:ok, ok_status()}
-                 | :ok)
+          list({:authentication, list(String.t() | {:current_user, String.t()}) | :any}),
+          (Plug.Conn.t(), %{any => any} ->
+             {Plug.Conn.t(),
+              {:error, error_status(), %{any => any} | String.t()}
+              | {:error, error_status()}
+              | {:ok, ok_status(), %{any => any} | String.t()}
+              | {:ok, ok_status()}
+              | :ok})
         ) :: Plug.Conn.t()
-  def with(conn, params, opts \\ [], func) do
-    process_opts(conn, opts) |> with_valid_opts(params, func)
+  def with(conn, opts, func) do
+    process_opts(conn, opts) |> with_valid_opts(func)
   end
 end

@@ -2,14 +2,23 @@ defmodule BookBank.MongoAuth do
   @behaviour BookBank.Auth
   @moduledoc false
 
-  def authenticate_user?(username, password) do
+  def authenticate_user(username, password) do
     case Mongo.find_one(:mongo, "users", %{username: username}) do
-      %{username: _, password: pw} -> Argon2.verify_pass(password, pw)
-      _ -> false
+      %{username: un, password: pw, roles: roles} ->
+        if Argon2.verify_pass(password, pw) do
+          {:ok, %BookBank.User{username: un, roles: roles}}
+        else
+          {:error, :wrong_password}
+        end
+
+      _ ->
+        {:error, :does_not_exist}
     end
   end
 
   def create_user(username, password, roles) do
+    roles = roles |> Enum.filter(fn x -> x in BookBank.Auth.roles() end)
+
     user = %{
       username: username,
       password: password,
@@ -103,5 +112,14 @@ defmodule BookBank.MongoAuth do
       {:ok, _} -> {:error, "The delete was not acknowledged by the server"}
       {:error, error} -> {:error, error}
     end
+  end
+
+  def users_with_role(role) do
+    list =
+      Mongo.find(:mongo, "users", %{roles: role})
+      |> Stream.map(fn x -> %BookBank.User{username: x["username"], roles: x["roles"]} end)
+      |> Enum.to_list()
+
+    {:ok, list}
   end
 end
