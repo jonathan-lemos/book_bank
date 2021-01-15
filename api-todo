@@ -32,7 +32,7 @@ PATCH /api/accounts/users/roles/:username
 
 PUT /api/accounts/users/password/:username
     requires: admin or current user
-    input: string
+    input: { password: string }
     output: { status: number, response: string }
 
 DELETE /api/accounts/users/:username

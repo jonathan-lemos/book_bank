@@ -1,13 +1,16 @@
-<div [class]="this.class + ' relative ' + this.state">
+<div [class]="this.class + ' relative ' + this.stateClass">
   <ng-content></ng-content>
   <div class="dialog" *ngIf="this.state !== 'not-loading'">
-    <b class="size-200" *ngIf="this.state === 'loading'">{{this.spinnerState}}</b>
-    <div *ngIf="this.isFinished()">
+    <div class="col my-m" *ngIf="this.state === 'loading'">
+      <b class="size-200 my-s" *ngIf="this.state === 'loading'">{{this.spinnerState}}</b>
+      <span class="size-150">{{this.pctString}}</span>
+    </div>
+    <div *ngIf="this.result !== null">
       <span class="close" (click)="this.close()">X</span>
-      <b class="size-200 success pb-s" *ngIf="this.state.isSuccess()">success</b>
-      <b class="size-200 failure pb-s" *ngIf="this.state.isError()">error</b>
+      <b class="size-200 success pb-s" *ngIf="this.result.isSuccess()">success</b>
+      <b class="size-200 failure pb-s" *ngIf="this.result.isError()">error</b>
       <p class="w-50">
-        {{this.state.value}}
+        {{this.result.value}}
       </p>
     </div>
   </div>

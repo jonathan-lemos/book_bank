@@ -80,7 +80,7 @@ defmodule BookBankWeb.Utils do
               {:ok, claims}
             else
               {:error, :forbidden,
-               "The user does not have any of the following roles: #{auth_list}."}
+               "The user does not have any of the following roles: #{IO.inspect(auth_list)}."}
             end
         end
 

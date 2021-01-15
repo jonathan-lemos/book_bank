@@ -1,4 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import { sizeUnit } from 'src/utils/size';
 import {Result} from "../../utils/functional/result";
 
 @Component({
@@ -8,20 +9,34 @@ import {Result} from "../../utils/functional/result";
 })
 export class LoadingComponent implements OnInit {
   @Input() class: string;
-  _state: "not-loading" | "loading" | Result<string, string> = "not-loading";
+  _state: "not-loading" | "loading" | "finished" = "not-loading";
+  result: Result<string, string> | null = null;
   spinnerPhases = ["|", "/", "-", "\\"];
   spinnerIndex = 0;
+  pctString = "";
 
   get spinnerState() {
     return this.spinnerPhases[this.spinnerIndex];
   }
 
-  get state() {
+  get state(): "not-loading" | "loading" | "finished" {
     return this._state;
   }
 
-  set state(value: "not-loading" | "loading" | Result<string, string>) {
-    this._state = value;
+  get stateClass(): string {
+    return typeof this.state === "string" ? this.state : "";
+  }
+
+  setState(value: "not-loading" | "loading" | Result<string, string>) {
+    if (typeof value === "string") {
+      this._state = value;
+      this.result = null;
+    }
+    else {
+      this._state = "finished";
+      this.result = value;
+    }
+
     if (value === "loading") {
         (async () => {
           while (this.state === "loading") {
@@ -32,21 +47,30 @@ export class LoadingComponent implements OnInit {
     }
   }
 
-  @Input() set promise(value: Promise<Result<string, string>> | null) {
+  @Input() set promise(value: Promise<Result<string, string>> | {promise: Promise<Result<string, string>>, progressCallbackRegistrationFunction: (cb: (progress: number, total: number) => void) => void} | null) {
     if (this.state === "loading") {
       return;
     }
 
     if (value !== null) {
-      this.state = "loading";
+      let prom: Promise<Result<string, string>>;
+      if ("promise" in value && "progressCallbackRegistrationFunction" in value) {
+        prom = value.promise;
+        value.progressCallbackRegistrationFunction((progress, total) => this.pctString = `${sizeUnit(progress).join(" ")}/${sizeUnit(total).join(" ")} (${Math.round(progress / total * 100)}%)`);
+      }
+      else {
+        prom = value;
+      }
 
-      value.then(r => {
-        this.state = r;
+      this.setState("loading");
+
+      prom.then(r => {
+        this.setState(r);
         this.finished.emit(r);
       });
     }
     else {
-      this.state = "not-loading";
+      this.setState("not-loading");
     }
   }
 
@@ -56,15 +80,10 @@ export class LoadingComponent implements OnInit {
   constructor() { }
 
   close(): void {
-    this.state = "not-loading";
+    this.setState("not-loading");
     this.closed.emit();
   }
 
   ngOnInit(): void {
   }
-
-  isFinished(): boolean {
-    return this.promise instanceof Result;
-  }
-
 }
