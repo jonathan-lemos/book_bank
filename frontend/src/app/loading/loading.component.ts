@@ -1,4 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import { round } from 'src/utils/format';
 import { sizeUnit } from 'src/utils/size';
 import {Result} from "../../utils/functional/result";
 
@@ -9,11 +10,20 @@ import {Result} from "../../utils/functional/result";
 })
 export class LoadingComponent implements OnInit {
   @Input() class: string;
+  @Input() progress: number | null = null;
+  @Input() total: number | null = null;
   _state: "not-loading" | "loading" | "finished" = "not-loading";
   result: Result<string, string> | null = null;
   spinnerPhases = ["|", "/", "-", "\\"];
   spinnerIndex = 0;
-  pctString = "";
+
+  get pctString() {
+    if (this.progress === null || this.total === null) {
+      return "";
+    }
+    return `${round(100 * this.progress / this.total, 1)}%`
+  }
+  
 
   get spinnerState() {
     return this.spinnerPhases[this.spinnerIndex];
@@ -47,24 +57,15 @@ export class LoadingComponent implements OnInit {
     }
   }
 
-  @Input() set promise(value: Promise<Result<string, string>> | {promise: Promise<Result<string, string>>, progressCallbackRegistrationFunction: (cb: (progress: number, total: number) => void) => void} | null) {
+  @Input() set promise(value: Promise<Result<string, string>> | null) {
     if (this.state === "loading") {
       return;
     }
 
     if (value !== null) {
-      let prom: Promise<Result<string, string>>;
-      if ("promise" in value && "progressCallbackRegistrationFunction" in value) {
-        prom = value.promise;
-        value.progressCallbackRegistrationFunction((progress, total) => this.pctString = `${sizeUnit(progress).join(" ")}/${sizeUnit(total).join(" ")} (${Math.round(progress / total * 100)}%)`);
-      }
-      else {
-        prom = value;
-      }
-
       this.setState("loading");
 
-      prom.then(r => {
+      value.then(r => {
         this.setState(r);
         this.finished.emit(r);
       });

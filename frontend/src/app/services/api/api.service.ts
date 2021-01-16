@@ -8,89 +8,98 @@ import RefreshResponse, {RefreshResponseSchema} from "./schemas/refresh-response
 import Book, {BookSchema} from "./schemas/book";
 import UnauthorizedResponse, {UnauthorizedResponseSchema} from "./schemas/unauthorized-response";
 import {AuthService} from "../auth.service";
+import UploadResponse, { UploadResponseSchema } from './schemas/upload-response';
 
 type ApiResponse = {type: "no response", reason: string} |
   {type: "json response", status: number, response: any} |
   {type: "non json response", status: number, response: string};
 
+type ApiMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+  
+type ApiParams = Partial<{
+  body: any,
+  auth: AuthService,
+  onProgress: (progress: number, total: number) => void;
+
+  headers: {[key: string]: string},
+}>
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  private readonly apiFetch = async (url: string, params: RequestInit, auth?: AuthService, retryUnauthorized = true): Promise<ApiResponse> => {
-    url = `${window.location.origin}/${url.replace(/^\/+/, "")}`;
-    try {
-      let res1 = await fetch(url, params);
+  private readonly apiFetch = async (url: string, method: ApiMethod, params: ApiParams) => new Promise<ApiResponse>(resolve => {
+    const apiUrl = `${window.location.origin}/${url.replace(/^\/+/, "")}`;
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, apiUrl, true);
 
-      const text = await res1.text();
+    for (const key in {"Accept": "application/json", ...(params.headers ?? {})}) {
+      if (!params.headers.hasOwnProperty(key)) {
+        continue;
+      }
+
+      xhr.setRequestHeader(key, params.headers[key]);
+    }
+
+    if (params.onProgress) {
+      xhr.onprogress = e => e.lengthComputable && params.onProgress(e.loaded, e.total);
+    }
+
+    xhr.onerror = e => resolve({type: "no response", reason: "Network error"});
+
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState !== XMLHttpRequest.DONE) {
+        return; 
+      }
+
+      const text = xhr.responseText;
       try {
-        const res2 = text.trim() !== "" ? JSON.parse(text) : "";
-
-        const check = validate<UnauthorizedResponse>(res2, UnauthorizedResponseSchema);
-
-        if (retryUnauthorized && res1.status === 401 && check.isSuccess() && auth !== undefined) {
-          if (check.value.reason === "expired token") {
-            const res = await this.refresh(auth);
-            if (res.isError()) {
-              console.log(`Failed to refresh token: ${res.value}`);
-              auth.logout();
-            }
-            else {
-              return await this.apiFetch(url, params, auth, false);
-            }
-          }
-          return await this.apiFetch(url, params, auth, false);
-        }
-        else if (res1.status === 401) {
-          auth?.logout();
-        }
-
-        return {type: "json response", status: res1.status, response: res2};
+        resolve({ type: "json response", status: xhr.status, response: JSON.parse(text) });
+        return;
       }
       catch (e) {
-        return {type: "non json response", status: res1.status, response: text};
+        resolve({ type: "non json response", status: xhr.status, response: text });
+        return;
       }
     }
-    catch (e) {
-      return {type: "no response", reason: e.message ?? e};
-    }
-  }
 
-  private postProcess<T>(f: (s: {status: number, response: any}) => Result<T, string>): (a: ApiResponse) => Result<T, string> {
+    if (params.body === undefined) {
+      xhr.send();
+    }
+    else if (params.body instanceof FormData) {
+      xhr.send(params.body);
+    }
+    else {
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.send(JSON.stringify(params.body));
+    }
+  });
+
+  private postProcess<T>(f: (s: { status: number, response: any }) => Result<T, string>): (a: ApiResponse) => Result<T, string> {
     return (a: ApiResponse) => {
       if (a.type !== "json response") {
-        return new Failure(JSON.stringify({...a, error: "Expected a JSON response"}, null, 2));
+        return new Failure(JSON.stringify({ ...a, error: "Expected a JSON response" }, null, 2));
       }
 
       if (Math.floor(a.status / 100) !== 2) {
-        return new Failure(JSON.stringify({...a, error: "Response status was not 2XX."}, null, 2));
+        return new Failure(JSON.stringify({ ...a, error: "Response status was not 2XX." }, null, 2));
       }
 
       return f(a);
     }
   }
 
-  private readonly ajax = (method: string) => async (url: string, auth?: AuthService) =>
-    this.apiFetch(url, {
-      method: method,
-      credentials: "include"
-    }, auth);
+  private readonly ajax = (method: ApiMethod, onProgress?: (progress: number, total: number) => void) => async (url: string, auth?: AuthService, onProgress?: (progress: number, total: number) => void) =>
+    this.apiFetch(url, method, { auth, onProgress });
 
-  private readonly ajaxBody = (method: string) => async (url: string, body: any, auth?: AuthService) =>
-    this.apiFetch(url, {
-      method: method,
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body)
-    }, auth);
+  private readonly ajaxBody = (method: ApiMethod, onProgress?: (progress: number, total: number) => void) => async (url: string, body: any, auth?: AuthService, onProgress?: (progress: number, total: number) => void) =>
+    this.apiFetch(url, method, { auth, onProgress, body });
 
   private readonly get = this.ajax("GET");
   private readonly del = this.ajax("DELETE");
   private readonly post = this.ajaxBody("POST");
   private readonly patch = this.ajaxBody("PATCH");
+  private readonly put = this.ajaxBody("PUT");
 
   constructor() { }
 
@@ -104,10 +113,10 @@ export class ApiService {
         return new Failure(`The authentication response did not contain an access token. Was ${JSON.stringify(resp.value)}`);
       }
 
-      return auth.authenticate(resp.value.token).map_val(() => {});
+      return auth.authenticate(resp.value.token).map_val(() => { });
     }
     else {
-      return resp.map_val(() => {});
+      return resp.map_val(() => { });
     }
   }
 
@@ -139,10 +148,10 @@ export class ApiService {
         return new Failure("The authentication response did not contain an access token.");
       }
 
-      return auth.authenticate(resp.value.token).map_val(() => {});
+      return auth.authenticate(resp.value.token).map_val(() => { });
     }
     else {
-      return resp.map_val(() => {});
+      return resp.map_val(() => { });
     }
   }
 
@@ -180,10 +189,20 @@ export class ApiService {
     }));
   }
 
-  async updateBookMetadata(bookId: string, title: string, metadata: {key: string, value: string}[], auth: AuthService): Promise<Result<void, string>> {
+  async updateBookMetadata(bookId: string, title: string, metadata: { key: string, value: string }[], auth: AuthService): Promise<Result<void, string>> {
     if (bookId === "") {
       return new Failure("The book id cannot be blank");
     }
-    return await this.post(`/api/books/metadata/${bookId}`, {title, metadata}, auth).then(this.postProcess(_ => new Success(null)))
+    return await this.post(`/api/books/metadata/${bookId}`, { title, metadata }, auth).then(this.postProcess(_ => new Success(null)))
+  }
+
+  async uploadBook(form: FormData, auth: AuthService, onProgress?: (progress: number, total: number) => void): Promise<Result<string, string>> {
+    if (["title", "book", "filename"].some(t => form.get(t) === null)) {
+      return new Failure("The form must have 'title', 'book', and 'filename' keys.");
+    }
+
+    return await this.post("/api/books", form, auth, onProgress).then(this.postProcess(res => {
+      return validate<UploadResponse>(res, UploadResponseSchema).map_val(x => x.id);
+    }));
   }
 }

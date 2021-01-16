@@ -2,6 +2,8 @@ import { Component, ElementRef, OnInit, Renderer2, ViewChild } from '@angular/co
 import { Router } from '@angular/router';
 import fetchProgress from 'src/utils/ajax';
 import { Result } from 'src/utils/functional/result';
+import validate from 'src/utils/validator';
+import { ApiService } from '../services/api/api.service';
 import { AuthService } from '../services/auth.service';
 
 @Component({
@@ -12,10 +14,11 @@ import { AuthService } from '../services/auth.service';
 export class UploadComponent implements OnInit {
   title: string = "";
   @ViewChild("upload_form") element: ElementRef;
-  promiseObj: { promise: Promise<Result<string, string>>, progressCallbackRegistrationFunction: (cb: (progress: number, total: number) => void) => void } | null = null;
-  private cb: (progress: number, total: number) => void | null = null;
+  promise: Promise<Result<string, string>> | null = null;
+  progress: number | null = null;
+  total: number | null = null;
 
-  constructor(private renderer: Renderer2, private router: Router) { }
+  constructor(private renderer: Renderer2, private api: ApiService, private auth: AuthService, private router: Router) { }
 
   ngOnInit(): void {
   }
@@ -28,17 +31,16 @@ export class UploadComponent implements OnInit {
     const formEl = this.renderer.selectRootElement(this.element.nativeElement);
     const fd = new FormData(formEl);
 
-    const prom = fetchProgress(`${window.location.origin}/api/books`, { method: "POST", body: fd }, (progress, total) => this.cb && this.cb(progress, total));
-    this.promiseObj = { promise: prom.then(x => x.map_val(y => y.text).map_err(y => y.reason ?? "")), progressCallbackRegistrationFunction: c => this.cb = c };
+    this.promise = this.api.uploadBook(fd, this.auth, (progress, total) => {
+      this.progress = progress;
+      this.total = total;
+    });
   }
 
   async onClose(): Promise<void> {
-    await this.promiseObj.promise.then(async r => {
+    await this.promise.then(async r => {
       if (r.isSuccess()) {
-        try {
-          const jsonObject = JSON.parse(r.value);
-        }
-        await this.router.navigate([`book/${this.book.id}`])
+        await this.router.navigate([`book/${r.value}`])
       }
       else {
         console.log(r.value);

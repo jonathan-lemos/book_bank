@@ -2,7 +2,7 @@ defmodule BookBank.Database do
   @moduledoc false
   @callback create_book(
               title :: String.t(),
-              body :: (() -> Stream.t()),
+              body :: Stream.t(),
               metadata :: %{String.t() => String.t()}
             ) ::
               {:ok, BookBank.Book} | {:error, String.t()}
