@@ -78,12 +78,15 @@ defmodule BookBank.MongoDatabase do
         update(set, [[k, v] | push], pull, tail)
 
       {:replace_metadata, m} ->
-        update(m, push, pull, tail)
+        update(%{set | metadata: m}, push, pull, tail)
+
+      {:set_title, title} ->
+        update(%{set | title: title}, push, pull, tail)
     end
   end
 
   def update(updates) do
-    update(nil, [], [], updates)
+    update(%{}, [], [], updates)
   end
 
   def update_book(id_string, updates) do
@@ -91,6 +94,7 @@ defmodule BookBank.MongoDatabase do
       {set, push, pull} = update(updates)
 
       obj = %{
+        "$set": set,
         "$addToSet": %{
           metadata: push
         },
@@ -98,12 +102,6 @@ defmodule BookBank.MongoDatabase do
           metadata: pull
         }
       }
-
-      obj =
-        case set do
-          %{} = m -> Map.put(obj, "$set", %{metadata: m})
-          nil -> obj
-        end
 
       case Mongo.update_many(:mongo, "books", %{_id: BSON.ObjectId.decode!(id)}, obj) do
         {:ok, %Mongo.UpdateResult{acknowledged: true}} ->

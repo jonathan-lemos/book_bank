@@ -61,12 +61,12 @@ POST /api/books
 
 PUT /api/books/metadata/:id
 	requires: librarian
-	input: { title: string, metadata: { key: string, value: string }[] }
+	input: { title: string, metadata: { [string]: string }[] }
 	output: { status: number, response: string }
 
 PATCH /api/books/metadata/:id
 	requires: librarian
-	input: { title: string | null, metadata: { key: string, value: string | null }[] }
+	input: { title?: string, add?: { [string]: string }[], remove?: string[] }
 	output: { status: number, response: string }
 
 DELETE /api/books/:id

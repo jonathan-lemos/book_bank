@@ -16,6 +16,7 @@ defmodule BookBank.Database do
                    %{String.t() => String.t()}
                    | {:remove, String.t()}
                    | {:update, String.t(), String.t()}}
+                   | {:set_title, String.t()}
                 )
             ) :: :ok | {:error, :does_not_exist | String.t()}
   @callback delete_book(id :: String.t()) :: :ok | {:error, :does_not_exist | String.t()}
