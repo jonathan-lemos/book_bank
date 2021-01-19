@@ -86,7 +86,7 @@ defmodule BookBankWeb.AccountsController do
       [authentication: [{:current_user, user}, "admin"]],
       fn conn, _extra ->
         obj =
-          with {:ok, %BookBank.User{roles: roles}} <- BookBank.MongoAuth.read_user(user) do
+          with {:ok, %BookBank.User{roles: roles}} <- BookBank.MongoAuth.get_user(user) do
             {:ok, :ok, %{"roles" => roles}}
           else
             {:error, :does_not_exist} ->

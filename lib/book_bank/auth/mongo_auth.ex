@@ -34,7 +34,7 @@ defmodule BookBank.MongoAuth do
     end
   end
 
-  def read_user(username) do
+  def get_user(username) do
     case Mongo.find_one(:mongo, "users", %{username: username}) do
       %{username: un, password: _, roles: r} ->
         {:ok, %BookBank.User{username: un, roles: r}}

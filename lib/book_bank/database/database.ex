@@ -6,8 +6,11 @@ defmodule BookBank.Database do
               metadata :: %{String.t() => String.t()}
             ) ::
               {:ok, BookBank.Book} | {:error, String.t()}
-  @callback read_book(id :: String.t()) ::
+  @callback get_book_metadata(id :: String.t()) ::
               {:ok, BookBank.Book} | {:error, :does_not_exist | String.t()}
+  @callback get_book_file(id :: String.t()) :: {:ok, Stream.t()} | {:error, :does_not_exist | String.t()}
+  @callback get_book_thumb(id :: String.t()) :: {:ok, Stream.t()} | {:error, :does_not_exist | String.t()}
+  @callback get_book_cover(id :: String.t()) :: {:ok, Stream.t()} | {:error, :does_not_exist | String.t()}
   @callback update_book(
               id :: String.t(),
               update ::

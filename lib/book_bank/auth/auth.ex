@@ -4,7 +4,7 @@ defmodule BookBank.Auth do
 
   @callback create_user(username :: String.t(), password :: String.t(), roles :: list(String.t())) ::
               {:ok, BookBank.User.t()} | {:error, :user_exists | String.t()}
-  @callback read_user(username :: String.t()) ::
+  @callback get_user(username :: String.t()) ::
               {:ok, BookBank.User.t()} | {:error, :does_not_exist | String.t()}
   @callback update_user(
               username :: String.t(),
