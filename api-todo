@@ -52,6 +52,9 @@ GET /api/books/thumbnail/:id
 GET /api/books/download/:id
     output: file
 
+GET /api/books/view/:id
+	output: file
+
 POST /api/books
 	requires: librarian
 	input: multipart-formdata:

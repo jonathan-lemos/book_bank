@@ -1,6 +1,103 @@
 defmodule BookBankWeb.BooksController do
   use BookBankWeb, :controller
 
+  def get_book_meta(conn, %{"id" => id}) do
+    BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
+      obj = case BookBank.MongoDatabase.get_book_metadata(id) do
+        {:ok, %BookBank.Book{id: id, title: title, metadata: metadata}} ->
+          {:ok, :ok, %{"id" => id, "title" => title, "metadata" => metadata}}
+        {:error, :does_not_exist} ->
+          {:error, :not_found, "No such book with id '#{id}'"}
+        {:error, e} when is_binary(e) ->
+          {:error, :internal_server_error, e}
+      end
+      {conn, obj}
+    end)
+  end
+
+  def get_book_meta(conn, _params) do
+    BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
+      {conn, {:error, :not_found}}
+    end)
+  end
+
+  def get_book_cover(conn, %{"id" => id}) do
+    BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
+      obj = case BookBank.MongoDatabase.get_book_cover(id) do
+        {:ok, stream, %BookBank.Book{title: title}} ->
+          {:ok, :ok, :stream, stream, [disposition: :inline, content_type: "image/jpg", filename: "cover-#{title}.jpg"]}
+        {:error, :does_not_exist} ->
+          {:error, :not_found, "No such book with id '#{id}'"}
+        {:error, e} when is_binary(e) ->
+          {:error, :internal_server_error, e}
+      end
+
+      {conn, obj}
+    end)
+  end
+
+  def get_book_cover(conn, _params) do
+    BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
+      {conn, {:error, :not_found}}
+    end)
+  end
+
+  def get_book_thumb(conn, %{"id" => id}) do
+    BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
+      obj = case BookBank.MongoDatabase.get_book_thumb(id) do
+        {:ok, stream, %BookBank.Book{title: title}} ->
+          {:ok, :ok, :stream, stream, [disposition: :inline, content_type: "image/jpg", filename: "title-#{title}.jpg"]}
+        {:error, :does_not_exist} ->
+          {:error, :not_found, "No such book with id '#{id}'"}
+        {:error, e} when is_binary(e) ->
+          {:error, :internal_server_error, e}
+      end
+
+      {conn, obj}
+    end)
+  end
+
+  def get_book_thumb(conn, _params) do
+    BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
+      {conn, {:error, :not_found}}
+    end)
+  end
+
+  defp get_book(conn, %{"id" => id}, disposition) do
+    BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
+      obj = case BookBank.MongoDatabase.get_book_file(id) do
+        {:ok, stream, %BookBank.Book{title: title}} ->
+          {:ok, :ok, :stream, stream, [disposition: disposition, content_type: "application/pdf", filename: "#{title}.pdf"]}
+        {:error, :does_not_exist} ->
+          {:error, :not_found, "No such book with id '#{id}'"}
+        {:error, e} when is_binary(e) ->
+          {:error, :internal_server_error, e}
+      end
+
+      {conn, obj}
+    end)
+  end
+
+  def get_book_download(conn, %{"id" => _} = params) do
+    get_book(conn, params, :attachment)
+  end
+
+  def get_book_download(conn, _params) do
+    BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
+      {conn, {:error, :not_found}}
+    end)
+  end
+
+  def get_book_view(conn, %{"id" => _} = params) do
+    get_book(conn, params, :inline)
+  end
+
+  def get_book_view(conn, _params) do
+    BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
+      {conn, {:error, :not_found}}
+    end)
+  end
+
   @spec post_upload(Plug.Conn.t(), %{String.t() => term()}) :: Plug.Conn.t()
   def post_upload(conn, %{
         "title" => title,
@@ -163,9 +260,18 @@ defmodule BookBankWeb.BooksController do
 
   def delete_book(conn, %{"id" => id}) do
     BookBankWeb.Utils.with(conn, [authentication: ["librarian", "admin"]], fn conn, _extra ->
-      BookBank.MongoDatabase.delete_book(id) do
-
+      obj = case BookBank.MongoDatabase.delete_book(id) do
+        :ok -> {:ok, :ok}
+        {:error, :does_not_exist} -> {:error, :not_found, "No such book with id #{id}."}
+        {:error, e} when is_binary(e) -> {:error, :internal_server_error, e}
       end
+      {conn, obj}
+    end)
+  end
+
+  def delete_book(conn, _params) do
+    BookBankWeb.Utils.with(conn, [authentication: ["librarian", "admin"]], fn conn, _extra ->
+      {conn, {:error, :not_found}}
     end)
   end
 end

@@ -105,6 +105,33 @@ defmodule BookBank.MongoDatabase do
     end)
   end
 
+  def get_book_file(id) do
+    with {:ok, %BookBank.Book{body_id: body_id} = book} <- get_book_metadata(id) do
+      case download_file(body_id) do
+        {:ok, stream} -> {:ok, stream, book}
+        {:error, _} = e -> {:error, e}
+      end
+    end
+  end
+
+  def get_book_cover(id) do
+    with {:ok, %BookBank.Book{cover_id: cover_id} = book} <- get_book_metadata(id) do
+      case download_file(cover_id, "cover") do
+        {:ok, stream} -> {:ok, stream, book}
+        {:error, _} = e -> {:error, e}
+      end
+    end
+  end
+
+  def get_book_thumb(id) do
+    with {:ok, %BookBank.Book{cover_id: thumb_id} = book} <- get_book_metadata(id) do
+      case download_file(thumb_id, "thumb") do
+        {:ok, stream} -> {:ok, stream, book}
+        {:error, _} = e -> {:error, e}
+      end
+    end
+  end
+
   def update(set, push, pull, []) do
     {set, push, pull}
   end
@@ -213,12 +240,14 @@ defmodule BookBank.MongoDatabase do
   def generate_thumbnails(id_string) do
     with_object_id(id_string, fn id ->
       tmpdir = System.tmp_dir!()
+      thumb_fn = "thumb_#{id}.jpg"
+      cover_fn = "cover_#{id}.jpg"
       pdf_path = Path.join(tmpdir, "#{id}.pdf")
-      thumb_path = Path.join(tmpdir, "thumb_#{id}.jpg")
-      cover_path = Path.join(tmpdir, "cover_#{id}.jpg")
+      thumb_path = Path.join(tmpdir, thumb_fn)
+      cover_path = Path.join(tmpdir, cover_fn)
 
       ret =
-        with {:ok, %BookBank.Book{body_id: body_id, cover_id: cover_id, thumb_id: thumb_id}} <-
+        with {:ok, %BookBank.Book{body_id: body_id}} <-
                get_book_metadata(id_string),
              :ok <- download_file_save(body_id, pdf_path),
              [:ok, :ok] <-
@@ -226,9 +255,9 @@ defmodule BookBank.MongoDatabase do
                  fn -> pdf_thumbnail(pdf_path, thumb_path) end,
                  fn -> pdf_cover(pdf_path, cover_path) end
                ]),
-             {:ok, thumb_id} <- create_file("thumb_#{id}.jpg", File.stream!(thumb_path), "thumb"),
-             {:ok, cover_id} <- create_file("cover_#{id}.jpg", File.stream!(cover_path), "cover") do
-          case Mongo.update_one(:mongo, "books", %{"_id" => id}, %{
+             {:ok, thumb_id} <- create_file(thumb_fn, File.stream!(thumb_path), "thumb"),
+             {:ok, cover_id} <- create_file(cover_fn, File.stream!(cover_path), "cover") do
+          result = case Mongo.update_one(:mongo, "books", %{"_id" => id}, %{
                  "$set" => %{
                    "thumb" => thumb_id |> BSON.ObjectId.decode!(),
                    "cover" => cover_id |> BSON.ObjectId.decode!()
@@ -244,14 +273,28 @@ defmodule BookBank.MongoDatabase do
               {:error, error.message}
           end
 
-          :ok
+          case result do
+            :ok ->
+              :ok
+
+            {:error, _} = e ->
+              BookBank.Utils.Parallel.invoke([
+                fn -> delete_file(thumb_id, "thumb") end,
+                fn -> delete_file(cover_id, "cover") end
+              ])
+              e
+          end
         else
+          [{:error, e1}, {:error, e2}] -> {:error, [{:pdf, e1}, {:thumb, e2}]}
+          [{:error, e1}, _] -> {:error, :pdf, e1}
+          [_, {:error, e2}] -> {:error, :thumb, e2}
           {:error, e} when is_binary(e) -> {:error, e}
           {:error, :does_not_exist} -> {:error, :does_not_exist}
           {:error, a} when is_atom(a) -> {:error, :file.format_error(a)}
         end
 
       Enum.each([pdf_path, thumb_path, cover_path], &File.rm/1)
+
       ret
     end)
   end

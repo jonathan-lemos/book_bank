@@ -126,6 +126,16 @@ defmodule BookBankWeb.Utils do
 
     try do
       case func.(conn, extra) do
+        {conn, {:ok, status, :stream, stream, list}} ->
+          conn
+          |> Plug.Conn.put_status(status)
+          |> Phoenix.Controller.send_download({:binary, stream}, list)
+
+        {conn, {:ok, status, :stream, stream}} ->
+          conn
+          |> Plug.Conn.put_status(status)
+          |> Phoenix.Controller.send_download({:binary, stream})
+
         {conn, {:ok, status, map}} when is_map(map) ->
           conn
           |> Plug.Conn.put_status(status)
@@ -186,6 +196,8 @@ defmodule BookBankWeb.Utils do
               | {:error, error_status()}
               | {:ok, ok_status(), %{any => any} | String.t()}
               | {:ok, ok_status()}
+              | {:ok, ok_status(), :stream, Stream.t(), list({:content_type, String.t()} | {:filename, String.t()} | {:disposition, :attachment | :inline})}
+              | {:ok, ok_status(), :stream, Stream.t()}
               | :ok})
         ) :: Plug.Conn.t()
   def with(conn, opts, func) do
