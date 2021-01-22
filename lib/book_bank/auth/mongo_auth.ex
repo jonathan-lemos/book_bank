@@ -108,7 +108,8 @@ defmodule BookBank.MongoAuth do
 
   def delete_user(username) do
     case Mongo.delete_many(:mongo, "users", %{username: username}) do
-      {:ok, %Mongo.DeleteResult{acknowledged: true}} -> :ok
+      {:ok, %Mongo.DeleteResult{acknowledged: true, deleted_count: n}} when n > 0 -> :ok
+      {:ok, %Mongo.DeleteResult{acknowledged: true, deleted_count: 0}} -> {:error, :does_not_exist}
       {:ok, _} -> {:error, "The delete was not acknowledged by the server"}
       {:error, error} -> {:error, error}
     end

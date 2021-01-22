@@ -16,7 +16,7 @@ defmodule BookBank.Application do
       BookBankWeb.Endpoint,
       # Start a worker by calling: BookBank.Worker.start_link(arg)
       # {BookBank.Worker, arg}
-      {Mongo, [[database: System.get_env("DB_NAME") || "book_bank", pool_size: 16]], name: :mongo}
+      {Mongo, [[url: Application.get_env(:book_bank, BookBank.MongoDatabase, :url), pool_size: 16]], name: :mongo}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -37,6 +37,20 @@ defmodule BookBankWeb.Utils do
     end
   end
 
+  def status_code_to_atom(s) do
+    case s do
+      200 -> :ok
+      201 -> :created
+      400 -> :bad_request
+      500 -> :internal_server_error
+      409 -> :conflict
+      401 -> :unauthorized
+      403 -> :forbidden
+      404 -> :not_found
+      _ -> :internal_server_error
+    end
+  end
+
   defp get_jwt(conn) do
     case conn |> Plug.Conn.get_req_header("authorization") do
       ["Bearer " <> val] ->
@@ -66,7 +80,7 @@ defmodule BookBankWeb.Utils do
     false
   end
 
-  defp verify_token(jwt, type) do
+  defp verify_token(conn, jwt, type) do
     case BookBankWeb.Utils.Auth.verify_token(jwt) do
       {:ok, claims} ->
         case type do
@@ -79,13 +93,13 @@ defmodule BookBankWeb.Utils do
             if verify_claims_list(username, roles, auth_list) do
               {:ok, claims}
             else
-              {:error, :forbidden,
+              {:error, conn, :forbidden,
                "The user does not have any of the following roles: #{IO.inspect(auth_list)}."}
             end
         end
 
       {:error, error} ->
-        {:error, :unauthorized, error}
+        {:error, conn, :unauthorized, error}
     end
   end
 
@@ -98,32 +112,32 @@ defmodule BookBankWeb.Utils do
 
     jwt_res =
       case jwt do
-        x when is_binary(x) -> verify_token(jwt, type)
-        nil -> {:error, :unauthorized, "No authentication token was given."}
+        x when is_binary(x) -> verify_token(conn, jwt, type)
+        nil -> {:error, conn, :unauthorized, "No authentication token was given."}
       end
 
     case jwt_res do
       {:ok, claims} ->
         process_opts(conn, tail, Map.put(extra, :claims, claims))
 
-      {:error, _, _} = err ->
+      {:error, _, _, _} = err ->
         err
     end
   end
 
-  defp process_opts({:error, status, error}, _, _) do
-    {:error, status, error}
+  defp process_opts({:error, conn, status, error}, _, _) do
+    {:error, conn, status, error}
   end
 
   defp process_opts(conn, list) do
     process_opts(conn, list, %{})
   end
 
-  defp with_valid_opts({:ok, conn, extra}, func) do
-    default_map = fn status ->
-      %{status: status_to_number(status), response: status_to_string(status)}
-    end
+  defp default_map(status) do
+    %{status: status_to_number(status), response: status_to_string(status)}
+  end
 
+  defp with_valid_opts({:ok, conn, extra}, func) do
     try do
       case func.(conn, extra) do
         {conn, {:ok, status, :stream, stream, list}} ->
@@ -139,52 +153,60 @@ defmodule BookBankWeb.Utils do
         {conn, {:ok, status, map}} when is_map(map) ->
           conn
           |> Plug.Conn.put_status(status)
-          |> Phoenix.Controller.json(Map.merge(default_map.(status), map))
+          |> Phoenix.Controller.json(Map.merge(default_map(status), map))
 
         {conn, {:ok, status, str}} when is_binary(str) ->
           conn
           |> Plug.Conn.put_status(status)
-          |> Phoenix.Controller.json(Map.put(default_map.(status), "response", str))
+          |> Phoenix.Controller.json(Map.put(default_map(status), "response", str))
 
         {conn, {:ok, status}} ->
           conn
           |> Plug.Conn.put_status(status)
-          |> Phoenix.Controller.json(default_map.(status))
+          |> Phoenix.Controller.json(default_map(status))
 
         {conn, :ok} ->
           conn
           |> Plug.Conn.put_status(:ok)
-          |> Phoenix.Controller.json(default_map.(:ok))
+          |> Phoenix.Controller.json(default_map(:ok))
 
         {conn, {:error, status, map}} when is_map(map) ->
           conn
           |> Plug.Conn.put_status(status)
-          |> Phoenix.Controller.json(Map.merge(default_map.(status), map))
+          |> Phoenix.Controller.json(Map.merge(default_map(status), map))
 
         {conn, {:error, status, str}} when is_binary(str) ->
           conn
           |> Plug.Conn.put_status(status)
-          |> Phoenix.Controller.json(Map.put(default_map.(status), "response", str))
+          |> Phoenix.Controller.json(Map.put(default_map(status), "response", str))
 
         {conn, {:error, status}} ->
           conn
           |> Plug.Conn.put_status(status)
-          |> Phoenix.Controller.json(default_map.(status))
+          |> Phoenix.Controller.json(default_map(status))
       end
     rescue
       e ->
         conn
         |> Plug.Conn.put_status(:internal_server_error)
-        |> Phoenix.Controller.json(%{
-          status: 500,
-          response: "Internal Server Error",
-          message: e.message
-        })
+        |> Phoenix.Controller.json(
+          Map.put(default_map(:internal_server_error), "message", e.message)
+        )
     end
   end
 
-  defp with_valid_opts({:error, status, error}, _) do
-    {:error, status, error}
+  defp with_valid_opts({:error, conn, status, error}, _) do
+    conn =
+      if status == :unauthorized do
+        conn
+        |> Plug.Conn.put_resp_cookie("X-Auth-Token", "", max_age: 0, http_only: true, secure: true)
+      else
+        conn
+      end
+
+    conn
+    |> Plug.Conn.put_status(status)
+    |> Phoenix.Controller.json(Map.put(default_map(status), "error", error))
   end
 
   @spec with(
@@ -196,7 +218,12 @@ defmodule BookBankWeb.Utils do
               | {:error, error_status()}
               | {:ok, ok_status(), %{any => any} | String.t()}
               | {:ok, ok_status()}
-              | {:ok, ok_status(), :stream, Stream.t(), list({:content_type, String.t()} | {:filename, String.t()} | {:disposition, :attachment | :inline})}
+              | {:ok, ok_status(), :stream, Stream.t(),
+                 list(
+                   {:content_type, String.t()}
+                   | {:filename, String.t()}
+                   | {:disposition, :attachment | :inline}
+                 )}
               | {:ok, ok_status(), :stream, Stream.t()}
               | :ok})
         ) :: Plug.Conn.t()

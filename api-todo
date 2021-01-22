@@ -30,7 +30,7 @@ PATCH /api/accounts/users/roles/:username
 	input: { remove?: string[], add?: string[] }
 	output: { status: number, response: string }
 
-PUT /api/accounts/users/password/:username
+PUT /api/accounts/password/:username
     requires: admin or current user
     input: { password: string }
     output: { status: number, response: string }
@@ -44,7 +44,7 @@ GET /api/books/cover/:id
     output: image
 
 GET /api/books/metadata/:id
-	output: { id: string, title: string, size: number, metadata: [string, string][] }
+	output: { id: string, title: string, size: number, metadata: { key: string, value: string }[] }
 
 GET /api/books/thumbnail/:id
     output: image
@@ -64,23 +64,20 @@ POST /api/books
 
 PUT /api/books/metadata/:id
 	requires: librarian
-	input: { title: string, metadata: { [string]: string }[] }
+	input: { title: string, metadata: { key: string, value: string }[] }
 	output: { status: number, response: string }
 
 PATCH /api/books/metadata/:id
 	requires: librarian
-	input: { title?: string, add?: { [string]: string }[], remove?: string[] }
+	input: { title?: string, add?: { key: string, value: string }[], remove?: string[] }
 	output: { status: number, response: string }
 
 DELETE /api/books/:id
 	requires: librarian
 	output: { status: number, response: string }
 
-GET /api/search/:query?count=num&page=num
-	output: { id: string, title: string, metadata: [string, string][] }[]
+GET /api/search/query/:query?count=num&page=num
+	output: { status: number, response: string, results: { id: string, title: string, metadata: [string, string][] }}
 
-GET /api/search_count/:query
+GET /api/search/count/:query
 	output: number
-
-GET /api/suggestions/:query/:count
-	output: { id: string, text: string, tag: string }[]

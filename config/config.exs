@@ -15,6 +15,14 @@ config :book_bank, BookBankWeb.Endpoint,
   pubsub_server: BookBank.PubSub,
   live_view: [signing_salt: "HLswLhK+"]
 
+config :book_bank, BookBank.MongoDatabase,
+  url: System.get_env("MONGO_CONNECTION_URL") || "mongodb://localhost:27017/book_bank",
+  pool_size: (System.get_env("MONGO_POOL_SIZE") || "16") |> Integer.parse() |> elem(0)
+
+config :book_bank, BookBankWeb.SearchController,
+  url: System.get_env("ELASTIC_CONNECTION_URL") || "http://localhost:9200",
+  index: System.get_env("ELASTIC_BOOK_INDEX") || "books"
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

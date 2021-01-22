@@ -50,7 +50,7 @@ defmodule BookBank.MixProject do
       {:argon2_elixir, "~> 2.0"},
       {:mox, "~> 1.0", only: :test},
       {:joken, "~> 2.0"},
-      {:mogrify, "~> 0.8.0"}
+      {:httpoison, "~> 1.7"}
     ]
   end
 

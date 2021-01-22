@@ -243,7 +243,15 @@ defmodule BookBankWeb.AccountsController do
     end)
   end
 
-  def index(conn, _params) do
-    render(conn, "index.html")
+  def delete_user(conn, %{"username" => user}) do
+    BookBankWeb.Utils.with(conn, [authentication: [{:current_user, user}, "admin"]], fn conn, _extra ->
+      obj = case BookBank.MongoAuth.delete_user(user) do
+        :ok -> {:ok, :ok}
+        {:error, :does_not_exist} -> {:error, :not_found, "No such user with username '#{user}'"}
+        {:error, e} -> {:error, :internal_server_error, e}
+      end
+
+      {conn, obj}
+    end)
   end
 end

@@ -19,6 +19,34 @@ defmodule BookBankWeb.Router do
     get "/", PageController, :index
   end
 
+  scope "/api/accounts", BookBankWeb do
+    pipe_through :api
+
+    post "/login", AccountsController, :post_login
+    post "/create", AccountsController, :post_create
+    get "/roles", AccountsController, :get_roles
+    get "/roles/:role", AccountsController, :get_user_roles
+    get "/users/roles/:username", AccountsController, :get_role_accounts
+    put "/users/roles/:username", AccountsController, :put_user_roles
+    patch "/users/roles/:username", AccountsController, :patch_user_roles
+    put "/users/password/:username", AccountsController, :put_user_password
+    delete "/users/:username", AccountsController, :delete_user
+  end
+
+  scope "/api/books", BookBankWeb do
+    pipe_through :api
+
+    get "/cover/:id", BooksController, :get_book_cover
+    get "/metadata/:id", BooksController, :get_book_meta
+    get "/thumbnail/:id", BooksController, :get_book_thumb
+    get "/download/:id", BooksController, :get_book_download
+    get "/view/:id", BooksController, :get_book_view
+    post "/", BooksController, :post_upload
+    put "/metadata/:id", BooksController, :put_metadata
+    patch "/metadata/:id", BooksController, :patch_metadata
+    delete "/:id", BooksController, :delete_book
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", BookBankWeb do
   #   pipe_through :api

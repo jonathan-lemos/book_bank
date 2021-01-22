@@ -14,7 +14,7 @@ config :book_bank, BookBankWeb.Endpoint,
   watchers: []
 
 config :book_bank, BookBankWeb.Utils.Auth,
-  secret: System.get_env("AUTH_SECRET") || "hunter2",
+  secret: System.get_env("AUTH_SECRET") || "hunter2"
 
 
 # ## SSL Support
