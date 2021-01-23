@@ -43,16 +43,15 @@ defmodule BookBankWeb.Validation do
     true
   end
 
-  defp validate_map(value, [{key, value} | tail]) when is_map(value) do
-    if validate_schema(Map.get(value, key)) do
+  defp validate_map(value, [{map_key, map_value} | tail]) when is_map(value) do
+    if validate_schema(Map.get(value, map_key), map_value) do
       validate_map(value, tail)
     else
       false
     end
-
   end
 
-  defp validate_map(value, _) do
+  defp validate_map(_value, _map) do
     false
   end
 
@@ -68,7 +67,7 @@ defmodule BookBankWeb.Validation do
     end
   end
 
-  defp validate_list(value, _) do
+  defp validate_list(_value, _) do
     false
   end
 
@@ -77,7 +76,8 @@ defmodule BookBankWeb.Validation do
       :string -> is_binary(value)
       :integer -> is_integer(value)
       s when is_map(s) -> validate_map(value, Map.to_list(s))
-      l when is_list(l) -> vali
+      l when is_list(l) -> validate_list(value, l)
+      {:list, subschema} -> is_list(value) and Enum.all?(value, fn v -> validate_schema(v, subschema) end)
       _ -> value === schema
     end
   end

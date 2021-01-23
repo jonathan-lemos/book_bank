@@ -54,28 +54,36 @@ defmodule BookBankWeb.SearchController do
     end
   end
 
-  defp format_hits(status, obj) do
-    case obj do
-      %{"hits" => %{"hits" => hits}} when is_list(hits) ->
-        if Enum.all?(hits, fn hit ->
-          case hit do
-            %{"_source" => src} when is_map(src) -> true
-            _ -> false
-          end
-        end) do
-          docs = Enum.map(hits, fn hit -> case hit["source"] do
-            %{"title" => title, "metadata" => metadata} when is_binary(title) and is_list(metadata) ->
-              if Enum.all?(metadata, fn kvp ->
-                {"key" => key, "value" => value} => true
-                _ => false
-              end) do
-                %{"title" => title, "metadata" => metadata}
-              end
-            end
-          end)
-        end
+  defp format_hits(obj) do
+    if BookBankWeb.Validation.validate_schema(obj, %{
+         "hits" => %{
+           "hits" =>
+             {:list,
+              %{
+                "_source" =>
+                  {:list,
+                   %{
+                     "id" => :string,
+                     "title" => :string,
+                     "metadata" =>
+                       {:list,
+                        %{
+                          "key" => :string,
+                          "value" => :string
+                        }}
+                   }}
+              }}
+         }
+       }) do
+      val = obj["hits"]["hits"]
+      |> Enum.map(fn x ->
+        src = x["_source"]
+        %{"id" => src["id"], "title" => src["title"], "metadata" => src["metadata"]}
+      end)
+      {:ok, val}
+    else
+      {:error, "Malformed response from Elasticsearch instance."}
     end
-    {:error, status, "Expected a JSON object."}
   end
 
   def get_query(conn, %{query: query, count: count, page: page}) do
@@ -90,15 +98,17 @@ defmodule BookBankWeb.SearchController do
                    multi_match: %{
                      query: query,
                      fields: ["title", "metadata.value^2"],
-                     fuzziness: "AUTO"
+                     fuzziness: "AUTO",
+                     _source: ["id", "title", "metadata"]
                    }
                  },
                  size: size,
                  from: from
                }) do
             {:ok, status, obj} ->
-              {:ok, status,
-               %{"results" => Enum.map(obj["hits"]["hits"], fn x -> x["_source"] end)}}
+              case format_hits(obj) do
+                {:ok, hits} -> {:ok, status, %{"results" => hits}}
+              end
 
             {:error, status, msg} ->
               {:error, status, msg}
@@ -111,21 +121,45 @@ defmodule BookBankWeb.SearchController do
     end)
   end
 
+  def get_query(conn, %{query: query, count: count}) do
+    get_query(conn, %{query: query, count: count, page: 0})
+  end
+
+  def get_query(conn, %{query: query, page: page}) do
+    get_query(conn, %{query: query, count: 10, page: page})
+  end
+
+  def get_query(conn, %{query: query}) do
+    get_query(conn, %{query: query, count: 10, page: 0})
+  end
+
   def get_count(conn, %{query: query}) do
-    obj =
-      case post_endpoint("/_search", %{
-             query: %{
-               multi_match: %{
-                 query: query,
-                 fields: ["title", "metadata.value^2"],
-                 fuzziness: "AUTO"
+    BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
+      obj =
+        case post_endpoint("/_search", %{
+               query: %{
+                 multi_match: %{
+                   query: query,
+                   fields: ["title", "metadata.value^2"],
+                   fuzziness: "AUTO",
+                   sort: [
+                     %{"_score" => "desc"},
+                     %{"title" => "asc"}
+                   ]
+                 }
                }
-             }
-           }) do
-            {:ok, status, obj} ->
-              {:ok, status, %{"count" => obj}}
-            {:error, status, e} ->
-              {:error, status, e}
-      end
+             }) do
+          {:ok, status, %{"count" => count}} when count >= 0 ->
+            {:ok, status, %{"count" => count}}
+
+          {:ok, _status, obj} ->
+            {:error, :internal_server_error,
+             %{"response" => "Malformed response from Elasticsearch: #{IO.inspect(obj)}"}}
+
+          {:error, status, e} ->
+            {:error, status, e}
+        end
+      {conn, obj}
+    end)
   end
 end

@@ -47,6 +47,13 @@ defmodule BookBankWeb.Router do
     delete "/:id", BooksController, :delete_book
   end
 
+  scope "/api/search", BookBankWeb do
+    pipe_through :api
+
+    get "/query/:query", SearchController, :get_query
+    get "/count/:query", SearchController, :get_count
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", BookBankWeb do
   #   pipe_through :api
