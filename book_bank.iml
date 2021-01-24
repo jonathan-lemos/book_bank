@@ -45,6 +45,15 @@
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/argon2_elixir" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/jose" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/joken" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/ssl_verify_fun" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/certifi" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/metrics" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/unicode_util_compat" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/mimerl" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/hackney" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/httpoison" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/idna" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/parse_trans" />
     </content>
     <orderEntry type="jdk" jdkName="Elixir 1.11.0" jdkType="Elixir SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -94,5 +103,17 @@
     <orderEntry type="library" name="comeonin" level="project" />
     <orderEntry type="library" name="elixir_make" level="project" />
     <orderEntry type="library" name="mox" level="project" />
+    <orderEntry type="library" name="joken" level="project" />
+    <orderEntry type="library" name="jose" level="project" />
+    <orderEntry type="library" name="junit_formatter" level="project" />
+    <orderEntry type="library" name="jsone" level="project" />
+    <orderEntry type="library" name="jsx" level="project" />
+    <orderEntry type="library" name="libdecaf" level="project" />
+    <orderEntry type="library" name="libsodium" level="project" />
+    <orderEntry type="library" name="ojson" level="project" />
+    <orderEntry type="library" name="poison" level="project" />
+    <orderEntry type="library" name="httpoison" level="project" />
+    <orderEntry type="library" name="mimic" level="project" />
+    <orderEntry type="library" name="httparrot" level="project" />
   </component>
 </module>

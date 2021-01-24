@@ -15,6 +15,7 @@ defmodule BookBankWeb.Utils.Auth.Token do
 end
 
 defmodule BookBankWeb.Utils.Auth do
+  @behaviour BookBankWeb.Utils.AuthBehavior
   alias BookBankWeb.Utils.Auth.Token, as: Token
 
   defp make_signer do
@@ -26,12 +27,15 @@ defmodule BookBankWeb.Utils.Auth do
 
   def make_token(user, roles) do
     case Token.generate_and_sign(%{"sub" => user, "roles" => roles}, make_signer()) do
-      {:ok, token, _claims} -> {:ok, token}
-      {:error, error} -> {:error, to_string(error)}
+      {:ok, token, %{"iat" => iat}} ->
+        :ok = BookBank.Auth.UserWhitelist.insert(user, iat)
+        {:ok, token}
+      {:error, error} ->
+        :ok = BookBank.Auth.UserWhitelist.delete(user)
+        {:error, to_string(error)}
     end
   end
 
-  @spec verify_token(binary) :: {:ok, term()} | {:error, String.t()}
   def verify_token(jwt) do
     case Token.verify_and_validate(jwt, make_signer()) do
       {:ok, %{"iat" => iat, "sub" => user, "roles" => []} = claims} ->

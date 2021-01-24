@@ -10,8 +10,8 @@ defmodule BookBank.Auth.UserWhitelist do
   Adds a user to the whitelist.
   """
   @spec insert(String.t()) :: :ok
-  def insert(user) do
-    GenServer.call(__MODULE__, {:insert, user})
+  def insert(user, iat \\ System.monotonic_time()) do
+    GenServer.call(__MODULE__, {:insert, user, iat})
   end
 
   @doc """
@@ -40,9 +40,8 @@ defmodule BookBank.Auth.UserWhitelist do
     {:ok, %{ttl: ttl_seconds}}
   end
 
-  def handle_call({:insert, user}, _from, state = %{ttl: ttl}) do
-    cur_time = System.monotonic_time(:second)
-    :ets.insert(:user_whitelist, {user, cur_time, cur_time + ttl})
+  def handle_call({:insert, user, iat}, _from, state = %{ttl: ttl}) do
+    :ets.insert(:user_whitelist, {user, iat, iat + ttl})
     {:reply, :ok, state}
   end
 

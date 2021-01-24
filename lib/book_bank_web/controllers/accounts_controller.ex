@@ -1,12 +1,15 @@
 defmodule BookBankWeb.AccountsController do
+  @auth_service Application.get_env(:book_bank, BookBank.Auth)
+  @token_service Application.get_env(:book_bank, BookBankWeb.Utils.AuthBehavior)
+
   use BookBankWeb, :controller
 
   @spec post_login(Plug.Conn.t(), %{String.t() => term()}) :: Plug.Conn.t()
-  def post_login(conn, %{username: un, password: pw}) when is_binary(un) and is_binary(pw) do
+  def post_login(conn, %{"username" => un, "password" => pw}) when is_binary(un) and is_binary(pw) do
     BookBankWeb.Utils.with(conn, [], fn conn, _extra ->
-      case BookBank.MongoAuth.authenticate_user(un, pw) do
+      case @auth_service.authenticate_user(un, pw) do
         {:ok, %BookBank.User{username: username, roles: roles}} ->
-          {:ok, jwt} = BookBankWeb.Utils.Auth.make_token(username, roles)
+          {:ok, jwt} = @token_service.make_token(username, roles)
 
           conn =
             conn
@@ -33,7 +36,7 @@ defmodule BookBankWeb.AccountsController do
   end
 
   defp post_create_process(%{username: username, password: password, roles: roles}) do
-    case BookBank.MongoAuth.create_user(username, password, roles) do
+    case @auth_service.create_user(username, password, roles) do
       {:ok, _} -> {:ok, :created}
       {:error, msg} -> {:error, :conflict, msg}
     end
@@ -68,7 +71,7 @@ defmodule BookBankWeb.AccountsController do
       obj =
         with %{"role" => role} <- params do
           if role in BookBank.Auth.roles() do
-            {:ok, :ok, BookBank.MongoAuth.users_with_role(role)}
+            {:ok, :ok, @auth_service.users_with_role(role)}
           else
             {:error, :not_found}
           end
@@ -86,7 +89,7 @@ defmodule BookBankWeb.AccountsController do
       [authentication: [{:current_user, user}, "admin"]],
       fn conn, _extra ->
         obj =
-          with {:ok, %BookBank.User{roles: roles}} <- BookBank.MongoAuth.get_user(user) do
+          with {:ok, %BookBank.User{roles: roles}} <- @auth_service.get_user(user) do
             {:ok, :ok, %{"roles" => roles}}
           else
             {:error, :does_not_exist} ->
@@ -151,7 +154,7 @@ defmodule BookBankWeb.AccountsController do
     BookBankWeb.Utils.with(conn, [authentication: ["admin"]], fn conn, _extra ->
       obj =
         with {:ok, tup} <- set_user_roles_list(roles) do
-          case BookBank.MongoAuth.update_user(user, [tup]) do
+          case @auth_service.update_user(user, [tup]) do
             :ok ->
               {:ok, :ok}
 
@@ -185,7 +188,7 @@ defmodule BookBankWeb.AccountsController do
           with {:ok, add} <- add_user_roles_list(add),
                {:ok, remove} <-
                  remove_user_roles_list(remove) do
-            case BookBank.MongoAuth.update_user(user, add ++ remove) do
+            case @auth_service.update_user(user, add ++ remove) do
               :ok ->
                 {:ok, :ok}
 
@@ -222,8 +225,9 @@ defmodule BookBankWeb.AccountsController do
   def put_user_password(conn, %{"username" => user, "password" => pw}) do
     BookBankWeb.Utils.with(conn, [authentication: [{:current_user, user}, "admin"]], fn conn, _extra ->
       obj =
-        case BookBank.MongoAuth.update_user(user, password: pw) do
+        case @auth_service.update_user(user, password: pw) do
           :ok ->
+            BookBank.Auth.UserWhitelist.delete(user)
             {:ok, :ok}
 
           {:error, :does_not_exist} ->
@@ -245,8 +249,10 @@ defmodule BookBankWeb.AccountsController do
 
   def delete_user(conn, %{"username" => user}) do
     BookBankWeb.Utils.with(conn, [authentication: [{:current_user, user}, "admin"]], fn conn, _extra ->
-      obj = case BookBank.MongoAuth.delete_user(user) do
-        :ok -> {:ok, :ok}
+      obj = case @auth_service.delete_user(user) do
+        :ok ->
+          BookBank.Auth.UserWhitelist.delete(user)
+          {:ok, :ok}
         {:error, :does_not_exist} -> {:error, :not_found, "No such user with username '#{user}'"}
         {:error, e} -> {:error, :internal_server_error, e}
       end

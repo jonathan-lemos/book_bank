@@ -15,6 +15,11 @@ config :book_bank, BookBankWeb.Endpoint,
   pubsub_server: BookBank.PubSub,
   live_view: [signing_salt: "HLswLhK+"]
 
+# dependency injection baby
+config :book_bank, BookBank.Database, BookBank.MongoDatabase
+config :book_bank, BookBank.Auth, BookBank.MongoAuth
+config :book_bank, BookBankWeb.Utils.AuthBehavior, BookBankWeb.Utils.Auth
+
 config :book_bank, BookBank.MongoDatabase,
   url: System.get_env("MONGO_CONNECTION_URL") || "mongodb://localhost:27017/book_bank",
   pool_size: (System.get_env("MONGO_POOL_SIZE") || "16") |> Integer.parse() |> elem(0)
