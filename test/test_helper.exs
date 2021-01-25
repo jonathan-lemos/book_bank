@@ -1,4 +1,4 @@
 ExUnit.start()
-Mox.defmock(BookBank.MockAuth, for: BookBank.Auth)
-Mox.defmock(BookBank.MockDatabase, for: BookBank.Database)
-Mox.defmock(BookBankWeb.Utils.MockAuth, for: BookBankWeb.Utils.AuthBehavior)
+Mox.defmock(BookBank.MockAuth, for: BookBank.AuthBehavior)
+Mox.defmock(BookBank.MockDatabase, for: BookBank.DatabaseBehavior)
+Mox.defmock(BookBankWeb.Utils.MockJwt, for: BookBankWeb.Utils.JwtBehavior)

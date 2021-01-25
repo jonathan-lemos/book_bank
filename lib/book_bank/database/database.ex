@@ -1,4 +1,4 @@
-defmodule BookBank.Database do
+defmodule BookBank.DatabaseBehavior do
   @moduledoc false
   @callback create_book(
               title :: String.t(),

@@ -47,7 +47,7 @@ defmodule BookBankWeb.SearchController do
       end
     else
       {:error, e} ->
-        {:error, "Failed to encode the body '#{IO.inspect(body)}' as JSON: #{e.message}"}
+        {:error, "Failed to encode the body '#{Kernel.inspect(body)}' as JSON: #{e.message}"}
 
       e ->
         {:error, e.message}
@@ -154,7 +154,7 @@ defmodule BookBankWeb.SearchController do
 
           {:ok, _status, obj} ->
             {:error, :internal_server_error,
-             %{"response" => "Malformed response from Elasticsearch: #{IO.inspect(obj)}"}}
+             %{"response" => "Malformed response from Elasticsearch: #{Kernel.inspect(obj)}"}}
 
           {:error, status, e} ->
             {:error, status, e}

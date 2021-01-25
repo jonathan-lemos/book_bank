@@ -1,4 +1,4 @@
-defmodule BookBankWeb.Utils.Auth.Token do
+defmodule BookBankWeb.Utils.Jwt.Token do
   use Joken.Config
 
   @spec token_lifetime_seconds :: 7200
@@ -14,14 +14,14 @@ defmodule BookBankWeb.Utils.Auth.Token do
   end
 end
 
-defmodule BookBankWeb.Utils.Auth do
-  @behaviour BookBankWeb.Utils.AuthBehavior
-  alias BookBankWeb.Utils.Auth.Token, as: Token
+defmodule BookBankWeb.Utils.Jwt do
+  @behaviour BookBankWeb.Utils.JwtBehavior
+  alias BookBankWeb.Utils.Jwt.Token, as: Token
 
   defp make_signer do
       Joken.Signer.create(
         "HS256",
-        Application.get_env(:book_bank, BookBankWeb.Utils.Auth) |> Keyword.get(:secret)
+        Application.get_env(:book_bank, BookBankWeb.Utils.Jwt) |> Keyword.get(:secret)
       )
   end
 

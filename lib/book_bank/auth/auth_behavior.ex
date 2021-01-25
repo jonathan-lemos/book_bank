@@ -1,4 +1,4 @@
-defmodule BookBank.Auth do
+defmodule BookBank.AuthBehavior do
   @moduledoc false
   @callback authenticate_user(username :: String.t(), password :: String.t()) :: {:ok, BookBank.User.t()} | {:error, :does_not_exist | :wrong_password}
 

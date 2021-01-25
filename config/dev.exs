@@ -13,7 +13,7 @@ config :book_bank, BookBankWeb.Endpoint,
   check_origin: false,
   watchers: []
 
-config :book_bank, BookBankWeb.Utils.Auth,
+config :book_bank, BookBankWeb.Utils.Jwt,
   secret: System.get_env("AUTH_SECRET") || "hunter2"
 
 

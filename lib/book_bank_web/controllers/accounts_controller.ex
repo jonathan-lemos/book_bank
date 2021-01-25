@@ -1,6 +1,6 @@
 defmodule BookBankWeb.AccountsController do
-  @auth_service Application.get_env(:book_bank, BookBank.Auth)
-  @token_service Application.get_env(:book_bank, BookBankWeb.Utils.AuthBehavior)
+  @auth_service Application.get_env(:book_bank, BookBank.AuthBehavior)
+  @token_service Application.get_env(:book_bank, BookBankWeb.Utils.JwtBehavior)
 
   use BookBankWeb, :controller
 
@@ -14,7 +14,7 @@ defmodule BookBankWeb.AccountsController do
           conn =
             conn
             |> Plug.Conn.put_resp_cookie("X-Auth-Token", jwt,
-              max_age: BookBankWeb.Utils.Auth.Token.token_lifetime_seconds(),
+              max_age: BookBankWeb.Utils.Jwt.Token.token_lifetime_seconds(),
               http_only: true,
               secure: true
             )
@@ -35,14 +35,15 @@ defmodule BookBankWeb.AccountsController do
     end)
   end
 
-  defp post_create_process(%{username: username, password: password, roles: roles}) do
+  defp post_create_process(%{"username" => username, "password" => password, "roles" => roles}) do
     case @auth_service.create_user(username, password, roles) do
       {:ok, _} -> {:ok, :created}
+      # {:error, :user_exists} -> {:error, :conflict, "The user '#{username}' already exists."}
       {:error, msg} -> {:error, :conflict, msg}
     end
   end
 
-  defp post_create_process(%{username: _, password: _} = map) do
+  defp post_create_process(%{"username" => _, "password" => _} = map) do
     post_create_process(Map.put(map, :roles, []))
   end
 
@@ -111,7 +112,7 @@ defmodule BookBankWeb.AccountsController do
       else
         {:error,
          "The following contents of 'add' are not valid roles: #{
-           IO.inspect(Enum.filter(list, &(&1 not in BookBank.Auth.roles())))
+           Kernel.inspect(Enum.filter(list, &(&1 not in BookBank.Auth.roles())))
          }"}
       end
     else
@@ -142,7 +143,7 @@ defmodule BookBankWeb.AccountsController do
       else
         {:error,
          "The following contents of 'roles' are not valid roles: #{
-           IO.inspect(Enum.filter(list, &(&1 not in BookBank.Auth.roles())))
+           Kernel.inspect(Enum.filter(list, &(&1 not in BookBank.Auth.roles())))
          }"}
       end
     else

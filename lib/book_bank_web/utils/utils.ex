@@ -1,4 +1,6 @@
 defmodule BookBankWeb.Utils do
+  @jwt_service Application.get_env(:book_bank, BookBankWeb.Utils.JwtBehavior)
+
   @type ok_status :: :ok | :created
   @type error_status ::
           :bad_request
@@ -58,7 +60,7 @@ defmodule BookBankWeb.Utils do
 
       _ ->
         nconn = conn |> Plug.Conn.fetch_cookies()
-        {nconn, nconn |> Map.get("req_cookies") |> Map.get("X-Auth-Token")}
+        {nconn, nconn.req_cookies["X-Auth-Token"]}
     end
   end
 
@@ -81,20 +83,20 @@ defmodule BookBankWeb.Utils do
   end
 
   defp verify_token(conn, jwt, type) do
-    case BookBankWeb.Utils.Auth.verify_token(jwt) do
+    case @jwt_service.verify_token(jwt) do
       {:ok, claims} ->
         case type do
           :any ->
             {:ok, claims}
 
           auth_list when is_list(auth_list) ->
-            %{"username" => username, "roles" => roles} = claims
+            %{"sub" => username, "roles" => roles} = claims
 
             if verify_claims_list(username, roles, auth_list) do
               {:ok, claims}
             else
               {:error, conn, :forbidden,
-               "The user does not have any of the following roles: #{IO.inspect(auth_list)}."}
+               "The user does not have any of the following roles: #{Kernel.inspect(auth_list)}."}
             end
         end
 
@@ -184,13 +186,18 @@ defmodule BookBankWeb.Utils do
           conn
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.json(default_map(status))
+
+        res ->
+          conn
+          |> Plug.Conn.put_status(:internal_server_error)
+          |> Phoenix.Controller.json(default_map(:internal_server_error) |> Map.put("message", "Function '#{Kernel.inspect func}' produced an invalid response '#{Kernel.inspect res}'. This is a bug."))
       end
     rescue
       e ->
         conn
         |> Plug.Conn.put_status(:internal_server_error)
         |> Phoenix.Controller.json(
-          Map.put(default_map(:internal_server_error), "message", e.message)
+          Map.put(default_map(:internal_server_error), "message", "#{Exception.format(:error, e)}")
         )
     end
   end

@@ -1,5 +1,5 @@
 defmodule BookBank.MongoAuth do
-  @behaviour BookBank.Auth
+  @behaviour BookBank.AuthBehavior
 
   def authenticate_user(username, password) do
     case Mongo.find_one(:mongo, "users", %{username: username}, read_concern: "majority") do

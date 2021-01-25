@@ -18,7 +18,7 @@ config :book_bank, BookBankWeb.Endpoint,
   ],
   secret_key_base: secret_key_base
 
-config :book_bank, BookBankWeb.Auth,
+config :book_bank, BookBankWeb.Utils.Jwt,
   secret: System.get_env("AUTH_SECRET") || raise """
   environment variable AUTH_SECRET is missing.
   """

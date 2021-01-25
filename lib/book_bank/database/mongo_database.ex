@@ -1,5 +1,5 @@
 defmodule BookBank.MongoDatabase do
-  @behaviour BookBank.Database
+  @behaviour BookBank.DatabaseBehavior
 
   defp create_file(filename, file_stream, bucket_name \\ "fs") do
     bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
