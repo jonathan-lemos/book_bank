@@ -142,27 +142,27 @@ defmodule BookBankWeb.Utils do
   defp with_valid_opts({:ok, conn, extra}, func) do
     try do
       case func.(conn, extra) do
-        {conn, {:ok, status, :stream, stream, list}} ->
+        {conn, {:ok, status, :stream, stream, list}} when is_list(list) and (is_atom(status) or is_integer(status)) ->
           conn
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.send_download({:binary, stream}, list)
 
-        {conn, {:ok, status, :stream, stream}} ->
+        {conn, {:ok, status, :stream, stream}} when is_atom(status) or is_integer(status) ->
           conn
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.send_download({:binary, stream})
 
-        {conn, {:ok, status, map}} when is_map(map) ->
+        {conn, {:ok, status, map}} when is_map(map) and (is_atom(status) or is_integer(status)) ->
           conn
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.json(Map.merge(default_map(status), map))
 
-        {conn, {:ok, status, str}} when is_binary(str) ->
+        {conn, {:ok, status, str}} when is_binary(str) and (is_atom(status) or is_integer(status)) ->
           conn
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.json(Map.put(default_map(status), "response", str))
 
-        {conn, {:ok, status}} ->
+        {conn, {:ok, status}} when is_atom(status) or is_integer(status) ->
           conn
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.json(default_map(status))
@@ -172,25 +172,30 @@ defmodule BookBankWeb.Utils do
           |> Plug.Conn.put_status(:ok)
           |> Phoenix.Controller.json(default_map(:ok))
 
-        {conn, {:error, status, map}} when is_map(map) ->
+        {conn, {:error, status, map}} when is_map(map) and (is_atom(status) or is_integer(status)) ->
           conn
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.json(Map.merge(default_map(status), map))
 
-        {conn, {:error, status, str}} when is_binary(str) ->
+        {conn, {:error, status, str}} when is_binary(str) and (is_atom(status) or is_integer(status)) ->
           conn
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.json(Map.put(default_map(status), "response", str))
 
-        {conn, {:error, status}} ->
+        {conn, {:error, status}} when is_atom(status) or is_integer(status) ->
           conn
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.json(default_map(status))
 
-        res ->
+        {conn, res} ->
           conn
           |> Plug.Conn.put_status(:internal_server_error)
           |> Phoenix.Controller.json(default_map(:internal_server_error) |> Map.put("message", "Function '#{Kernel.inspect func}' produced an invalid response '#{Kernel.inspect res}'. This is a bug."))
+
+        _ ->
+          conn
+          |> Plug.Conn.put_status(:internal_server_error)
+          |> Phoenix.Controller.json(default_map(:internal_server_error) |> Map.put("message", "Function '#{Kernel.inspect func}' did not include the connection in the response. This is a bug."))
       end
     rescue
       e ->

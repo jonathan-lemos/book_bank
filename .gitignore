@@ -31,3 +31,5 @@ book_bank-*.tar
 /.idea/
 
 /node_modules/
+
+.vscode

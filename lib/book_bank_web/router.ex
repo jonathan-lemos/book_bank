@@ -25,8 +25,8 @@ defmodule BookBankWeb.Router do
     post "/login", AccountsController, :post_login
     post "/create", AccountsController, :post_create
     get "/roles", AccountsController, :get_roles
-    get "/roles/:role", AccountsController, :get_user_roles
-    get "/users/roles/:username", AccountsController, :get_role_accounts
+    get "/roles/:role", AccountsController, :get_role_accounts
+    get "/users/roles/:username", AccountsController, :get_user_roles
     put "/users/roles/:username", AccountsController, :put_user_roles
     patch "/users/roles/:username", AccountsController, :patch_user_roles
     put "/users/password/:username", AccountsController, :put_user_password

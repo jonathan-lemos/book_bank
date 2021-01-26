@@ -19,6 +19,7 @@ config :book_bank, BookBankWeb.Endpoint,
 config :book_bank, BookBank.DatabaseBehavior, BookBank.MongoDatabase
 config :book_bank, BookBank.AuthBehavior, BookBank.MongoAuth
 config :book_bank, BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.Jwt
+config :book_bank, BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.UserWhitelist
 
 config :book_bank, BookBank.MongoDatabase,
   url: System.get_env("MONGO_CONNECTION_URL") || "mongodb://localhost:27017/book_bank",
@@ -35,6 +36,8 @@ config :logger, :console,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+config :joken, :current_time_adapter, BookBankWeb.Utils.JwtTime
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

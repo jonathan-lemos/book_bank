@@ -38,7 +38,7 @@ defmodule BookBankWeb.AccountsController do
   defp post_create_process(%{"username" => username, "password" => password, "roles" => roles}) do
     case @auth_service.create_user(username, password, roles) do
       {:ok, _} -> {:ok, :created}
-      # {:error, :user_exists} -> {:error, :conflict, "The user '#{username}' already exists."}
+      {:error, :user_exists} -> {:error, :conflict, "The user '#{username}' already exists."}
       {:error, msg} -> {:error, :conflict, msg}
     end
   end
@@ -62,7 +62,7 @@ defmodule BookBankWeb.AccountsController do
   @spec get_roles(Plug.Conn.t(), %{String.t() => term()}) :: Plug.Conn.t()
   def get_roles(conn, _params) do
     BookBankWeb.Utils.with(conn, [authentication: ["admin"]], fn conn, _extra ->
-      {conn, {:ok, BookBank.Auth.roles()}}
+      {conn, {:ok, :ok, %{"roles" => BookBank.AuthBehavior.roles()}}}
     end)
   end
 
@@ -71,8 +71,11 @@ defmodule BookBankWeb.AccountsController do
     BookBankWeb.Utils.with(conn, [authentication: ["admin"]], fn conn, _extra ->
       obj =
         with %{"role" => role} <- params do
-          if role in BookBank.Auth.roles() do
-            {:ok, :ok, @auth_service.users_with_role(role)}
+          if role in BookBank.AuthBehavior.roles() do
+            case @auth_service.users_with_role(role) do
+              {:ok, users} -> {:ok, :ok, %{"users" => users |> Enum.map(&(&1.username))}}
+              {:error, reason} -> {:error, :internal_server_error, reason}
+            end
           else
             {:error, :not_found}
           end
@@ -107,7 +110,7 @@ defmodule BookBankWeb.AccountsController do
 
   defp add_user_roles_list(list) when is_list(list) do
     if Enum.all?(list, &is_binary/1) do
-      if Enum.all?(list, &(&1 in BookBank.Auth.roles())) do
+      if Enum.all?(list, &(&1 in BookBank.AuthBehavior.roles())) do
         {:ok, list |> Enum.map(&{:add_role, &1})}
       else
         {:error,
@@ -138,7 +141,7 @@ defmodule BookBankWeb.AccountsController do
 
   defp set_user_roles_list(list) when is_list(list) do
     if Enum.all?(list, &is_binary/1) do
-      if Enum.all?(list, &(&1 in BookBank.Auth.roles())) do
+      if Enum.all?(list, &(&1 in BookBank.AuthBehavior.roles())) do
         {:ok, {:set_roles, list}}
       else
         {:error,

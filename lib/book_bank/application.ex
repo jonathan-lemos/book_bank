@@ -5,24 +5,38 @@ defmodule BookBank.Application do
 
   use Application
 
+  def add_if(list, condition, elem) do
+    if condition do
+      [elem | list]
+    else
+      list
+    end
+  end
+
   @spec start(any, any) :: no_return
   def start(_type, _args) do
+    children =
+      [
+        # Start the Telemetry supervisor
+        BookBankWeb.Telemetry,
+        # Start the PubSub system
+        {Phoenix.PubSub, name: BookBank.PubSub},
+        # Start the Endpoint (http/https)
+        BookBankWeb.Endpoint
+        # Start a worker by calling: BookBank.Worker.start_link(arg)
+        # {BookBank.Worker, arg}
+      ]
+      |> add_if(
+        Application.get_env(:book_bank, BookBank.Database) == BookBank.MongoAuth,
+        {Mongo,
+         name: :mongo,
+         database: "book_bank",
+         url: Application.get_env(:book_bank, BookBank.MongoDatabase)[:url],
+         pool_size: 16}
+      )
 
-    children = [
-      # Start the Telemetry supervisor
-      BookBankWeb.Telemetry,
-      # Start the PubSub system
-      {Phoenix.PubSub, name: BookBank.PubSub},
-      # Start the Endpoint (http/https)
-      BookBankWeb.Endpoint,
-      # Start a worker by calling: BookBank.Worker.start_link(arg)
-      # {BookBank.Worker, arg}
-    ]
-
-    children = if Application.get_env(:book_bank, BookBank.Database) == BookBank.MongoAuth do
-      [{Mongo, name: :mongo, database: "book_bank", url: Application.get_env(:book_bank, BookBank.MongoDatabase)[:url], pool_size: 16} | children]
-    else
-      children
+    if Application.get_env(:book_bank, BookBank.Auth.UserWhitelistBehavior) == BookBank.Auth.UserWhitelist do
+      :ets.new(:user_whitelist, [:set, :public, :named_table])
     end
 
     # See https://hexdocs.pm/elixir/Supervisor.html

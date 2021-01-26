@@ -14,5 +14,7 @@ config :book_bank, BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.MockJwt
 config :book_bank, BookBankWeb.Utils.Jwt,
   secret: "hunter2"
 
+config :joken, :current_time_adapter, BookBankWeb.Utils.MockJwtTime
+
 # Print only warnings and errors during test
 config :logger, level: :warn

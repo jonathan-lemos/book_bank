@@ -1,25 +1,34 @@
 defmodule BookBank.Auth.UserWhitelist do
+  @behaviour BookBank.Auth.UserWhitelistBehavior
+
   @moduledoc """
     Stores the list of users that are allowed to authenticate with a JWT and the time of authentication.
     An entry will live at least as long as the ttl_seconds specified in start_link/1.
   """
 
-  use GenServer
-
   @doc """
-  Adds a user to the whitelist.
+  Adds a user to the whitelist. This will overwrite an existing entry in the table.
   """
-  @spec insert(String.t()) :: :ok
-  def insert(user, iat \\ System.monotonic_time()) do
-    GenServer.call(__MODULE__, {:insert, user, iat})
+  @spec insert(String.t(), integer()) :: :ok
+  def insert(user, iat) do
+    :ets.insert(:user_whitelist, {user, iat, iat + BookBankWeb.Utils.Jwt.Token.token_lifetime_seconds()})
+    :ok
   end
 
   @doc """
   Returns true if a user is present in the whitelist and their token was not issued before they were last insert()'ed into the whitelist.
   """
-  @spec check(String.t(), non_neg_integer()) :: boolean()
   def check(user, iat) do
-    GenServer.call(__MODULE__, {:check, user, iat})
+    case :ets.lookup(:user_whitelist, user) do
+      [{^user, valid_beyond, valid_until}] ->
+        if System.monotonic_time(:second) <= valid_until and iat >= valid_beyond do
+          true
+        else
+          :ets.delete(:user_whitelist, user)
+          false
+        end
+      _ -> false
+    end
   end
 
   @doc """
@@ -27,40 +36,8 @@ defmodule BookBank.Auth.UserWhitelist do
   """
   @spec delete(String.t()) :: :ok
   def delete(user) do
-    GenServer.call(__MODULE__, {:delete, user})
-  end
-
-  def start_link(ttl_seconds) do
-    GenServer.start_link(__MODULE__, ttl_seconds, name: __MODULE__)
-  end
-
-  @spec init(non_neg_integer()) :: {:ok, %{ttl: any}}
-  def init(ttl_seconds) when ttl_seconds >= 0 do
-    :ets.new(:user_whitelist, [:set, :protected, :named_table])
-    {:ok, %{ttl: ttl_seconds}}
-  end
-
-  def handle_call({:insert, user, iat}, _from, state = %{ttl: ttl}) do
-    :ets.insert(:user_whitelist, {user, iat, iat + ttl})
-    {:reply, :ok, state}
-  end
-
-  def handle_call({:check, user, iat}, _from, state) do
-    case :ets.lookup(:user_whitelist, user) do
-      [{^user, valid_beyond, valid_until}] ->
-        if System.monotonic_time(:second) <= valid_until and iat >= valid_beyond do
-          {:reply, true, state}
-        else
-          :ets.delete(:user_whitelist, user)
-          {:reply, false, state}
-        end
-      _ -> {:reply, false, state}
-    end
-  end
-
-  def handle_call({:delete, user}, _from, state) do
     :ets.delete(:user_whitelist, user)
-    {:reply, :ok, state}
+    :ok
   end
 
   def handle_info(:clear_cache, state) do
