@@ -35,8 +35,11 @@ defmodule BookBank.Application do
          pool_size: 16}
       )
 
-    if Application.get_env(:book_bank, BookBank.Auth.UserWhitelistBehavior) == BookBank.Auth.UserWhitelist do
-      :ets.new(:user_whitelist, [:set, :public, :named_table])
+    children = if Application.get_env(:book_bank, BookBank.Auth.UserWhitelistBehavior) == BookBank.Auth.UserWhitelist do
+      BookBank.Auth.UserWhitelist.init()
+      [{BookBank.Auth.UserWhitelistTTLService, [BookBankWeb.Utils.Jwt.Token.token_lifetime_seconds()]} | children]
+    else
+      children
     end
 
     # See https://hexdocs.pm/elixir/Supervisor.html

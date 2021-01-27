@@ -20,6 +20,8 @@ config :book_bank, BookBank.DatabaseBehavior, BookBank.MongoDatabase
 config :book_bank, BookBank.AuthBehavior, BookBank.MongoAuth
 config :book_bank, BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.Jwt
 config :book_bank, BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.UserWhitelist
+config :book_bank, BookBankWeb.Utils.Jwt.Token,
+  lifetime_seconds: 2 * 60 * 60
 
 config :book_bank, BookBank.MongoDatabase,
   url: System.get_env("MONGO_CONNECTION_URL") || "mongodb://localhost:27017/book_bank",

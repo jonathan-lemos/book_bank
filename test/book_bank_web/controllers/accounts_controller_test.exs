@@ -167,6 +167,7 @@ defmodule BookBankWeb.AccountsControllerTest do
     expect(BookBank.MockAuth, :update_user, fn "user1", [password: "hunter2"] ->
       :ok
     end)
+    expect(BookBank.Auth.MockUserWhitelist, :delete, fn "user1" -> :ok end)
 
     conn =
       with_token(conn, "user1")
@@ -179,6 +180,7 @@ defmodule BookBankWeb.AccountsControllerTest do
 
   test "DELETE /api/accounts/users/user1 success", %{conn: conn} do
     expect(BookBank.MockAuth, :delete_user, fn "user1" -> :ok end)
+    expect(BookBank.Auth.MockUserWhitelist, :delete, fn "user1" -> :ok end)
 
     conn =
       with_token(conn, "admin", ["admin"])

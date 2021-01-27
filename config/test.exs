@@ -10,11 +10,13 @@ config :book_bank, BookBankWeb.Endpoint,
 config :book_bank, BookBank.DatabaseBehavior, BookBank.MockDatabase
 config :book_bank, BookBank.AuthBehavior, BookBank.MockAuth
 config :book_bank, BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.MockJwt
+config :book_bank, BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.MockUserWhitelist
 
 config :book_bank, BookBankWeb.Utils.Jwt,
   secret: "hunter2"
 
-config :joken, :current_time_adapter, BookBankWeb.Utils.MockJwtTime
+# config :joken, :current_time_adapter, BookBankWeb.Utils.MockJwtTime
+config :joken, :current_time_adapter, Test.StubTime
 
 # Print only warnings and errors during test
 config :logger, level: :warn

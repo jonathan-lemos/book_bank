@@ -1,6 +1,7 @@
 defmodule BookBankWeb.AccountsController do
   @auth_service Application.get_env(:book_bank, BookBank.AuthBehavior)
   @token_service Application.get_env(:book_bank, BookBankWeb.Utils.JwtBehavior)
+  @whitelist_service Application.get_env(:book_bank, BookBank.Auth.UserWhitelistBehavior)
 
   use BookBankWeb, :controller
 
@@ -231,7 +232,7 @@ defmodule BookBankWeb.AccountsController do
       obj =
         case @auth_service.update_user(user, password: pw) do
           :ok ->
-            BookBank.Auth.UserWhitelist.delete(user)
+            @whitelist_service.delete(user)
             {:ok, :ok}
 
           {:error, :does_not_exist} ->
@@ -255,7 +256,7 @@ defmodule BookBankWeb.AccountsController do
     BookBankWeb.Utils.with(conn, [authentication: [{:current_user, user}, "admin"]], fn conn, _extra ->
       obj = case @auth_service.delete_user(user) do
         :ok ->
-          BookBank.Auth.UserWhitelist.delete(user)
+          @whitelist_service.delete(user)
           {:ok, :ok}
         {:error, :does_not_exist} -> {:error, :not_found, "No such user with username '#{user}'"}
         {:error, e} -> {:error, :internal_server_error, e}
