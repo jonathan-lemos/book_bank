@@ -59,7 +59,9 @@ POST /api/books
 	requires: librarian
 	input: multipart-formdata:
 		title: string
-		body: [[ binary pdf content ]]
+		book:
+			Content-Type: application/pdf
+			[[ binary pdf content ]]
 		output: { status: number, response: string, id: string | null }
 
 PUT /api/books/metadata/:id

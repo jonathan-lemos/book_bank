@@ -1,7 +1,8 @@
 defmodule BookBank.Auth.UserWhitelist do
   @behaviour BookBank.Auth.UserWhitelistBehavior
-
   @time_service Application.get_env(:joken, :current_time_adapter)
+
+  import Ex2ms
 
   def init() do
     :ets.new(:user_whitelist, [:set, :public, :named_table])
@@ -67,7 +68,7 @@ defmodule BookBank.Auth.UserWhitelist do
 
   def delete_expired_entries() do
     cur_time = @time_service.current_time()
-    expr = :ets.fun2ms(fn {_user, _, valid_until} -> cur_time > valid_until end)
-    :ets.select_delete(:user_whitelist, expr)
+    match_spec = fun do {_user, _valid_beyond, valid_until} = row -> ^cur_time > valid_until end
+    :ets.select_delete(:user_whitelist, match_spec)
   end
 end

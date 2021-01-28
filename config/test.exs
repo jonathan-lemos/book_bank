@@ -11,6 +11,7 @@ config :book_bank, BookBank.DatabaseBehavior, BookBank.MockDatabase
 config :book_bank, BookBank.AuthBehavior, BookBank.MockAuth
 config :book_bank, BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.MockJwt
 config :book_bank, BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.MockUserWhitelist
+config :book_bank, BookBankWeb.Utils.ChunkBehavior, BookBankWeb.Utils.MockChunk
 
 config :book_bank, BookBankWeb.Utils.Jwt,
   secret: "hunter2"

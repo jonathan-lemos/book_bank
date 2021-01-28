@@ -54,10 +54,7 @@ defmodule BookBank.MongoDatabase do
          %BookBank.Book{
            id: BSON.ObjectId.encode!(doc_id),
            title: title,
-           metadata: metadata,
-           body_id: id,
-           cover_id: nil,
-           thumb_id: nil
+           metadata: metadata
          }}
 
       {:ok, %Mongo.InsertOneResult{}} ->
@@ -75,60 +72,74 @@ defmodule BookBank.MongoDatabase do
     end
   end
 
-  def get_book_metadata(id_string) do
+  defp get_document(id_string) do
     with_object_id(id_string, fn id ->
       case Mongo.find_one(:mongo, "books", %{_id: id}) do
         %{
-          _id: id,
-          title: title,
-          metadata: metadata,
-          body: body_id,
-          cover: cover_id,
-          thumb: thumb_id
-        } ->
-          {:ok,
-           %BookBank.Book{
-             id: BSON.ObjectId.encode!(id),
-             title: title,
-             metadata: metadata,
-             body_id: body_id,
-             cover_id: cover_id,
-             thumb_id: thumb_id
-           }}
+          "_id" => id,
+          "title" => title,
+          "metadata" => metadata
+        } = doc
+        when is_binary(id) and is_binary(title) and is_map(metadata) ->
+          {:ok, doc}
 
         %{} ->
-          {:error, "Malformed data"}
+          Mongo.delete_many!(:mongo, "books", %{_id: id})
+          {:error, :does_not_exist}
 
-        nil ->
+        _ ->
           {:error, :does_not_exist}
       end
     end)
   end
 
-  def get_book_file(id) do
-    with {:ok, %BookBank.Book{body_id: body_id} = book} <- get_book_metadata(id) do
+  defp doc_to_book(%{"_id" => id, "title" => title, "metadata" => metadata}) do
+    %BookBank.Book{id: id, title: title, metadata: metadata}
+  end
+
+  def get_book_metadata(id_string) do
+    case get_document(id_string) do
+      {:ok, doc} ->
+        {:ok, doc_to_book(doc)}
+
+      e ->
+        e
+    end
+  end
+
+  def get_book_cover(id_string) do
+    with {:ok, %{"cover" => cover_id} = document} <- get_document(id_string) do
+      case download_file(cover_id) do
+        {:ok, stream} -> {:ok, stream, doc_to_book(document)}
+        {:error, _} = e -> e
+      end
+    else
+      {:error, _} = e -> e
+      {:ok, %{}} -> {:error, :does_not_exist}
+    end
+  end
+
+  def get_book_file(id_string) do
+    with {:ok, %{"body" => body_id} = document} <- get_document(id_string) do
       case download_file(body_id) do
-        {:ok, stream} -> {:ok, stream, book}
-        {:error, _} = e -> {:error, e}
+        {:ok, stream} -> {:ok, stream, doc_to_book(document)}
+        {:error, _} = e -> e
       end
+    else
+      {:error, _} = e -> e
+      {:ok, %{}} -> {:error, :does_not_exist}
     end
   end
 
-  def get_book_cover(id) do
-    with {:ok, %BookBank.Book{cover_id: cover_id} = book} <- get_book_metadata(id) do
-      case download_file(cover_id, "cover") do
-        {:ok, stream} -> {:ok, stream, book}
-        {:error, _} = e -> {:error, e}
+  def get_book_thumb(id_string) do
+    with {:ok, %{"thumb" => thumb_id} = document} <- get_document(id_string) do
+      case download_file(thumb_id) do
+        {:ok, stream} -> {:ok, stream, doc_to_book(document)}
+        {:error, _} = e -> e
       end
-    end
-  end
-
-  def get_book_thumb(id) do
-    with {:ok, %BookBank.Book{cover_id: thumb_id} = book} <- get_book_metadata(id) do
-      case download_file(thumb_id, "thumb") do
-        {:ok, stream} -> {:ok, stream, book}
-        {:error, _} = e -> {:error, e}
-      end
+    else
+      {:error, _} = e -> e
+      {:ok, %{}} -> {:error, :does_not_exist}
     end
   end
 
@@ -228,15 +239,6 @@ defmodule BookBank.MongoDatabase do
     end
   end
 
-  defp download_file_save(id, filename) do
-    with {:ok, stream} <- download_file(id) do
-      stream |> Stream.into(File.stream!(filename)) |> Stream.run()
-      :ok
-    else
-      {:error, e} -> {:error, e}
-    end
-  end
-
   def generate_thumbnails(id_string) do
     with_object_id(id_string, fn id ->
       tmpdir = System.tmp_dir!()
@@ -247,9 +249,9 @@ defmodule BookBank.MongoDatabase do
       cover_path = Path.join(tmpdir, cover_fn)
 
       ret =
-        with {:ok, %BookBank.Book{body_id: body_id}} <-
-               get_book_metadata(id_string),
-             :ok <- download_file_save(body_id, pdf_path),
+        with {:ok, stream, _book} <-
+               get_book_file(id_string),
+             :ok <- stream |> Stream.into(File.stream!(pdf_path)) |> Stream.run(),
              [:ok, :ok] <-
                BookBank.Utils.Parallel.invoke([
                  fn -> pdf_thumbnail(pdf_path, thumb_path) end,
@@ -257,21 +259,22 @@ defmodule BookBank.MongoDatabase do
                ]),
              {:ok, thumb_id} <- create_file(thumb_fn, File.stream!(thumb_path), "thumb"),
              {:ok, cover_id} <- create_file(cover_fn, File.stream!(cover_path), "cover") do
-          result = case Mongo.update_one(:mongo, "books", %{"_id" => id}, %{
-                 "$set" => %{
-                   "thumb" => thumb_id |> BSON.ObjectId.decode!(),
-                   "cover" => cover_id |> BSON.ObjectId.decode!()
-                 }
-               }) do
-            {:ok, %Mongo.UpdateResult{acknowledged: true}} ->
-              :ok
+          result =
+            case Mongo.update_one(:mongo, "books", %{"_id" => id}, %{
+                   "$set" => %{
+                     "thumb" => thumb_id |> BSON.ObjectId.decode!(),
+                     "cover" => cover_id |> BSON.ObjectId.decode!()
+                   }
+                 }) do
+              {:ok, %Mongo.UpdateResult{acknowledged: true}} ->
+                :ok
 
-            {:ok, %Mongo.UpdateResult{}} ->
-              {:error, "The update was not acknowledged"}
+              {:ok, %Mongo.UpdateResult{}} ->
+                {:error, "The update was not acknowledged"}
 
-            {:error, error} ->
-              {:error, error.message}
-          end
+              {:error, error} ->
+                {:error, error.message}
+            end
 
           case result do
             :ok ->
@@ -282,6 +285,7 @@ defmodule BookBank.MongoDatabase do
                 fn -> delete_file(thumb_id, "thumb") end,
                 fn -> delete_file(cover_id, "cover") end
               ])
+
               e
           end
         else

@@ -36,4 +36,14 @@ defmodule BookBank.Auth.UserWhitelistTest do
 
     assert check("user1", 0) === false
   end
+
+  test "Users expire" do
+    expect_lifetime(5)
+    insert("user1", 0)
+
+    Test.StubTime.set_current_time(10)
+    delete_expired_entries()
+
+    assert check("user1", 0) === false
+  end
 end

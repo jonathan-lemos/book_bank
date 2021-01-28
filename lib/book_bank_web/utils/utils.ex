@@ -1,5 +1,6 @@
 defmodule BookBankWeb.Utils do
   @jwt_service Application.get_env(:book_bank, BookBankWeb.Utils.JwtBehavior)
+  @chunk_service Application.get_env(:book_bank, BookBankWeb.Utils.ChunkBehavior)
 
   @type ok_status :: :ok | :created
   @type error_status ::
@@ -139,18 +140,37 @@ defmodule BookBankWeb.Utils do
     %{status: status_to_number(status), response: status_to_string(status)}
   end
 
+  defp download_opts(conn, []) do
+    conn
+  end
+
+  defp download_opts(conn, [{key, value} | tail]) do
+    case key do
+      :content_type -> conn |> Plug.Conn.put_resp_content_type(value)
+      :disposition -> case value do
+        :inline -> conn |> Plug.Conn.put_resp_header("content-disposition", "inline")
+        {:attachment, filename} when is_binary(filename) -> conn |> Plug.Conn.put_resp_header("content-disposition", "attachment; filename=\"#{URI.encode(filename)}\"")
+      end
+    end
+  end
+
   defp with_valid_opts({:ok, conn, extra}, func) do
     try do
       case func.(conn, extra) do
         {conn, {:ok, status, :stream, stream, list}} when is_list(list) and (is_atom(status) or is_integer(status)) ->
+          conn = conn
+          |> download_opts(list)
+          |> Plug.Conn.send_chunked(status)
+
+          Stream.scan(stream, conn, fn chunk, conn_acc -> @chunk_service.send_chunk(conn_acc, chunk) end) |> Stream.run()
           conn
-          |> Plug.Conn.put_status(status)
-          |> Phoenix.Controller.send_download({:binary, stream}, list)
 
         {conn, {:ok, status, :stream, stream}} when is_atom(status) or is_integer(status) ->
+          conn = conn
+          |> Plug.Conn.send_chunked(status)
+
+          Stream.scan(stream, conn, fn chunk, conn_acc -> @chunk_service.send_chunk(conn_acc, chunk) end) |> Stream.run()
           conn
-          |> Plug.Conn.put_status(status)
-          |> Phoenix.Controller.send_download({:binary, stream})
 
         {conn, {:ok, status, map}} when is_map(map) and (is_atom(status) or is_integer(status)) ->
           conn
@@ -241,5 +261,15 @@ defmodule BookBankWeb.Utils do
         ) :: Plug.Conn.t()
   def with(conn, opts, func) do
     process_opts(conn, opts) |> with_valid_opts(func)
+  end
+end
+
+defmodule BookBankWeb.Utils.ChunkBehavior do
+  @callback send_chunk(Plug.Conn.t(), binary()) :: Plug.Conn.t()
+end
+
+defmodule BookBankWeb.Utils.Chunk do
+  def send_chunk(conn, chunk) do
+    conn |> Plug.Conn.chunk(chunk)
   end
 end

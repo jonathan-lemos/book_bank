@@ -63,6 +63,9 @@
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/httpoison" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/idna" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/parse_trans" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/ex2ms" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/ex2ms" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/briefly" />
     </content>
     <orderEntry type="jdk" jdkName="Elixir 1.11.0" jdkType="Elixir SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -124,5 +127,7 @@
     <orderEntry type="library" name="httpoison" level="project" />
     <orderEntry type="library" name="mimic" level="project" />
     <orderEntry type="library" name="httparrot" level="project" />
+    <orderEntry type="library" name="ex2ms" level="project" />
+    <orderEntry type="library" name="briefly" level="project" />
   </component>
 </module>
