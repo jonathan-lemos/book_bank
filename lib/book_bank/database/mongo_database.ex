@@ -5,9 +5,13 @@ defmodule BookBank.MongoDatabase do
     bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
     upload_stream = Mongo.GridFs.Upload.open_upload_stream(bucket, filename)
 
-    file_stream |> Stream.into(upload_stream) |> Stream.run()
+    size =
+      file_stream
+      |> Stream.into(upload_stream)
+      |> Enum.reduce(0, fn chunk, acc -> acc + byte_size(chunk) end)
+
     id = upload_stream.id |> BSON.ObjectId.encode!()
-    {:ok, id}
+    {:ok, id, size}
   end
 
   defp download_file(id, bucket_name \\ "fs") do
@@ -36,11 +40,12 @@ defmodule BookBank.MongoDatabase do
   end
 
   def create_book(title, body, metadata) do
-    {:ok, id} = create_file("#{title}.pdf", body)
+    {:ok, id, size} = create_file("#{title}.pdf", body)
 
     doc = %{
       title: title,
       metadata: metadata,
+      size: size,
       body: id,
       cover: nil,
       thumb: nil
@@ -54,6 +59,7 @@ defmodule BookBank.MongoDatabase do
          %BookBank.Book{
            id: BSON.ObjectId.encode!(doc_id),
            title: title,
+           size: size,
            metadata: metadata
          }}
 
@@ -93,8 +99,8 @@ defmodule BookBank.MongoDatabase do
     end)
   end
 
-  defp doc_to_book(%{"_id" => id, "title" => title, "metadata" => metadata}) do
-    %BookBank.Book{id: id, title: title, metadata: metadata}
+  defp doc_to_book(%{"_id" => id, "size" => size, "title" => title, "metadata" => metadata}) do
+    %BookBank.Book{id: id, size: size, title: title, metadata: metadata}
   end
 
   def get_book_metadata(id_string) do
@@ -241,65 +247,57 @@ defmodule BookBank.MongoDatabase do
 
   def generate_thumbnails(id_string) do
     with_object_id(id_string, fn id ->
-      tmpdir = System.tmp_dir!()
-      thumb_fn = "thumb_#{id}.jpg"
-      cover_fn = "cover_#{id}.jpg"
-      pdf_path = Path.join(tmpdir, "#{id}.pdf")
-      thumb_path = Path.join(tmpdir, thumb_fn)
-      cover_path = Path.join(tmpdir, cover_fn)
+      thumb_fn = Briefly.create!()
+      cover_fn = Briefly.create!()
+      pdf_path = Briefly.create!()
 
-      ret =
-        with {:ok, stream, _book} <-
-               get_book_file(id_string),
-             :ok <- stream |> Stream.into(File.stream!(pdf_path)) |> Stream.run(),
-             [:ok, :ok] <-
-               BookBank.Utils.Parallel.invoke([
-                 fn -> pdf_thumbnail(pdf_path, thumb_path) end,
-                 fn -> pdf_cover(pdf_path, cover_path) end
-               ]),
-             {:ok, thumb_id} <- create_file(thumb_fn, File.stream!(thumb_path), "thumb"),
-             {:ok, cover_id} <- create_file(cover_fn, File.stream!(cover_path), "cover") do
-          result =
-            case Mongo.update_one(:mongo, "books", %{"_id" => id}, %{
-                   "$set" => %{
-                     "thumb" => thumb_id |> BSON.ObjectId.decode!(),
-                     "cover" => cover_id |> BSON.ObjectId.decode!()
-                   }
-                 }) do
-              {:ok, %Mongo.UpdateResult{acknowledged: true}} ->
-                :ok
-
-              {:ok, %Mongo.UpdateResult{}} ->
-                {:error, "The update was not acknowledged"}
-
-              {:error, error} ->
-                {:error, error.message}
-            end
-
-          case result do
-            :ok ->
+      with {:ok, stream, _book} <-
+             get_book_file(id_string),
+           :ok <- stream |> Stream.into(File.stream!(pdf_path)) |> Stream.run(),
+           [:ok, :ok] <-
+             BookBank.Utils.Parallel.invoke([
+               fn -> pdf_thumbnail(pdf_path, cover_fn) end,
+               fn -> pdf_cover(pdf_path, cover_fn) end
+             ]),
+           {:ok, thumb_id, _size} <- create_file(thumb_fn, File.stream!(thumb_fn), "thumb"),
+           {:ok, cover_id, _size} <- create_file(cover_fn, File.stream!(cover_fn), "cover") do
+        result =
+          case Mongo.update_one(:mongo, "books", %{"_id" => id}, %{
+                 "$set" => %{
+                   "thumb" => thumb_id |> BSON.ObjectId.decode!(),
+                   "cover" => cover_id |> BSON.ObjectId.decode!()
+                 }
+               }) do
+            {:ok, %Mongo.UpdateResult{acknowledged: true}} ->
               :ok
 
-            {:error, _} = e ->
-              BookBank.Utils.Parallel.invoke([
-                fn -> delete_file(thumb_id, "thumb") end,
-                fn -> delete_file(cover_id, "cover") end
-              ])
+            {:ok, %Mongo.UpdateResult{}} ->
+              {:error, "The update was not acknowledged"}
 
-              e
+            {:error, error} ->
+              {:error, error.message}
           end
-        else
-          [{:error, e1}, {:error, e2}] -> {:error, [{:pdf, e1}, {:thumb, e2}]}
-          [{:error, e1}, _] -> {:error, :pdf, e1}
-          [_, {:error, e2}] -> {:error, :thumb, e2}
-          {:error, e} when is_binary(e) -> {:error, e}
-          {:error, :does_not_exist} -> {:error, :does_not_exist}
-          {:error, a} when is_atom(a) -> {:error, :file.format_error(a)}
+
+        case result do
+          :ok ->
+            :ok
+
+          {:error, _} = e ->
+            BookBank.Utils.Parallel.invoke([
+              fn -> delete_file(thumb_id, "thumb") end,
+              fn -> delete_file(cover_id, "cover") end
+            ])
+
+            e
         end
-
-      Enum.each([pdf_path, thumb_path, cover_path], &File.rm/1)
-
-      ret
+      else
+        [{:error, e1}, {:error, e2}] -> {:error, [{:pdf, e1}, {:thumb, e2}]}
+        [{:error, e1}, _] -> {:error, :pdf, e1}
+        [_, {:error, e2}] -> {:error, :thumb, e2}
+        {:error, e} when is_binary(e) -> {:error, e}
+        {:error, :does_not_exist} -> {:error, :does_not_exist}
+        {:error, a} when is_atom(a) -> {:error, :file.format_error(a)}
+      end
     end)
   end
 end

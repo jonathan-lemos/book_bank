@@ -5,14 +5,18 @@ defmodule BookBankWeb.BooksController do
 
   def get_book_meta(conn, %{"id" => id}) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
-      obj = case @database_service.get_book_metadata(id) do
-        {:ok, %BookBank.Book{id: id, title: title, metadata: metadata}} ->
-          {:ok, :ok, %{"id" => id, "title" => title, "metadata" => metadata}}
-        {:error, :does_not_exist} ->
-          {:error, :not_found, "No such book with id '#{id}'"}
-        {:error, e} when is_binary(e) ->
-          {:error, :internal_server_error, e}
-      end
+      obj =
+        case @database_service.get_book_metadata(id) do
+          {:ok, %BookBank.Book{id: id, title: title, metadata: metadata, size: size}} ->
+            {:ok, :ok, %{"id" => id, "title" => title, "metadata" => metadata, "size" => size}}
+
+          {:error, :does_not_exist} ->
+            {:error, :not_found, "No such book with id '#{id}'"}
+
+          {:error, e} when is_binary(e) ->
+            {:error, :internal_server_error, e}
+        end
+
       {conn, obj}
     end)
   end
@@ -25,14 +29,17 @@ defmodule BookBankWeb.BooksController do
 
   def get_book_cover(conn, %{"id" => id}) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
-      obj = case @database_service.get_book_cover(id) do
-        {:ok, stream, %BookBank.Book{}} ->
-          {:ok, :ok, :stream, stream, disposition: :inline, content_type: "image/jpg"}
-        {:error, :does_not_exist} ->
-          {:error, :not_found, "No such book with id '#{id}'"}
-        {:error, e} when is_binary(e) ->
-          {:error, :internal_server_error, e}
-      end
+      obj =
+        case @database_service.get_book_cover(id) do
+          {:ok, stream, %BookBank.Book{}} ->
+            {:ok, :ok, :stream, stream, disposition: :inline, content_type: "image/jpg"}
+
+          {:error, :does_not_exist} ->
+            {:error, :not_found, "No such book with id '#{id}'"}
+
+          {:error, e} when is_binary(e) ->
+            {:error, :internal_server_error, e}
+        end
 
       {conn, obj}
     end)
@@ -46,14 +53,17 @@ defmodule BookBankWeb.BooksController do
 
   def get_book_thumb(conn, %{"id" => id}) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
-      obj = case @database_service.get_book_thumb(id) do
-        {:ok, stream, %BookBank.Book{}} ->
-          {:ok, :ok, :stream, stream, disposition: :inline, content_type: "image/jpg"}
-        {:error, :does_not_exist} ->
-          {:error, :not_found, "No such book with id '#{id}'"}
-        {:error, e} when is_binary(e) ->
-          {:error, :internal_server_error, e}
-      end
+      obj =
+        case @database_service.get_book_thumb(id) do
+          {:ok, stream, %BookBank.Book{}} ->
+            {:ok, :ok, :stream, stream, disposition: :inline, content_type: "image/jpg"}
+
+          {:error, :does_not_exist} ->
+            {:error, :not_found, "No such book with id '#{id}'"}
+
+          {:error, e} when is_binary(e) ->
+            {:error, :internal_server_error, e}
+        end
 
       {conn, obj}
     end)
@@ -67,18 +77,24 @@ defmodule BookBankWeb.BooksController do
 
   defp get_book(conn, %{"id" => id}, disposition) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
-      obj = case @database_service.get_book_file(id) do
-        {:ok, stream, %BookBank.Book{title: title}} ->
-          disposition = case disposition do
-            :inline -> :inline
-            :attachment -> {:attachment, "#{title}.pdf"}
-          end
-          {:ok, :ok, :stream, stream, [disposition: disposition, content_type: "application/pdf"]}
-        {:error, :does_not_exist} ->
-          {:error, :not_found, "No such book with id '#{id}'"}
-        {:error, e} when is_binary(e) ->
-          {:error, :internal_server_error, e}
-      end
+      obj =
+        case @database_service.get_book_file(id) do
+          {:ok, stream, %BookBank.Book{title: title}} ->
+            disposition =
+              case disposition do
+                :inline -> :inline
+                :attachment -> {:attachment, "#{title}.pdf"}
+              end
+
+            {:ok, :ok, :stream, stream,
+             [disposition: disposition, content_type: "application/pdf"]}
+
+          {:error, :does_not_exist} ->
+            {:error, :not_found, "No such book with id '#{id}'"}
+
+          {:error, e} when is_binary(e) ->
+            {:error, :internal_server_error, e}
+        end
 
       {conn, obj}
     end)
@@ -153,13 +169,25 @@ defmodule BookBankWeb.BooksController do
              {k, v} when is_binary(k) and is_binary(v) -> true
              _ -> false
            end) do
-          put_metadata_params_update_list(tail, [{:replace_metadata, metadata} | acc])
+          put_metadata_params_update_list(tail, [
+            {:replace_metadata,
+             metadata |> Enum.map(fn {k, v} -> %{"key" => k, "value" => v} end)}
+            | acc
+          ])
         else
           {:error, "'metadata' must be { [string]: string }"}
         end
 
+      {"metadata", metadata} when is_list(metadata) ->
+        if Enum.all?(metadata, fn
+             %{"key" => key, "value" => value} when is_binary(key) and is_binary(value) -> true
+             _ -> false
+           end) do
+          put_metadata_params_update_list(tail, [{:replace_metadata, metadata} | acc])
+        end
+
       {"metadata", _} ->
-        {:error, "'metadata' must be { [string]: string }"}
+        {:error, "'metadata' must be { [string]: string } or { key: string, value: string }[]"}
 
       _ ->
         put_metadata_params_update_list(tail, acc)
@@ -217,12 +245,19 @@ defmodule BookBankWeb.BooksController do
             _, _ -> {:error, "'metadata' values must all be strings"}
           end) ++ acc
 
+        {"add", add} when is_list(add) ->
+          Enum.reduce(add, [], fn
+            _, {:error, s} -> {:error, s}
+            %{"key" => k, "value" => v}, acc when is_binary(k) and is_binary(v) -> [{:update, k, v} | acc]
+            _, _ -> {:error, "'metadata' list values must all be { key: string, value: string }"}
+          end) ++ acc
+
         {"add", _} ->
           {:error, "'add' must be { [string]: string }"}
 
         {"remove", remove} when is_list(remove) ->
           if Enum.all?(remove, &is_binary/1) do
-            [{:remove} | acc]
+            Enum.map(remove, &({:remove, &1})) ++ acc
           end
 
         {"remove", _} ->
@@ -266,11 +301,13 @@ defmodule BookBankWeb.BooksController do
 
   def delete_book(conn, %{"id" => id}) do
     BookBankWeb.Utils.with(conn, [authentication: ["librarian", "admin"]], fn conn, _extra ->
-      obj = case @database_service.delete_book(id) do
-        :ok -> {:ok, :ok}
-        {:error, :does_not_exist} -> {:error, :not_found, "No such book with id #{id}."}
-        {:error, e} when is_binary(e) -> {:error, :internal_server_error, e}
-      end
+      obj =
+        case @database_service.delete_book(id) do
+          :ok -> {:ok, :ok}
+          {:error, :does_not_exist} -> {:error, :not_found, "No such book with id #{id}."}
+          {:error, e} when is_binary(e) -> {:error, :internal_server_error, e}
+        end
+
       {conn, obj}
     end)
   end

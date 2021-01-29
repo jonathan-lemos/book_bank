@@ -15,6 +15,7 @@ defmodule BookBankWeb.BooksControllerTest do
       {:ok, content_stream,
        %BookBank.Book{
          id: id,
+         size: Enum.reduce(list, 0, fn chunk, acc -> acc + bit_size(chunk) end),
          title: keywords[:title] || "Test Title",
          metadata: keywords[:metadata] || %{}
        }}
@@ -30,6 +31,34 @@ defmodule BookBankWeb.BooksControllerTest do
 
     assert conn.status === 200
     assert {"content-disposition", "inline"} in conn.resp_headers
+  end
+
+  test "GET /api/books/metadata/1 success", %{conn: conn} do
+    expect(BookBank.MockDatabase, :get_book_metadata, fn "1" ->
+      {:ok,
+       %BookBank.Book{
+         id: "1",
+         title: "Green Eggs and Cum",
+         size: 12345,
+         metadata: [
+           %{"key" => "Author", "value" => "Mr. Seuss"},
+           %{"key" => "ISBN-10", "value" => "1234567890"}
+         ]
+       }}
+    end)
+
+    conn =
+      with_token(conn, "user")
+      |> get("/api/books/metadata/1")
+
+    assert %{
+             "title" => "Green Eggs and Cum",
+             "size" => 12345,
+             "metadata" => [
+               %{"key" => "Author", "value" => "Mr. Seuss"},
+               %{"key" => "ISBN-10", "value" => "1234567890"}
+             ]
+           } = conn |> Phoenix.ConnTest.json_response(:ok)
   end
 
   test "GET /api/books/download/1 success", %{conn: conn} do
@@ -65,11 +94,11 @@ defmodule BookBankWeb.BooksControllerTest do
     assert {"content-disposition", "inline"} in conn.resp_headers
   end
 
-  test "POST /api/books", %{conn: conn} do
+  test "POST /api/books success", %{conn: conn} do
     expect(BookBank.MockDatabase, :create_book, fn "Test Title", stream, %{} ->
       contents = Enum.join(stream)
       assert contents == "abcde"
-      {:ok, %BookBank.Book{id: "1", title: "Test Title", metadata: %{}}}
+      {:ok, %BookBank.Book{id: "1", size: 5, title: "Test Title", metadata: %{}}}
     end)
 
     conn =
@@ -79,6 +108,56 @@ defmodule BookBankWeb.BooksControllerTest do
         "book" => {"abcde", filename: "test.pdf", content_type: "application/pdf"}
       })
 
-    assert conn.status === 201
+    assert %{"id" => "1"} = conn |> Phoenix.ConnTest.json_response(:created)
+  end
+
+  test "PUT /api/books/metadata/1 success", %{conn: conn} do
+    expect(BookBank.MockDatabase, :update_book, fn "1", list ->
+      assert list[:set_title] === "New Title"
+
+      assert list[:replace_metadata] === [
+               %{"key" => "Author", "value" => "Dr. Seuss"},
+               %{"key" => "ISBN-13", "value" => "1234567890-123"}
+             ]
+
+      :ok
+    end)
+
+    conn =
+      with_token(conn, "user", ["librarian"])
+      |> json_req(&put/3, "/api/books/metadata/1", %{
+        "title" => "New Title",
+        "metadata" => [
+          %{"key" => "Author", "value" => "Dr. Seuss"},
+          %{"key" => "ISBN-13", "value" => "1234567890-123"}
+        ]
+      })
+
+    assert %{} = conn |> Phoenix.ConnTest.json_response(:ok)
+  end
+
+  test "PATCH /api/books/metadata/1 success", %{conn: conn} do
+    expect(BookBank.MockDatabase, :update_book, fn "1", list ->
+      groups = list |> Enum.group_by(fn {k, v} -> k end, fn {k, v} -> v end)
+      assert list[:set_title] === "New Title"
+
+      assert list[:replace_metadata] === [
+               %{"key" => "Author", "value" => "Dr. Seuss"},
+               %{"key" => "ISBN-13", "value" => "1234567890-123"}
+             ]
+
+      :ok
+    end)
+
+    conn =
+      with_token(conn, "user", ["librarian"])
+      |> json_req(&patch/3, "/api/books/metadata/1", %{
+        "title" => "New Title",
+        "add" => %{
+          "Rating" => "4.77",
+          "Test" => "Value"
+        },
+        "remove" => []
+      })
   end
 end
