@@ -64,14 +64,8 @@ defmodule BookBank.MongoAuth do
         {:set_roles, roles} ->
           obj_mutate_selector.("$set", "roles", [], fn _ -> roles end)
 
-        {:add_role, role} ->
-          obj_mutate_selector.("$addToSet", "roles", [], &[role | &1])
-
         {:add_roles, roles} ->
           obj_mutate_selector.("$addToSet", "roles", [], &(roles ++ &1))
-
-        {:remove_role, role} ->
-          obj_mutate_selector.("$pullAll", "roles", [], &[role | &1])
 
         {:remove_roles, roles} ->
           obj_mutate_selector.("$pullAll", "roles", [], &(roles ++ &1))
@@ -88,6 +82,18 @@ defmodule BookBank.MongoAuth do
   end
 
   def update_user(username, updates) do
+    set = if updates[:password] !== nil do
+      true = updates[:password] |> is_binary()
+      %{"$set" => updates[:password]}
+    else
+      %{}
+    end
+
+    push = if updates[:add_roles] !== nil do
+      ar = updates[:add_roles]
+      true = ar |> Enum.all?(&is_binary/1)
+    end
+
     obj = update(updates)
 
     case Mongo.update_one(:mongo, "users", %{username: username}, obj, write_concern: BookBank.Utils.Mongo.write_concern_majority()) do

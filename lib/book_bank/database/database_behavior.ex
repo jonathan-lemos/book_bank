@@ -16,9 +16,9 @@ defmodule BookBank.DatabaseBehavior do
               update ::
                 list(
                   {:replace_metadata,
-                   %{String.t() => String.t()}
-                   | {:remove, String.t()}
-                   | {:update, String.t(), String.t()}}
+                   %{String.t() => String.t()}}
+                   | {:remove, list(String.t())}
+                   | {:update, %{String.t() => String.t()}}
                    | {:set_title, String.t()}
                 )
             ) :: :ok | {:error, :does_not_exist | String.t()}

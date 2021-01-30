@@ -149,7 +149,7 @@ defmodule BookBankWeb.AccountsControllerTest do
   end
 
   test "PATCH /api/accounts/users/roles/user1 success", %{conn: conn} do
-    expect(BookBank.MockAuth, :update_user, fn "user1", [add_role: "admin", remove_role: "librarian"] ->
+    expect(BookBank.MockAuth, :update_user, fn "user1", [add_roles: ["admin"], remove_roles: ["librarian"]] ->
       :ok
     end)
 

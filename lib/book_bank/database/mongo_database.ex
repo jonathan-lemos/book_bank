@@ -1,6 +1,14 @@
 defmodule BookBank.MongoDatabase do
   @behaviour BookBank.DatabaseBehavior
 
+  def init() do
+    Mongo.create_indexes(:mongo, "books", [
+      [[key: [metadata: [key: 1]], unique: true]]
+    ])
+
+    Mongo.create_indexes(:mongo, "users", [[key: [username: 1], unique: true]])
+  end
+
   defp create_file(filename, file_stream, bucket_name \\ "fs") do
     bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
     upload_stream = Mongo.GridFs.Upload.open_upload_stream(bucket, filename)
@@ -41,6 +49,8 @@ defmodule BookBank.MongoDatabase do
 
   def create_book(title, body, metadata) do
     {:ok, id, size} = create_file("#{title}.pdf", body)
+
+    metadata = metadata |> Enum.map(fn {k, v} -> %{"key" => k, "value" => v} end)
 
     doc = %{
       title: title,
@@ -149,40 +159,30 @@ defmodule BookBank.MongoDatabase do
     end
   end
 
-  def update(set, push, pull, []) do
-    {set, push, pull}
-  end
-
-  def update(set, push, pull, [head | tail]) do
-    case head do
-      {:remove, k} ->
-        update(set, push, [k | pull], tail)
-
-      {:update, k, v} ->
-        update(set, [[k, v] | push], pull, tail)
-
-      {:replace_metadata, m} ->
-        update(%{set | metadata: m}, push, pull, tail)
-
-      {:set_title, title} ->
-        update(%{set | title: title}, push, pull, tail)
-    end
-  end
-
-  def update(updates) do
-    update(%{}, [], [], updates)
-  end
-
   def update_book(id_string, updates) do
     with_object_id(id_string, fn id ->
-      {set, push, pull} = update(updates)
+      {set, push, pull} =
+        if updates[:replace_metadata] do
+          {updates[:replace_metadata], [], []}
+        else
+          push_map = updates[:update] || %{}
+
+          pull_list =
+            (updates[:remove] || []) |> Enum.filter(fn e -> not Map.has_key?(push_map, e) end)
+
+          true = pull_list |> Enum.all?(&is_binary/1)
+
+          {[], (updates[:update] || %{}) |> BookBank.Utils.Mongo.kvpmap_to_kvplist(), pull_list}
+        end
 
       obj = %{
         "$set": set,
         "$addToSet": %{
-          metadata: push
+          metadata: %{
+            "$each": push
+          }
         },
-        "$pull": %{
+        "$pullAll": %{
           metadata: pull
         }
       }

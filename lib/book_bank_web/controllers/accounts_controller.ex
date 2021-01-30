@@ -112,7 +112,7 @@ defmodule BookBankWeb.AccountsController do
   defp add_user_roles_list(list) when is_list(list) do
     if Enum.all?(list, &is_binary/1) do
       if Enum.all?(list, &(&1 in BookBank.AuthBehavior.roles())) do
-        {:ok, list |> Enum.map(&{:add_role, &1})}
+        {:ok, {:add_roles, list}}
       else
         {:error,
          "The following contents of 'add' are not valid roles: #{
@@ -130,7 +130,7 @@ defmodule BookBankWeb.AccountsController do
 
   defp remove_user_roles_list(list) when is_list(list) do
     if Enum.all?(list, &is_binary/1) do
-      {:ok, list |> Enum.map(&{:remove_role, &1})}
+      {:ok, {:remove_roles, list}}
     else
       {:error, "The contents of 'remove' must all be strings."}
     end
@@ -193,7 +193,7 @@ defmodule BookBankWeb.AccountsController do
           with {:ok, add} <- add_user_roles_list(add),
                {:ok, remove} <-
                  remove_user_roles_list(remove) do
-            case @auth_service.update_user(user, add ++ remove) do
+            case @auth_service.update_user(user, [add, remove]) do
               :ok ->
                 {:ok, :ok}
 

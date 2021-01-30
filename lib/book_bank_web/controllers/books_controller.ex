@@ -239,18 +239,18 @@ defmodule BookBankWeb.BooksController do
           {:error, "'title' must be a string."}
 
         {"add", add} when is_map(add) ->
-          Enum.reduce(add, [], fn
-            _, {:error, s} -> {:error, s}
-            {k, v}, acc when is_binary(k) and is_binary(v) -> [{:update, k, v} | acc]
-            _, _ -> {:error, "'metadata' values must all be strings"}
-          end) ++ acc
+          if Enum.all?(add, fn {k, v} -> is_binary(k) and is_binary(v) end) do
+            [{:update, add} | acc]
+          else
+            {:error, "All metadata values must be strings"}
+          end
 
         {"add", add} when is_list(add) ->
-          Enum.reduce(add, [], fn
-            _, {:error, s} -> {:error, s}
-            %{"key" => k, "value" => v}, acc when is_binary(k) and is_binary(v) -> [{:update, k, v} | acc]
-            _, _ -> {:error, "'metadata' list values must all be { key: string, value: string }"}
-          end) ++ acc
+            if Enum.all?(add, fn
+              %{"key" => k, "value" => v} when is_binary(k) and is_binary(v) -> true
+            _ -> false end) do
+              [{:update, add |> Enum.map(fn %{"key" => k, "value" => v} -> {k, v} end) |> Map.new()} | acc]
+            end
 
         {"add", _} ->
           {:error, "'add' must be { [string]: string }"}
