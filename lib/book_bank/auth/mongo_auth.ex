@@ -43,48 +43,10 @@ defmodule BookBank.MongoAuth do
     end
   end
 
-  defp update(obj, []) do
-    obj
-  end
-
-  defp update(obj, [head | tail]) do
-    # the func takes obj[key][selector] and outputs its new value
-    obj_mutate_selector = fn selector, key, default, func ->
-      selector_map = Map.get(obj, selector, %{})
-      key_obj = Map.get(selector_map, key, default)
-
-      new_key_obj = func.(key_obj)
-      new_selector_map = Map.put(selector_map, key, new_key_obj)
-
-      Map.put(obj, selector, new_selector_map)
-    end
-
-    new_obj =
-      case head do
-        {:set_roles, roles} ->
-          obj_mutate_selector.("$set", "roles", [], fn _ -> roles end)
-
-        {:add_roles, roles} ->
-          obj_mutate_selector.("$addToSet", "roles", [], &(roles ++ &1))
-
-        {:remove_roles, roles} ->
-          obj_mutate_selector.("$pullAll", "roles", [], &(roles ++ &1))
-
-        {:password, pw} ->
-          obj_mutate_selector.("$set", "password", "", fn _ -> Argon2.hash_pwd_salt(pw) end)
-      end
-
-    update(new_obj, tail)
-  end
-
-  defp update(updates) do
-    update(%{}, updates)
-  end
-
   def update_user(username, updates) do
     set = if updates[:password] !== nil do
       true = updates[:password] |> is_binary()
-      %{"$set" => updates[:password]}
+      %{"$set" => %{"password" => updates[:password]}}
     else
       %{}
     end
@@ -92,9 +54,20 @@ defmodule BookBank.MongoAuth do
     push = if updates[:add_roles] !== nil do
       ar = updates[:add_roles]
       true = ar |> Enum.all?(&is_binary/1)
+      %{"$addToSet" => %{"$each" => %{"roles" => ar}}}
+    else
+      %{}
     end
 
-    obj = update(updates)
+    pull = if updates[:remove_roles] !== nil do
+      rr = updates[:remove_roles] |> Enum.filter(&(&1 not in push))
+      true = rr |> Enum.all?(&is_binary/1)
+      %{"$pullAll" => %{"roles" => rr}}
+    else
+      %{}
+    end
+
+    obj = Enum.reduce([set, push, pull], &BookBank.Utils.Mongo.object_merge/2)
 
     case Mongo.update_one(:mongo, "users", %{username: username}, obj, write_concern: BookBank.Utils.Mongo.write_concern_majority()) do
       {:ok, %Mongo.UpdateResult{acknowledged: true, matched_count: n}} when n > 0 ->

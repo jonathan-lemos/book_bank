@@ -219,6 +219,10 @@ defmodule BookBankWeb.Utils do
       end
     rescue
       e ->
+        if Application.get_env(:book_bank, :testing) do
+          Kernel.reraise e, __STACKTRACE__
+        end
+
         conn
         |> Plug.Conn.put_status(:internal_server_error)
         |> Phoenix.Controller.json(

@@ -159,7 +159,7 @@ defmodule BookBankWeb.BooksController do
   def put_metadata_params_update_list([head | tail], acc) do
     case head do
       {"title", title} when is_binary(title) ->
-        put_metadata_params_update_list(tail, [{:set_title, title} | acc])
+        put_metadata_params_update_list(tail, [{:update_title, title} | acc])
 
       {"title", _} ->
         {:error, "'title' must be a string"}
@@ -170,7 +170,7 @@ defmodule BookBankWeb.BooksController do
              _ -> false
            end) do
           put_metadata_params_update_list(tail, [
-            {:replace_metadata,
+            {:set_metadata,
              metadata |> Enum.map(fn {k, v} -> %{"key" => k, "value" => v} end)}
             | acc
           ])
@@ -183,7 +183,7 @@ defmodule BookBankWeb.BooksController do
              %{"key" => key, "value" => value} when is_binary(key) and is_binary(value) -> true
              _ -> false
            end) do
-          put_metadata_params_update_list(tail, [{:replace_metadata, metadata} | acc])
+          put_metadata_params_update_list(tail, [{:set_metadata, metadata} | acc])
         end
 
       {"metadata", _} ->
@@ -233,14 +233,14 @@ defmodule BookBankWeb.BooksController do
     acc =
       case head do
         {"title", title} when is_binary(title) ->
-          [{:set_title, title} | acc]
+          [{:update_title, title} | acc]
 
         {"title", _} ->
           {:error, "'title' must be a string."}
 
         {"add", add} when is_map(add) ->
           if Enum.all?(add, fn {k, v} -> is_binary(k) and is_binary(v) end) do
-            [{:update, add} | acc]
+            [{:update_metadata, add} | acc]
           else
             {:error, "All metadata values must be strings"}
           end
@@ -249,7 +249,7 @@ defmodule BookBankWeb.BooksController do
             if Enum.all?(add, fn
               %{"key" => k, "value" => v} when is_binary(k) and is_binary(v) -> true
             _ -> false end) do
-              [{:update, add |> Enum.map(fn %{"key" => k, "value" => v} -> {k, v} end) |> Map.new()} | acc]
+              [{:update_metadata, add |> Enum.map(fn %{"key" => k, "value" => v} -> {k, v} end) |> Map.new()} | acc]
             end
 
         {"add", _} ->
@@ -257,7 +257,7 @@ defmodule BookBankWeb.BooksController do
 
         {"remove", remove} when is_list(remove) ->
           if Enum.all?(remove, &is_binary/1) do
-            Enum.map(remove, &({:remove, &1})) ++ acc
+           [{:remove, remove} | acc]
           end
 
         {"remove", _} ->
@@ -282,6 +282,7 @@ defmodule BookBankWeb.BooksController do
       obj =
         with {:ok, update_list} <- patch_metadata_params_update_list(params) do
           case @database_service.update_book(id, update_list) do
+            :ok -> {:ok, :ok}
             {:error, :does_not_exist} -> {:error, :not_found, "No such book with id '#{id}'."}
             {:error, str} -> {:error, :internal_server_error, str}
           end

@@ -13,6 +13,8 @@ config :book_bank, BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.MockJwt
 config :book_bank, BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.MockUserWhitelist
 config :book_bank, BookBankWeb.Utils.ChunkBehavior, BookBankWeb.Utils.MockChunk
 
+config :book_bank, :testing, true
+
 config :book_bank, BookBankWeb.Utils.Jwt,
   secret: "hunter2"
 

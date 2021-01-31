@@ -1,12 +1,15 @@
 defmodule BookBank.MongoDatabase do
   @behaviour BookBank.DatabaseBehavior
 
+  @dialyzer {:no_contracts, :"init/0"}
   def init() do
     Mongo.create_indexes(:mongo, "books", [
       [[key: [metadata: [key: 1]], unique: true]]
     ])
 
     Mongo.create_indexes(:mongo, "users", [[key: [username: 1], unique: true]])
+
+    :ok
   end
 
   defp create_file(filename, file_stream, bucket_name \\ "fs") do
@@ -96,7 +99,7 @@ defmodule BookBank.MongoDatabase do
           "title" => title,
           "metadata" => metadata
         } = doc
-        when is_binary(id) and is_binary(title) and is_map(metadata) ->
+        when is_binary(id) and is_binary(title) and is_list(metadata) ->
           {:ok, doc}
 
         %{} ->
@@ -160,34 +163,33 @@ defmodule BookBank.MongoDatabase do
   end
 
   def update_book(id_string, updates) do
-    with_object_id(id_string, fn id ->
-      {set, push, pull} =
-        if updates[:replace_metadata] do
-          {updates[:replace_metadata], [], []}
-        else
-          push_map = updates[:update] || %{}
+    with {:ok, %{"_id" => id, "title" => title, "metadata" => metadata}} = document
+         when is_binary(title) and is_list(metadata) <-
+           get_document(id_string) do
 
-          pull_list =
-            (updates[:remove] || []) |> Enum.filter(fn e -> not Map.has_key?(push_map, e) end)
+      if not BookBank.Utils.Mongo.is_kvplist(metadata) do
+        raise ArgumentError, message: "The database entry for #{id_string} is malformed."
+      end
 
-          true = pull_list |> Enum.all?(&is_binary/1)
+      remove = (updates[:remove_roles] || []) |> MapSet.new()
 
-          {[], (updates[:update] || %{}) |> BookBank.Utils.Mongo.kvpmap_to_kvplist(), pull_list}
-        end
+      metadata =
+        metadata
+        |> Enum.filter(fn %{"key" => k} -> remove |> MapSet.member?(k) |> Kernel.not() end)
 
-      obj = %{
-        "$set": set,
-        "$addToSet": %{
-          metadata: %{
-            "$each": push
-          }
-        },
-        "$pullAll": %{
-          metadata: pull
-        }
-      }
+      add = updates[:update_roles] || %{}
 
-      case Mongo.update_many(:mongo, "books", %{_id: BSON.ObjectId.decode!(id)}, obj) do
+      metadata =
+        metadata
+        |> BookBank.Utils.Mongo.kvplist_to_kvpmap!()
+        |> Map.merge(add)
+        |> BookBank.Utils.Mongo.kvpmap_to_kvplist!()
+
+      title = updates[:update_title] || title
+
+      document = document |> Map.merge(%{"title" => title, "metadata" => metadata})
+
+      case Mongo.replace_one(:mongo, "books", %{_id: id}, document) do
         {:ok, %Mongo.UpdateResult{acknowledged: true}} ->
           :ok
 
@@ -197,7 +199,7 @@ defmodule BookBank.MongoDatabase do
         {:error, error} ->
           {:error, error.message}
       end
-    end)
+    end
   end
 
   def delete_book(id_string) do

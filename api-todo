@@ -66,7 +66,7 @@ POST /api/books
 
 PUT /api/books/metadata/:id
 	requires: librarian
-	input: { title: string, metadata: { key: string, value: string }[] | { [string]: string } }
+	input: { title?: string, metadata?: { key: string, value: string }[] | { [string]: string } }
 	output: { status: number, response: string }
 
 PATCH /api/books/metadata/:id

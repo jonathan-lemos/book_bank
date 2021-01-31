@@ -39,11 +39,25 @@ defmodule BookBank.Utils.Mongo do
     end
   end
 
+  def kvpmap_to_kvplist!(map) do
+    case kvplist_to_kvpmap(map) do
+      {:ok, list} -> list
+      :error -> raise ArgumentError, message: "The argument was not a %{String.t() => String.t()}"
+    end
+  end
+
   def kvplist_to_kvpmap(list) do
     if is_kvplist(list) do
       {:ok, list |> Map.new(fn %{"key" => k, "value" => v} -> {k, v} end)}
     else
       :error
+    end
+  end
+
+  def kvplist_to_kvpmap!(list) do
+    case kvplist_to_kvpmap(list) do
+      {:ok, map} -> map
+      :error -> raise ArgumentError, message: "The argument was not a key-value-pair list."
     end
   end
 

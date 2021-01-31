@@ -15,11 +15,11 @@ defmodule BookBank.DatabaseBehavior do
               id :: String.t(),
               update ::
                 list(
-                  {:replace_metadata,
+                  {:set_metadata,
                    %{String.t() => String.t()}}
-                   | {:remove, list(String.t())}
-                   | {:update, %{String.t() => String.t()}}
-                   | {:set_title, String.t()}
+                   | {:remove_metadata, list(String.t())}
+                   | {:update_metadata, %{String.t() => String.t()}}
+                   | {:update_title, String.t()}
                 )
             ) :: :ok | {:error, :does_not_exist | String.t()}
   @callback delete_book(id :: String.t()) :: :ok | {:error, :does_not_exist | String.t()}

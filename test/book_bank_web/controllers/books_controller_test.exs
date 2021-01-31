@@ -113,9 +113,9 @@ defmodule BookBankWeb.BooksControllerTest do
 
   test "PUT /api/books/metadata/1 success", %{conn: conn} do
     expect(BookBank.MockDatabase, :update_book, fn "1", list ->
-      assert list[:set_title] === "New Title"
+      assert list[:update_title] === "New Title"
 
-      assert list[:replace_metadata] === [
+      assert list[:set_metadata] === [
                %{"key" => "Author", "value" => "Dr. Seuss"},
                %{"key" => "ISBN-13", "value" => "1234567890-123"}
              ]
@@ -138,13 +138,14 @@ defmodule BookBankWeb.BooksControllerTest do
 
   test "PATCH /api/books/metadata/1 success", %{conn: conn} do
     expect(BookBank.MockDatabase, :update_book, fn "1", list ->
-      groups = list |> Enum.group_by(fn {k, v} -> k end, fn {k, v} -> v end)
-      assert list[:set_title] === "New Title"
+      assert list[:update_title] === "New Title"
 
-      assert list[:replace_metadata] === [
-               %{"key" => "Author", "value" => "Dr. Seuss"},
-               %{"key" => "ISBN-13", "value" => "1234567890-123"}
-             ]
+      assert list[:update_metadata] === %{
+          "Rating" => "4.77",
+          "Test" => "Value"
+        }
+
+      assert list[:remove] === ["Author", "ISBN-10"]
 
       :ok
     end)
@@ -157,7 +158,9 @@ defmodule BookBankWeb.BooksControllerTest do
           "Rating" => "4.77",
           "Test" => "Value"
         },
-        "remove" => []
+        "remove" => ["Author", "ISBN-10"]
       })
+
+    assert %{} = conn |> Phoenix.ConnTest.json_response(:ok)
   end
 end
