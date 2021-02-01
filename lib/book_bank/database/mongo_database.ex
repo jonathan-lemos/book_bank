@@ -1,17 +1,6 @@
 defmodule BookBank.MongoDatabase do
   @behaviour BookBank.DatabaseBehavior
 
-  @dialyzer {:no_contracts, :"init/0"}
-  def init() do
-    Mongo.create_indexes(:mongo, "books", [
-      [[key: [metadata: [key: 1]], unique: true]]
-    ])
-
-    Mongo.create_indexes(:mongo, "users", [[key: [username: 1], unique: true]])
-
-    :ok
-  end
-
   defp create_file(filename, file_stream, bucket_name \\ "fs") do
     bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
     upload_stream = Mongo.GridFs.Upload.open_upload_stream(bucket, filename)

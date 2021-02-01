@@ -16,11 +16,11 @@ defmodule BookBank.MongoAuth do
   end
 
   def create_user(username, password, roles) do
-    roles = roles |> Enum.filter(fn x -> x in BookBank.Auth.roles() end)
+    roles = roles |> Enum.filter(fn x -> x in BookBank.AuthBehavior.roles end)
 
     user = %{
       username: username,
-      password: password,
+      password: password |> Argon2.hash_pwd_salt(),
       roles: roles
     }
 
@@ -34,9 +34,11 @@ defmodule BookBank.MongoAuth do
   end
 
   def get_user(username) do
-    case Mongo.find_one(:mongo, "users", %{username: username}, read_concern: "majority") do
-      %{username: un, password: _, roles: r} ->
+    case Mongo.find_one(:mongo, "users", %{username: username}, read_concern: BookBank.Utils.Mongo.read_concern_majority()) do
+      %{"username" => un, "password" => _, "roles" => r} ->
         {:ok, %BookBank.User{username: un, roles: r}}
+
+      {:error, %Mongo.Error{message: message}} -> {:error, message}
 
       nil ->
         {:error, :does_not_exist}

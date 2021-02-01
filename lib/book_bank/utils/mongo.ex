@@ -1,6 +1,23 @@
 defmodule BookBank.Utils.Mongo do
+  @dialyzer {:no_contracts, :"init/0"}
+  def init() do
+    Mongo.create_indexes(:mongo, "books", [
+      [[key: [metadata: [key: 1]], unique: true]]
+    ])
+
+    Mongo.create_indexes(:mongo, "users", [[key: [username: 1], unique: true]])
+
+    :ok
+  end
+
   @doc """
-  A write concern ensuring that at a majority of the nodes have acknowledged the write.
+  A read concern ensuring that a majority of the nodes have acknowledged the changes sent.
+  """
+  def read_concern_majority() do
+    %{level: "majority"}
+  end
+  @doc """
+  A write concern ensuring that a majority of the nodes have acknowledged the write.
   """
   def write_concern_majority(timeout_ms \\ 10000) when timeout_ms >= 0 do
     %{w: "majority", j: true, wtimeout: timeout_ms}

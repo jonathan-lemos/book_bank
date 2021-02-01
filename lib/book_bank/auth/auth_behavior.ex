@@ -20,6 +20,6 @@ defmodule BookBank.AuthBehavior do
   @callback users_with_role(role :: String.t()) :: {:ok, list(BookBank.User.t())} | {:error, String.t()}
 
   def roles() do
-    ["admin", "librarian"]
+    ["admin", "librarian", "plebian"]
   end
 end

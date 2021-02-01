@@ -163,4 +163,14 @@ defmodule BookBankWeb.BooksControllerTest do
 
     assert %{} = conn |> Phoenix.ConnTest.json_response(:ok)
   end
+
+  test "DELETE /api/books/1 success", %{conn: conn} do
+    expect(BookBank.MockDatabase, :delete_book, fn "1" -> :ok end)
+
+    conn =
+      with_token(conn, "user", ["librarian"])
+      |> delete("/api/books/1")
+
+    assert %{} = conn |> json_response(:ok)
+  end
 end

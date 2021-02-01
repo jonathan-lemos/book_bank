@@ -13,6 +13,9 @@ config :book_bank, BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.MockJwt
 config :book_bank, BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.MockUserWhitelist
 config :book_bank, BookBankWeb.Utils.ChunkBehavior, BookBankWeb.Utils.MockChunk
 
+config :book_bank, BookBank.MongoDatabase,
+  url: System.get_env("MONGO_TEST_CONNECTION_URL") || "mongodb://localhost:27017/test"
+
 config :book_bank, :testing, true
 
 config :book_bank, BookBankWeb.Utils.Jwt,

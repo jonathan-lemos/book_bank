@@ -145,13 +145,15 @@ defmodule BookBankWeb.Utils do
   end
 
   defp download_opts(conn, [{key, value} | tail]) do
-    case key do
+    conn = case key do
       :content_type -> conn |> Plug.Conn.put_resp_content_type(value)
       :disposition -> case value do
         :inline -> conn |> Plug.Conn.put_resp_header("content-disposition", "inline")
         {:attachment, filename} when is_binary(filename) -> conn |> Plug.Conn.put_resp_header("content-disposition", "attachment; filename=\"#{URI.encode(filename)}\"")
       end
     end
+
+    download_opts(conn, tail)
   end
 
   defp with_valid_opts({:ok, conn, extra}, func) do
