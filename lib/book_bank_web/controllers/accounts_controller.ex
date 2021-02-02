@@ -230,7 +230,7 @@ defmodule BookBankWeb.AccountsController do
   def put_user_password(conn, %{"username" => user, "password" => pw}) do
     BookBankWeb.Utils.with(conn, [authentication: [{:current_user, user}, "admin"]], fn conn, _extra ->
       obj =
-        case @auth_service.update_user(user, password: pw) do
+        case @auth_service.update_user(user, set_password: pw) do
           :ok ->
             @whitelist_service.delete(user)
             {:ok, :ok}

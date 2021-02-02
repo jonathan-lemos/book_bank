@@ -10,7 +10,7 @@ defmodule BookBank.AuthBehavior do
               username :: String.t(),
               update ::
                 list(
-                  {:password, String.t()}
+                  {:set_password, String.t()}
                   | {:add_roles, list(String.t())}
                   | {:remove_roles, list(String.t())}
                   | {:set_roles, list(String.t())}

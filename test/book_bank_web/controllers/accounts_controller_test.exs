@@ -164,7 +164,7 @@ defmodule BookBankWeb.AccountsControllerTest do
   end
 
   test "PUT /api/accounts/users/password/user1 success", %{conn: conn} do
-    expect(BookBank.MockAuth, :update_user, fn "user1", [password: "hunter2"] ->
+    expect(BookBank.MockAuth, :update_user, fn "user1", [set_password: "hunter2"] ->
       :ok
     end)
     expect(BookBank.Auth.MockUserWhitelist, :delete, fn "user1" -> :ok end)

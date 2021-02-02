@@ -66,6 +66,7 @@
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/ex2ms" />
       <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/ex2ms" />
       <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/briefly" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/briefly" />
     </content>
     <orderEntry type="jdk" jdkName="Elixir 1.11.0" jdkType="Elixir SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
