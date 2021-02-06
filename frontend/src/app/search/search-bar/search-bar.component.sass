@@ -1,5 +1,8 @@
+@import "frontend/src/styles/border"
 @import "frontend/src/styles/color"
 @import "frontend/src/styles/container"
+@import "frontend/src/styles/form"
+@import "frontend/src/styles/spacing"
 @import "frontend/src/styles/sizing"
 
 div.searchbar
@@ -16,7 +19,8 @@ div.searchbar
       @extend .mx-none
 
     & button
-      @extend .hover-accent
+      @extend .hover-glow
+      @extend .accent
 
 
   & > div.suggestions

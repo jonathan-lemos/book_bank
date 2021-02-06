@@ -1,3 +1,4 @@
+@import "border"
 @import "color"
 @import "spacing"
 
@@ -21,7 +22,8 @@ input[type=text], input[type=password]
     @extend .#{$name}
 
   &.hover-glow:hover
-    @extend .glow-#{$name}
+    @extend .glow
+    @extend .#{$name}
 
   &:disabled, &:disabled *
     color: $color-fg-muted

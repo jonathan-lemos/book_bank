@@ -1,0 +1,23 @@
+services:
+  book_bank:
+    build:
+      context: .
+    environment:
+      MIX_ENV: dev
+    ports:
+      - "4000:4000"
+    depends_on:
+      - elastic
+      - mongo
+      - mongo-connector
+  elastic:
+    image: elasticsearch:7.10.1
+    restart: always
+  mongo:
+    image: mongo:latest
+    restart: always
+  mongo-connector:
+    image: yeasy/mongo-connector:latest
+    depends_on:
+      - elastic
+      - mongo

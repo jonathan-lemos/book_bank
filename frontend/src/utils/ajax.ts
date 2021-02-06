@@ -62,10 +62,10 @@ export default function fetchProgress(url: string, params: FetchProgressParams, 
                 }
                 else {
                     try {
-                        resolve(new Failure({status: status, reason: xhr.responseText});
+                        resolve(new Failure({status: status, reason: xhr.responseText}));
                     }
                     catch (e) {
-                        resolve(new Failure({status: status, reason: null}))
+                        resolve(new Failure({status: status, reason: null}));
                     }
                 }
             }
