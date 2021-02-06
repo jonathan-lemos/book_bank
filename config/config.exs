@@ -21,6 +21,7 @@ config :book_bank, BookBank.AuthBehavior, BookBank.MongoAuth
 config :book_bank, BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.Jwt
 config :book_bank, BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.UserWhitelist
 config :book_bank, BookBankWeb.Utils.ChunkBehavior, BookBankWeb.Utils.Chunk
+config :book_bank, BookBank.SearchBehavior, BookBank.ElasticSearch
 
 config :book_bank, :testing, false
 

@@ -34,13 +34,14 @@ defmodule BookBank.Application do
          url: Application.get_env(:book_bank, BookBank.MongoDatabase)[:url],
          pool_size: 16}
       )
-
-    children = if Application.get_env(:book_bank, BookBank.Auth.UserWhitelistBehavior) == BookBank.Auth.UserWhitelist do
-      BookBank.Auth.UserWhitelist.init()
-      [{BookBank.Auth.UserWhitelistTTLService, [BookBankWeb.Utils.Jwt.Token.token_lifetime_seconds()]} | children]
-    else
-      children
-    end
+      |> add_if(
+        Application.get_env(:book_bank, BookBank.Auth.UserWhitelistBehavior) ===
+          BookBank.Auth.UserWhitelist,
+          %{
+            id: BookBank.Auth.UserWhitelist,
+            start: {BookBank.Auth.UserWhitelist, :start_link, ttl_seconds: BookBankWeb.Utils.Jwt.Token.token_lifetime_seconds()}
+          }
+      )
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

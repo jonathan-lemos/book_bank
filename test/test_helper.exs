@@ -4,6 +4,7 @@ Mox.defmock(BookBank.MockDatabase, for: BookBank.DatabaseBehavior)
 Mox.defmock(BookBankWeb.Utils.MockJwt, for: BookBankWeb.Utils.JwtBehavior)
 Mox.defmock(BookBank.Auth.MockUserWhitelist, for: BookBank.Auth.UserWhitelistBehavior)
 Mox.defmock(BookBankWeb.Utils.MockChunk, for: BookBankWeb.Utils.ChunkBehavior)
+Mox.defmock(BookBank.MockSearch, for: BookBank.SearchBehavior)
 
 # Mox.defmock(BookBankWeb.Utils.MockJwtTime, for: Joken.CurrentTime)
 # Mox.stub_with(BookBankWeb.Utils.MockJwtTime, Test.StubTime)
