@@ -24,7 +24,7 @@ export const routes: (Route & {
 ].map(x => ({...x, roles: x.roles as Roles, data: {roles: x.roles as Roles}, canActivate: [AuthService]}));
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes)],
+  imports: [RouterModule.forRoot(routes, { relativeLinkResolution: 'legacy' })],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }

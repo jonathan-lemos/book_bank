@@ -9,5 +9,6 @@ RUN mix deps.get
 
 FROM bitwalker/alpine-elixir:latest
 COPY --from=build . .
+RUN apk update && apk add --update imagemagick
 
 CMD ["mix", "phx.server"]
