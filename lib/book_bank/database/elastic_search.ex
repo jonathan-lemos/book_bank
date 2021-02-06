@@ -127,7 +127,7 @@ defmodule BookBank.ElasticSearch do
           {:error, msg}
       end
     else
-      {:error, e} -> {:error, :bad_request, e}
+      {:error, e} -> {:error, e}
     end
   end
 

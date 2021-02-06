@@ -29,4 +29,29 @@ defmodule BookBankWeb.SearchControllerTest do
 
     assert %{"results" => ^res} = conn |> json_response(:ok)
   end
+
+  test "/api/search/query/test?count=2&page=3 success", %{conn: conn} do
+    res = [
+        %{
+          "id" => "1",
+          "title" => "Green Eggs and Ham",
+          "metadata" => %{"main character" => "sam i am", "author" => "doctor seuss"}
+        },
+        %{
+          "id" => "2",
+          "title" => "Cat in the Hat",
+          "metadata" => %{"main character" => "cat", "author" => "dr seuss"}
+        }
+      ]
+
+    expect(BookBank.MockSearch, :search, fn "test", 2, 3 ->
+      {:ok, res}
+    end)
+
+    conn =
+      with_token(conn, "user")
+      |> get("/api/search/query/test?count=2&page=3")
+
+    assert %{"results" => ^res} = conn |> json_response(:ok)
+  end
 end

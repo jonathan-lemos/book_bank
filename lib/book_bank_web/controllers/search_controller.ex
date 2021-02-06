@@ -5,9 +5,14 @@ defmodule BookBankWeb.SearchController do
   def get_query(conn, %{"query" => query, "count" => count, "page" => page}) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
       obj =
-        case @search_service.search(query, count, page) do
-          {:ok, hits} -> {:ok, :ok, %{"results" => hits}}
-          {:error, e} -> {:error, :internal_server_error, e}
+        with {:ok, count} <- BookBankWeb.Validation.validate_integer(count, lower: 1),
+             {:ok, page} <- BookBankWeb.Validation.validate_integer(page, lower: 0) do
+          case @search_service.search(query, count, page) do
+            {:ok, hits} -> {:ok, :ok, %{"results" => hits}}
+            {:error, e} -> {:error, :internal_server_error, e}
+          end
+        else
+          {:error, e} -> {:error, :bad_request, e}
         end
 
       {conn, obj}

@@ -1,13 +1,12 @@
 defmodule BookBank.Auth.UserWhitelistTest do
   use ExUnit.Case, async: false
   import Mox
-  import Test.Utils
   import BookBank.Auth.UserWhitelist
 
   setup :verify_on_exit!
 
   setup do
-    {:ok, pid} = GenServer.start_link(BookBank.Auth.UserWhitelist, [ttl_seconds: 10], name: BookBank.Auth.UserWhitelist)
+    {:ok, _pid} = GenServer.start_link(BookBank.Auth.UserWhitelist, [ttl_seconds: 10], name: BookBank.Auth.UserWhitelist)
     Test.StubTime.set_current_time(0)
     on_exit(&uninit/0)
   end

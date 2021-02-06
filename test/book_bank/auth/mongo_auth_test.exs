@@ -1,7 +1,6 @@
 defmodule BookBank.MongoAuthTest do
   use ExUnit.Case, async: false
   import Mox
-  import Test.Utils
   import BookBank.MongoAuth
 
   setup :verify_on_exit!

@@ -6,7 +6,6 @@ defmodule BookBank.MongoAuth do
            read_concern: BookBank.Utils.Mongo.read_concern_majority()
          ) do
       %{"username" => un, "password" => pw, "roles" => roles} ->
-        IO.inspect(pw)
         if Argon2.verify_pass(password, pw) do
           {:ok, %BookBank.User{username: un, roles: roles}}
         else

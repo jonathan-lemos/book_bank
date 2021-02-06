@@ -102,9 +102,7 @@ defmodule BookBank.Auth.UserWhitelist do
   @impl true
   def insert(user, iat) do
     :mnesia.transaction(fn ->
-      :mnesia.write(
-        {current_table(), user, iat, iat + get_ttl()}
-      )
+      :mnesia.write({current_table(), user, iat, iat + get_ttl()})
     end)
     |> transaction_result()
   end
@@ -113,8 +111,6 @@ defmodule BookBank.Auth.UserWhitelist do
     case :mnesia.transaction(fn -> :mnesia.read({table, user}) end) |> transaction_result() do
       {:ok, [{^table, ^user, valid_beyond, valid_until}]} ->
         ct = @time_service.current_time()
-
-        IO.puts("#{Kernel.inspect(ct)}: #{valid_beyond} #{valid_until}")
 
         cond do
           iat !== valid_beyond ->
