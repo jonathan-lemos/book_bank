@@ -1,5 +1,7 @@
 defmodule BookBank.SearchBehavior do
   @moduledoc false
+  @callback insert_book(book :: BookBank.Book.t()) :: :ok | {:error, String.t()}
+  @callback update_book(new_book :: BookBank.Book.t()) :: :ok | {:error, String.t()}
   @callback search(query :: String.t(), count :: pos_integer(), page :: non_neg_integer()) ::
               {:ok,
                list(%{
