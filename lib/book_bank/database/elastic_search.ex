@@ -26,9 +26,9 @@ defmodule BookBank.ElasticSearch do
     end
   end
 
-  defp get_endpoint(endpoint, body) do
+  defp hit_endpoint(method, endpoint, body \\ nil) do
     with {:ok, json} <- Jason.encode(body) do
-      case HTTPoison.request(:get, es_url(endpoint), json, [
+      case HTTPoison.request(method, es_url(endpoint), json, [
              {"Accept", "application/json"},
              {"Content-Type", "application/json"}
            ]) do
@@ -102,7 +102,7 @@ defmodule BookBank.ElasticSearch do
          {:ok, page} <- BookBankWeb.Validation.validate_integer(page, lower: 0) do
       from = page * size
 
-      case get_endpoint("/_search", %{
+      case hit_endpoint(:get, "/_search", %{
              query: %{
                multi_match: %{
                  query: query,
@@ -133,7 +133,7 @@ defmodule BookBank.ElasticSearch do
 
   @impl true
   def search_count(query) do
-    case get_endpoint("/_count", %{
+    case hit_endpoint(:get, "/_count", %{
            query: %{
              multi_match: %{
                query: query,
@@ -147,6 +147,56 @@ defmodule BookBank.ElasticSearch do
 
       {:ok, obj} ->
         {:error, "Malformed response from Elasticsearch: #{Kernel.inspect(obj)}"}
+
+      {:error, e} ->
+        {:error, e}
+    end
+  end
+
+  @impl true
+  def insert_book(%BookBank.Book{id: id, title: title, metadata: metadata}) do
+    case hit_endpoint(:put, "/books/_create/#{id}", %{
+           "id" => id,
+           "title" => title,
+           "metadata" => metadata |> BookBank.Utils.Mongo.kvpmap_to_kvplist!()
+         }) do
+      {:ok, %{"result" => "created"}} ->
+        :ok
+
+      {:ok, e} ->
+        {:error, "Bad response from Elasticsearch: #{Kernel.inspect(e)}"}
+
+      {:error, e} ->
+        {:error, e}
+    end
+  end
+
+  @impl true
+  def update_book(%BookBank.Book{id: id, title: title, metadata: metadata}) do
+    case hit_endpoint(:put, "/books/_doc/#{id}", %{
+           "id" => id,
+           "title" => title,
+           "metadata" => metadata |> BookBank.Utils.Mongo.kvpmap_to_kvplist!()
+         }) do
+      {:ok, %{"result" => "updated"}} ->
+        :ok
+
+      {:ok, e} ->
+        {:error, "Bad response from Elasticsearch: #{Kernel.inspect(e)}"}
+
+      {:error, e} ->
+        {:error, e}
+    end
+  end
+
+  @impl true
+  def delete_book(id) do
+    case hit_endpoint(:delete, "/books/_doc/#{id}") do
+      {:ok, %{"result" => "deleted"}} ->
+        :ok
+
+      {:ok, e} ->
+        {:error, "Bad response from Elasticsearch: #{Kernel.inspect(e)}"}
 
       {:error, e} ->
         {:error, e}

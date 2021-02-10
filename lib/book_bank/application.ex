@@ -39,7 +39,7 @@ defmodule BookBank.Application do
           BookBank.Auth.UserWhitelist,
           %{
             id: BookBank.Auth.UserWhitelist,
-            start: {BookBank.Auth.UserWhitelist, :start_link, ttl_seconds: BookBankWeb.Utils.Jwt.Token.token_lifetime_seconds()}
+            start: {BookBank.Auth.UserWhitelist, :start_link, [[ttl_seconds: BookBankWeb.Utils.Jwt.Token.token_lifetime_seconds()]]}
           }
       )
 

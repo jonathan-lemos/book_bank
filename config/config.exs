@@ -16,17 +16,19 @@ config :book_bank, BookBankWeb.Endpoint,
   live_view: [signing_salt: "HLswLhK+"]
 
 # dependency injection baby
-config :book_bank, BookBank.DatabaseBehavior, BookBank.MongoDatabase
-config :book_bank, BookBank.AuthBehavior, BookBank.MongoAuth
-config :book_bank, BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.Jwt
-config :book_bank, BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.UserWhitelist
-config :book_bank, BookBankWeb.Utils.ChunkBehavior, BookBankWeb.Utils.Chunk
-config :book_bank, BookBank.SearchBehavior, BookBank.ElasticSearch
+config :book_bank, :services, [
+  {BookBank.DatabaseBehavior, BookBank.MongoDatabase},
+  {BookBank.AuthBehavior, BookBank.MongoAuth},
+  {BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.Jwt},
+  {BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.UserWhitelist},
+  {BookBankWeb.Utils.ChunkBehavior, BookBankWeb.Utils.Chunk},
+  {BookBank.SearchBehavior, BookBank.ElasticSearch},
+  {BookBank.ThumbnailBehavior, BookBank.ImageMagickThumbnail}
+]
 
 config :book_bank, :testing, false
 
-config :book_bank, BookBankWeb.Utils.Jwt.Token,
-  lifetime_seconds: 2 * 60 * 60
+config :book_bank, BookBankWeb.Utils.Jwt.Token, lifetime_seconds: 2 * 60 * 60
 
 config :book_bank, BookBank.MongoDatabase,
   url: System.get_env("MONGO_CONNECTION_URL") || "mongodb://localhost:27017/book_bank",

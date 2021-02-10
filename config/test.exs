@@ -6,21 +6,23 @@ config :book_bank, BookBankWeb.Endpoint,
   http: [port: 4002],
   server: false
 
-# dependency injection baby
-config :book_bank, BookBank.DatabaseBehavior, BookBank.MockDatabase
-config :book_bank, BookBank.AuthBehavior, BookBank.MockAuth
-config :book_bank, BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.MockJwt
-config :book_bank, BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.MockUserWhitelist
-config :book_bank, BookBankWeb.Utils.ChunkBehavior, BookBankWeb.Utils.MockChunk
-config :book_bank, BookBank.SearchBehavior, BookBank.MockSearch
-
 config :book_bank, BookBank.MongoDatabase,
   url: System.get_env("MONGO_TEST_CONNECTION_URL") || "mongodb://localhost:27017/test"
 
+# dependency injection baby
+config :book_bank, :services, [
+  {BookBank.DatabaseBehavior, BookBank.MockDatabase},
+  {BookBank.AuthBehavior, BookBank.MockAuth},
+  {BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.MockJwt},
+  {BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.MockUserWhitelist},
+  {BookBankWeb.Utils.ChunkBehavior, BookBankWeb.Utils.MockChunk},
+  {BookBank.SearchBehavior, BookBank.MockSearch},
+  {BookBank.ThumbnailBehavior, BookBank.MockThumbnail}
+]
+
 config :book_bank, :testing, true
 
-config :book_bank, BookBankWeb.Utils.Jwt,
-  secret: "hunter2"
+config :book_bank, BookBankWeb.Utils.Jwt, secret: "hunter2"
 
 # config :joken, :current_time_adapter, BookBankWeb.Utils.MockJwtTime
 config :joken, :current_time_adapter, Test.StubTime

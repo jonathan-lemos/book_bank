@@ -16,7 +16,7 @@ end
 
 defmodule BookBankWeb.Utils.Jwt do
   @behaviour BookBankWeb.Utils.JwtBehavior
-  @whitelist_behavior Application.get_env(:book_bank, BookBank.Auth.UserWhitelistBehavior)
+  @whitelist_behavior Application.get_env(:book_bank, :services)[BookBank.Auth.UserWhitelistBehavior]
   alias BookBankWeb.Utils.Jwt.Token, as: Token
 
   defp make_signer do

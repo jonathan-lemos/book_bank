@@ -1,6 +1,6 @@
 defmodule BookBankWeb.Utils do
-  @jwt_service Application.get_env(:book_bank, BookBankWeb.Utils.JwtBehavior)
-  @chunk_service Application.get_env(:book_bank, BookBankWeb.Utils.ChunkBehavior)
+  @jwt_service Application.get_env(:book_bank, :services)[BookBankWeb.Utils.JwtBehavior]
+  @chunk_service Application.get_env(:book_bank, :services)[BookBankWeb.Utils.ChunkBehavior]
 
   @type ok_status :: :ok | :created
   @type error_status ::

@@ -24,18 +24,3 @@ services:
     ports:
       - "27017:27017"
     restart: always
-    command: mongod --replSet rs0 --bind_ip 0.0.0.0
-  mongo-rs-initiator:
-    image: mongo:latest
-    command: mongo mongodb://mongo:27017 --eval 'rs.initiate();'
-    depends_on:
-      - mongo
-  mongo-connector:
-    image: yeasy/mongo-connector:latest
-    depends_on:
-      - elastic
-      - mongo
-      - mongo-rs-initiator
-    environment:
-      - MONGO=mongo
-      - ELASTICSEARCH=elastic

@@ -1,14 +1,11 @@
-FROM bitwalker/alpine-elixir:latest as build
+FROM bitwalker/alpine-elixir:latest
 
 COPY . .
-RUN apk update && apk add --update musl musl-dev musl-utils nodejs-npm build-base imagemagick
-RUN npm install
-RUN npm install -g --silent @angular/cli
-RUN ng build
-RUN mix deps.get
-
-FROM bitwalker/alpine-elixir:latest
-COPY --from=build . .
-RUN apk update && apk add --update imagemagick
+RUN apk update && \
+apk add --update musl musl-dev musl-utils nodejs-npm build-base imagemagick && \
+npm install && \
+npm install -g --silent @angular/cli && \
+ng build && \
+mix deps.get
 
 CMD ["mix", "phx.server"]

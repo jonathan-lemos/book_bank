@@ -1,7 +1,7 @@
 defmodule BookBankWeb.AccountsController do
-  @auth_service Application.get_env(:book_bank, BookBank.AuthBehavior)
-  @token_service Application.get_env(:book_bank, BookBankWeb.Utils.JwtBehavior)
-  @whitelist_service Application.get_env(:book_bank, BookBank.Auth.UserWhitelistBehavior)
+  @auth_service Application.get_env(:book_bank, :services)[BookBank.AuthBehavior]
+  @token_service Application.get_env(:book_bank, :services)[BookBankWeb.Utils.JwtBehavior]
+  @whitelist_service Application.get_env(:book_bank, :services)[BookBank.Auth.UserWhitelistBehavior]
 
   use BookBankWeb, :controller
 

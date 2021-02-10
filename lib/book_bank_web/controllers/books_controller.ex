@@ -1,7 +1,7 @@
 defmodule BookBankWeb.BooksController do
   use BookBankWeb, :controller
 
-  @database_service Application.get_env(:book_bank, BookBank.DatabaseBehavior)
+  @database_service Application.get_env(:book_bank, :services)[BookBank.DatabaseBehavior]
 
   def get_book_meta(conn, %{"id" => id}) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->

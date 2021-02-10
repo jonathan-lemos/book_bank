@@ -1,10 +1,7 @@
+ExUnit.configure(exclude: [:mongo])
 ExUnit.start()
-Mox.defmock(BookBank.MockAuth, for: BookBank.AuthBehavior)
-Mox.defmock(BookBank.MockDatabase, for: BookBank.DatabaseBehavior)
-Mox.defmock(BookBankWeb.Utils.MockJwt, for: BookBankWeb.Utils.JwtBehavior)
-Mox.defmock(BookBank.Auth.MockUserWhitelist, for: BookBank.Auth.UserWhitelistBehavior)
-Mox.defmock(BookBankWeb.Utils.MockChunk, for: BookBankWeb.Utils.ChunkBehavior)
-Mox.defmock(BookBank.MockSearch, for: BookBank.SearchBehavior)
+
+Application.get_env(:book_bank, :services) |> Enum.each(fn {behavior, mock} -> Mox.defmock(mock, for: behavior) end)
 
 # Mox.defmock(BookBankWeb.Utils.MockJwtTime, for: Joken.CurrentTime)
 # Mox.stub_with(BookBankWeb.Utils.MockJwtTime, Test.StubTime)

@@ -1,5 +1,7 @@
 defmodule BookBank.MongoDatabase do
   @behaviour BookBank.DatabaseBehavior
+  @search_service Application.get_env(:book_bank, :services)[BookBank.SearchBehavior]
+  @thumbnail_service Application.get_env(:book_bank, :services)[BookBank.ThumbnailBehavior]
 
   defp create_file(filename, file_stream, bucket_name \\ "fs") do
     bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
@@ -39,6 +41,7 @@ defmodule BookBank.MongoDatabase do
     end
   end
 
+  @impl true
   def create_book(title, body, metadata) do
     {:ok, id, size} = create_file("#{title}.pdf", body)
 
@@ -55,15 +58,28 @@ defmodule BookBank.MongoDatabase do
 
     case Mongo.insert_one(:mongo, "books", doc) do
       {:ok, %Mongo.InsertOneResult{acknowledged: true, inserted_id: doc_id}} ->
-        Task.start(fn -> generate_thumbnails(id) end)
+        book = %BookBank.Book{
+          id: BSON.ObjectId.encode!(doc_id),
+          title: title,
+          size: size,
+          metadata: metadata
+        }
 
-        {:ok,
-         %BookBank.Book{
-           id: BSON.ObjectId.encode!(doc_id),
-           title: title,
-           size: size,
-           metadata: metadata
-         }}
+        case @search_service.insert_book(book) do
+          :ok ->
+            {:ok,
+             %BookBank.Book{
+               id: BSON.ObjectId.encode!(doc_id),
+               title: title,
+               size: size,
+               metadata: metadata
+             }}
+          {:error, reason} ->
+            Mongo.delete_one(:mongo, "books", %{_id: doc_id})
+            {:error, reason}
+        end
+
+        Task.start(fn -> generate_thumbnails(id) end)
 
       {:ok, %Mongo.InsertOneResult{}} ->
         {:error, "Write was not successful"}
@@ -155,7 +171,6 @@ defmodule BookBank.MongoDatabase do
     with {:ok, %{"_id" => id, "title" => title, "metadata" => metadata}} = document
          when is_binary(title) and is_list(metadata) <-
            get_document(id_string) do
-
       if not BookBank.Utils.Mongo.is_kvplist(metadata) do
         raise ArgumentError, message: "The database entry for #{id_string} is malformed."
       end
@@ -245,10 +260,10 @@ defmodule BookBank.MongoDatabase do
       with {:ok, stream, _book} <-
              get_book_file(id_string),
            :ok <- stream |> Stream.into(File.stream!(pdf_path)) |> Stream.run(),
-           [:ok, :ok] <-
+           [{:ok, thumbnail}, {:ok, cover}] <-
              BookBank.Utils.Parallel.invoke([
-               fn -> pdf_thumbnail(pdf_path, cover_fn) end,
-               fn -> pdf_cover(pdf_path, cover_fn) end
+               fn -> @thumbnail_service.create(File.stream!(pdf_path), 300, 300) end,
+               fn -> @thumbnail_service.create(File.stream!(pdf_path), 1000, 1000) end
              ]),
            {:ok, thumb_id, _size} <- create_file(thumb_fn, File.stream!(thumb_fn), "thumb"),
            {:ok, cover_id, _size} <- create_file(cover_fn, File.stream!(cover_fn), "cover") do

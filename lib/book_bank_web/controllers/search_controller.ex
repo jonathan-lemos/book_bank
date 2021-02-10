@@ -1,6 +1,6 @@
 defmodule BookBankWeb.SearchController do
   use BookBankWeb, :controller
-  @search_service Application.get_env(:book_bank, BookBank.SearchBehavior)
+  @search_service Application.get_env(:book_bank, :services)[BookBank.SearchBehavior]
 
   def get_query(conn, %{"query" => query, "count" => count, "page" => page}) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
