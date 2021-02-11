@@ -41,17 +41,48 @@ defmodule BookBank.MongoDatabase do
     end
   end
 
+  defp upload_pdf_and_thumbnails(id, filename) do
+    case BookBank.Utils.Parallel.invoke([
+           fn -> create_file("#{id}.pdf", File.stream!(filename)) end,
+           fn ->
+             with {:ok, cover} <- @thumbnail_service.create(File.stream!(filename), 1000, 1000) do
+               create_file("#{id}.jpg", cover, "covers")
+             else
+               e -> e
+             end
+           end,
+           fn ->
+             with {:ok, thumb} <- @thumbnail_service.create(File.stream!(filename), 300, 300) do
+               create_file("#{id}.jpg", thumb, "thumbnails")
+             else
+               e -> e
+             end
+           end
+         ]) do
+      [{:ok, id, size}, {:ok, _id_cover, _size_cover}, {:ok, _id_thumb, _size_thumb}] ->
+        {:ok, id, size}
+
+      [_pdf_res, _cover_res, _thumb_res] = results ->
+        {:error,
+         results
+         |> Enum.zip(["Error uploading PDF: ", "Error uploading book cover: ", "Error uploading book thumbnail: "])
+         |> Enum.filter(&match?({{:error, _}, _}, &1))
+         |> Enum.map(fn {{:error, e}, prefix} -> prefix <> e end)
+         |> Enum.join(". ")}
+    end
+  end
+
   @impl true
   def create_book(title, body, metadata) do
-    {:ok, id, size} = create_file("#{title}.pdf", body)
-
-    metadata = metadata |> Enum.map(fn {k, v} -> %{"key" => k, "value" => v} end)
+    pdf_file = Briefly.create!()
+    body |> Stream.into(File.stream!(pdf_file)) |> Stream.run()
+    size = File.stat!(pdf_file).size
 
     doc = %{
       title: title,
-      metadata: metadata,
+      metadata: metadata |> BookBank.Utils.Mongo.kvpmap_to_kvplist!(),
       size: size,
-      body: id,
+      body: nil,
       cover: nil,
       thumb: nil
     }
@@ -67,13 +98,8 @@ defmodule BookBank.MongoDatabase do
 
         case @search_service.insert_book(book) do
           :ok ->
-            {:ok,
-             %BookBank.Book{
-               id: BSON.ObjectId.encode!(doc_id),
-               title: title,
-               size: size,
-               metadata: metadata
-             }}
+            {:ok, book}
+
           {:error, reason} ->
             Mongo.delete_one(:mongo, "books", %{_id: doc_id})
             {:error, reason}
@@ -121,6 +147,7 @@ defmodule BookBank.MongoDatabase do
     %BookBank.Book{id: id, size: size, title: title, metadata: metadata}
   end
 
+  @impl true
   def get_book_metadata(id_string) do
     case get_document(id_string) do
       {:ok, doc} ->
@@ -131,6 +158,7 @@ defmodule BookBank.MongoDatabase do
     end
   end
 
+  @impl true
   def get_book_cover(id_string) do
     with {:ok, %{"cover" => cover_id} = document} <- get_document(id_string) do
       case download_file(cover_id) do
@@ -143,6 +171,7 @@ defmodule BookBank.MongoDatabase do
     end
   end
 
+  @impl true
   def get_book_file(id_string) do
     with {:ok, %{"body" => body_id} = document} <- get_document(id_string) do
       case download_file(body_id) do
@@ -155,6 +184,7 @@ defmodule BookBank.MongoDatabase do
     end
   end
 
+  @impl true
   def get_book_thumb(id_string) do
     with {:ok, %{"thumb" => thumb_id} = document} <- get_document(id_string) do
       case download_file(thumb_id) do
@@ -167,6 +197,7 @@ defmodule BookBank.MongoDatabase do
     end
   end
 
+  @impl true
   def update_book(id_string, updates) do
     with {:ok, %{"_id" => id, "title" => title, "metadata" => metadata}} = document
          when is_binary(title) and is_list(metadata) <-
@@ -191,10 +222,21 @@ defmodule BookBank.MongoDatabase do
 
       title = updates[:update_title] || title
 
-      document = document |> Map.merge(%{"title" => title, "metadata" => metadata})
+      new_document = document |> Map.merge(%{"title" => title, "metadata" => metadata})
 
-      case Mongo.replace_one(:mongo, "books", %{_id: id}, document) do
-        {:ok, %Mongo.UpdateResult{acknowledged: true}} ->
+      case Mongo.replace_one(:mongo, "books", %{_id: id}, new_document) do
+        {:ok, %Mongo.UpdateResult{acknowledged: true, matched_count: n}} when n > 0 ->
+          new_book = doc_to_book(document)
+
+          case @search_service.update_book(new_book) do
+            :ok ->
+              :ok
+
+            {:error, e} ->
+              Mongo.replace_one(:mongo, "books", %{_id: id}, document)
+              {:error, e}
+          end
+
           :ok
 
         {:ok, %Mongo.UpdateResult{}} ->
@@ -206,6 +248,7 @@ defmodule BookBank.MongoDatabase do
     end
   end
 
+  @impl true
   def delete_book(id_string) do
     with_object_id(id_string, fn id ->
       case Mongo.delete_one(:mongo, "books", %{_id: id}) do
@@ -214,6 +257,8 @@ defmodule BookBank.MongoDatabase do
             ["fs", "thumbnails", "covers"]
             |> Enum.map(fn bucket -> fn -> delete_file(id, bucket) end end)
           )
+
+          @search_service.delete_book(id_string)
 
           :ok
 

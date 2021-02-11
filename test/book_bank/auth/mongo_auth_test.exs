@@ -30,7 +30,7 @@ defmodule BookBank.MongoAuthTest do
   end
 
   def assert_create_user(username, roles, password \\ "hunter2") do
-    assert {:ok, %BookBank.User{username: _username, roles: _roles}} =
+    assert {:ok, %BookBank.User{username: ^username, roles: ^roles}} =
              create_user(username, password, roles)
   end
 

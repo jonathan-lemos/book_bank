@@ -1,7 +1,7 @@
 defmodule BookBank.MongoDatabaseTest do
   use ExUnit.Case, async: false
   import Mox
-  import BookBank.MongoAuth
+  import BookBank.MongoDatabase
 
   @moduletag :mongo
 
@@ -29,59 +29,27 @@ defmodule BookBank.MongoDatabaseTest do
     end)
   end
 
-  def assert_create_user(username, roles, password \\ "hunter2") do
-    assert {:ok, %BookBank.User{username: _username, roles: _roles}} =
-             create_user(username, password, roles)
+  def assert_create_book(title, content, metadata \\ %{}) do
+    expect(BookBank.MockSearch, :insert_book, fn %BookBank.Book{title: ^title, metadata: ^metadata} -> :ok end)
+
+    len = String.length(content)
+    content_stream = [content] |> Stream.map(& &1)
+    assert {:ok, %BookBank.Book{title: ^title, size: ^len, metadata: ^metadata} = book} =
+             create_book(title, content_stream, metadata)
+
+    book
   end
 
-  def assert_get_user(username, roles) do
-    assert {:ok, %BookBank.User{username: ^username, roles: ^roles}} = get_user(username)
+  def assert_get_book_metadata(id, content, metadata) do
+    len = String.length(content)
+    assert {:ok, %BookBank.Book{id: ^id, size: ^len, metadata: ^metadata} = book} =
+             get_book_metadata(id)
+
+    book
   end
 
-  test "Can retrieve created user" do
-    assert_create_user("admin", ["admin"])
-    assert_get_user("admin", ["admin"])
-  end
-
-  test "Can authenticate created user" do
-    assert_create_user("admin", ["admin"], "hunter2")
-    assert {:ok, %BookBank.User{username: "admin", roles: ["admin"]}} = authenticate_user("admin", "hunter2")
-  end
-
-  test "Does not store raw password" do
-    assert_create_user("admin", ["admin"])
-
-    assert %{"password" => password} = Mongo.find_one(:mongo, "users", %{username: "admin"})
-    assert password !== "hunter2"
-  end
-
-  test "Update add roles" do
-    assert_create_user("pleb", ["plebian"])
-
-    assert :ok = update_user("pleb", add_roles: ["plebian", "librarian", "admin"])
-    assert_get_user("pleb", ["plebian", "librarian", "admin"])
-  end
-
-  test "Update remove roles" do
-    assert_create_user("pleb", ["plebian", "admin", "librarian"])
-
-    assert :ok = update_user("pleb", remove_roles: ["admin", "librarian"])
-    assert_get_user("pleb", ["plebian"])
-  end
-
-  test "Update add+remove roles" do
-    assert_create_user("pleb", ["admin", "librarian"])
-
-    assert :ok = update_user("pleb", remove_roles: ["admin"], add_roles: ["plebian"])
-    assert_get_user("pleb", ["librarian", "plebian"])
-  end
-
-  test "Update change password" do
-    assert_create_user("pleb", ["plebian"], "hunter2")
-
-    assert :ok = update_user("pleb", set_password: "hunter3")
-
-    assert {:ok, %BookBank.User{username: "pleb", roles: ["plebian"]}} =
-             authenticate_user("pleb", "hunter3")
+  test "Can retrieve created book" do
+    %BookBank.Book{id: id} = assert_create_book("Green Eggs and Ham", "sam", %{"Author" => "Dr. Seuss"})
+    assert_get_book_metadata(id, "sam", %{"Author" => "Dr. Seuss"})
   end
 end
