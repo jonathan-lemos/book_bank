@@ -3,72 +3,20 @@ defmodule BookBank.MongoDatabase do
   @search_service Application.get_env(:book_bank, :services)[BookBank.SearchBehavior]
   @thumbnail_service Application.get_env(:book_bank, :services)[BookBank.ThumbnailBehavior]
 
-  defp create_file(filename, file_stream, bucket_name \\ "fs") do
-    bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
-    upload_stream = Mongo.GridFs.Upload.open_upload_stream(bucket, filename)
+  alias BookBank.Utils.Mongo, as: Utils
 
-    size =
-      file_stream
-      |> Stream.into(upload_stream)
-      |> Enum.reduce(0, fn chunk, acc -> acc + byte_size(chunk) end)
-
-    id = upload_stream.id |> BSON.ObjectId.encode!()
-    {:ok, id, size}
-  end
-
-  defp download_file(id, bucket_name \\ "fs") do
-    bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
-
-    case Mongo.GridFs.Download.open_download_stream(bucket, id) do
-      {:ok, stream} -> {:ok, stream}
-      {:error, :not_found} -> {:error, :does_not_exist}
-      {:error, _} -> {:error, "Failed to fetch the document."}
-    end
-  end
-
-  defp delete_file(id, bucket_name \\ "fs") do
-    bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
-
-    case Mongo.GridFs.Bucket.delete(bucket, id) do
-      {:ok, %Mongo.DeleteResult{acknowledged: true, deleted_count: n}} when n > 0 ->
-        :ok
-
-      {:ok, %Mongo.DeleteResult{acknowledged: true, deleted_count: 0}} ->
-        {:error, :does_not_exist}
-
-      {:ok, %Mongo.DeleteResult{acknowledged: false}} ->
-        {:error, "The delete was not acknowledged."}
-    end
-  end
-
-  defp upload_pdf_and_thumbnails(id, filename) do
+  defp generate_thumbnails(filename) do
     case BookBank.Utils.Parallel.invoke([
-           fn -> create_file("#{id}.pdf", File.stream!(filename)) end,
            fn ->
-             with {:ok, cover} <- @thumbnail_service.create(File.stream!(filename), 1000, 1000) do
-               create_file("#{id}.jpg", cover, "covers")
-             else
-               e -> e
-             end
+             @thumbnail_service.create(File.stream!(filename), 1000, 1000)
            end,
            fn ->
-             with {:ok, thumb} <- @thumbnail_service.create(File.stream!(filename), 300, 300) do
-               create_file("#{id}.jpg", thumb, "thumbnails")
-             else
-               e -> e
-             end
+             @thumbnail_service.create(File.stream!(filename), 300, 300)
            end
          ]) do
-      [{:ok, id, size}, {:ok, _id_cover, _size_cover}, {:ok, _id_thumb, _size_thumb}] ->
-        {:ok, id, size}
-
-      [_pdf_res, _cover_res, _thumb_res] = results ->
-        {:error,
-         results
-         |> Enum.zip(["Error uploading PDF: ", "Error uploading book cover: ", "Error uploading book thumbnail: "])
-         |> Enum.filter(&match?({{:error, _}, _}, &1))
-         |> Enum.map(fn {{:error, e}, prefix} -> prefix <> e end)
-         |> Enum.join(". ")}
+      [{:ok, cover}, {:ok, thumb}] -> {:ok, cover, thumb}
+      [{:error, e}, _] -> {:error, e}
+      [_, {:error, e}] -> {:error, e}
     end
   end
 
@@ -81,85 +29,39 @@ defmodule BookBank.MongoDatabase do
     doc = %{
       title: title,
       metadata: metadata |> BookBank.Utils.Mongo.kvpmap_to_kvplist!(),
-      size: size,
-      body: nil,
-      cover: nil,
-      thumb: nil
+      size: size
     }
 
-    case Mongo.insert_one(:mongo, "books", doc) do
-      {:ok, %Mongo.InsertOneResult{acknowledged: true, inserted_id: doc_id}} ->
-        book = %BookBank.Book{
-          id: BSON.ObjectId.encode!(doc_id),
-          title: title,
-          size: size,
-          metadata: metadata
-        }
-
-        case @search_service.insert_book(book) do
-          :ok ->
-            {:ok, book}
-
-          {:error, reason} ->
-            Mongo.delete_one(:mongo, "books", %{_id: doc_id})
-            {:error, reason}
-        end
-
-        Task.start(fn -> generate_thumbnails(id) end)
-
-      {:ok, %Mongo.InsertOneResult{}} ->
-        {:error, "Write was not successful"}
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
-
-  defp with_object_id(id_string, func) do
-    case BSON.ObjectId.decode(id_string) do
-      {:ok, id} -> func.(id)
-      :error -> {:error, :does_not_exist}
-    end
-  end
-
-  defp get_document(id_string) do
-    with_object_id(id_string, fn id ->
-      case Mongo.find_one(:mongo, "books", %{_id: id}) do
-        %{
-          "_id" => id,
-          "title" => title,
-          "metadata" => metadata
-        } = doc
-        when is_binary(id) and is_binary(title) and is_list(metadata) ->
-          {:ok, doc}
-
-        %{} ->
-          Mongo.delete_many!(:mongo, "books", %{_id: id})
-          {:error, :does_not_exist}
-
-        _ ->
-          {:error, :does_not_exist}
+    with {:ok, cover, thumb} <- generate_thumbnails(pdf_file) do
+      case Utils.insert_with_files("books", doc, [
+             {["cover"], cover, "#{title}.jpg", "covers"},
+             {["thumbnail"], thumb, "#{title}.jpg", "thumbnails"},
+             {["body"], File.stream!(pdf_file, [], 4096), "#{title}.pdf", "files"}
+           ]) do
+        {:ok, id} -> {:ok, %BookBank.Book{id: id, title: title, metadata: metadata, size: size}}
+        {:error, e} -> {:error, e}
       end
-    end)
-  end
-
-  defp doc_to_book(%{"_id" => id, "size" => size, "title" => title, "metadata" => metadata}) do
-    %BookBank.Book{id: id, size: size, title: title, metadata: metadata}
-  end
-
-  @impl true
-  def get_book_metadata(id_string) do
-    case get_document(id_string) do
-      {:ok, doc} ->
-        {:ok, doc_to_book(doc)}
-
-      e ->
-        e
+    else
+      {:error, e} -> {:error, "Failed to generate thumbnails: #{e}"}
     end
   end
 
   @impl true
-  def get_book_cover(id_string) do
+  def get_book_metadata(id) do
+    case Utils.find_one("books", %{_id: id}) do
+      {:ok, %{"_id" => id, "metadata" => metadata, "title" => title, "size" => size}} ->
+        {:ok, %BookBank.Book{id: id, metadata: metadata, title: title, size: size}}
+
+      {:error, e} ->
+        {:error, e}
+    end
+  end
+
+  @impl true
+  def get_book_cover(id) do
+    case Utils.find_one("books", %{_id: id}) do
+
+    end
     with {:ok, %{"cover" => cover_id} = document} <- get_document(id_string) do
       case download_file(cover_id) do
         {:ok, stream} -> {:ok, stream, doc_to_book(document)}
