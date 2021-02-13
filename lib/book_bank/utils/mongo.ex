@@ -55,13 +55,45 @@ defmodule BookBank.Utils.Mongo do
     %{w: 3, j: true, wtimeout: timeout_ms}
   end
 
+  def prepare_document(%{__struct__: _} = doc) do
+    doc
+  end
+
+  def prepare_document(doc) when is_map(doc) do
+    doc
+    |> Stream.map(fn {key, value} ->
+      key =
+        cond do
+          is_atom(key) -> Atom.to_string(key)
+          is_binary(key) -> key
+          true -> raise ArgumentError, message: "Keys of a document must be strings or atoms, got #{Kernel.inspect(key)}"
+        end
+
+      value = if key === "_id" and is_binary(value) do
+        value |> BSON.ObjectId.decode!()
+      else
+        value |> prepare_document()
+      end
+
+      value = prepare_document(value)
+
+      {key, value}
+    end)
+    |> Map.new()
+  end
+
+  def prepare_document(doc) do
+    doc
+  end
+
   def is_kvpmap(map) do
-    is_map(map) and Enum.all?(fn e -> match?({k, v} when is_binary(k) and is_binary(v), e) end)
+    is_map(map) and
+      map |> Enum.all?(fn e -> match?({k, v} when is_binary(k) and is_binary(v), e) end)
   end
 
   def is_kvplist(list) do
     is_list(list) and
-      Enum.all?(fn e ->
+      list |> Enum.all?(fn e ->
         match?(%{"key" => k, "value" => v} when is_binary(k) and is_binary(v), e)
       end)
   end
@@ -75,7 +107,7 @@ defmodule BookBank.Utils.Mongo do
   end
 
   def kvpmap_to_kvplist!(map) do
-    case kvplist_to_kvpmap(map) do
+    case kvpmap_to_kvplist(map) do
       {:ok, list} -> list
       :error -> raise ArgumentError, message: "The argument was not a %{String.t() => String.t()}"
     end
@@ -136,7 +168,7 @@ defmodule BookBank.Utils.Mongo do
     end
   end
 
-  @spec find_one(
+  @spec find(
           String.t(),
           map(),
           list(
@@ -144,14 +176,14 @@ defmodule BookBank.Utils.Mongo do
             | {:read_concern, read_concern()}
           )
         ) :: {:ok, map()} | {:error, :does_not_exist | String.t()}
-  def find_one(collection, filter, opts \\ []) do
+  def find(collection, filter, opts \\ []) do
     retry_count = opts[:retry_count] || 2
     read_concern = opts[:read_concern] || read_concern_local()
 
     result =
-      case Mongo.find_one(:mongo, collection, filter, read_concern: read_concern) do
+      case Mongo.find_one(:mongo, collection, filter |> prepare_document(), read_concern: read_concern) do
         doc when is_map(doc) ->
-          {:ok, doc}
+          {:ok, doc |> Map.put("_id", doc["_id"] |> BSON.ObjectId.encode!())}
 
         nil ->
           {:error, :does_not_exist}
@@ -172,7 +204,7 @@ defmodule BookBank.Utils.Mongo do
 
       {:retry, msg} ->
         if retry_count > 0 do
-          find_one(collection, filter, opts |> Keyword.merge(retry_count: retry_count - 1))
+          find(collection, filter, opts |> Keyword.merge(retry_count: retry_count - 1))
         else
           {:error, msg}
         end
@@ -196,8 +228,8 @@ defmodule BookBank.Utils.Mongo do
     write_concern = opts[:write_concern] || write_concern_2()
 
     result =
-      case Mongo.insert_one(:mongo, collection, object, write_concern: write_concern) do
-        {:ok, %Mongo.InsertOneResult{acknowledged: true, inserted_id: id}} when is_binary(id) ->
+      case Mongo.insert_one(:mongo, collection, object |> prepare_document(), write_concern: write_concern) do
+        {:ok, %Mongo.InsertOneResult{acknowledged: true, inserted_id: id}} ->
           {:ok, BSON.ObjectId.encode!(id)}
 
         {:ok, %Mongo.InsertOneResult{acknowledged: true}} ->
@@ -231,7 +263,7 @@ defmodule BookBank.Utils.Mongo do
 
   @spec replace(
           String.t(),
-          id,
+          String.t(),
           map,
           list(
             {:retry_count, non_neg_integer()}
@@ -248,7 +280,7 @@ defmodule BookBank.Utils.Mongo do
     write_concern = opts[:write_concern] || write_concern_2()
 
     result =
-      case Mongo.replace_one(:mongo, collection, %{_id: id}, new_object |> Map.merge(%{_id: id}),
+      case Mongo.replace_one(:mongo, collection, %{_id: id}, new_object |> Map.merge(%{_id: id}) |> prepare_document(),
              write_concern: write_concern
            ) do
         {:ok, %Mongo.UpdateResult{acknowledged: true, matched_count: n}} when n > 0 ->
@@ -285,19 +317,19 @@ defmodule BookBank.Utils.Mongo do
 
   @spec delete(
           String.t(),
-          id,
+          map(),
           list(
             {:retry_count, non_neg_integer()}
             | {:write_concern, write_concern()}
           )
         ) ::
           {:ok, map()} | {:error, :does_not_exist | String.t()}
-  def delete(collection, id, opts \\ []) do
+  def delete(collection, filter, opts \\ []) do
     retry_count = opts[:retry_count] || 2
     write_concern = opts[:write_concern] || write_concern_2()
 
     result =
-      case Mongo.find_one_and_delete(:mongo, collection, %{_id: id}, write_concern: write_concern) do
+      case Mongo.find_one_and_delete(:mongo, collection, filter |> prepare_document(), write_concern: write_concern) do
         {:ok, doc} ->
           {:ok, doc}
 
@@ -314,7 +346,7 @@ defmodule BookBank.Utils.Mongo do
 
       {:retry, msg} ->
         if retry_count > 0 do
-          delete(collection, id, opts |> Keyword.merge(retry_count: retry_count - 1))
+          delete(collection, filter, opts |> Keyword.merge(retry_count: retry_count - 1))
         else
           {:error, msg}
         end
@@ -350,9 +382,10 @@ defmodule BookBank.Utils.Mongo do
     end
   end
 
-  @spec delete_file(BSON.ObjectId.t(), String.t(), non_neg_integer()) ::
+  @spec delete_file(BSON.ObjectId.t(), String.t(), list({:retry_count, non_neg_integer()})) ::
           :ok | {:error, :does_not_exist | String.t()}
-  def delete_file(id, bucket_name \\ "fs", retry_count \\ 2) do
+  def delete_file(id, bucket_name \\ "fs", opts \\ []) do
+    retry_count = opts[:retry_count] || 2
     bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
 
     result =
@@ -379,7 +412,7 @@ defmodule BookBank.Utils.Mongo do
 
       {:retry, msg} ->
         if retry_count > 0 do
-          delete_file(id, bucket_name, retry_count - 1)
+          delete_file(id, bucket_name, retry_count: retry_count - 1)
         else
           {:error, msg}
         end
@@ -392,9 +425,9 @@ defmodule BookBank.Utils.Mongo do
   defp remove_documents(inserted) do
     error_message =
       inserted
-      |> Enum.map(fn {_path, id, bucket, size} -> fn -> {id, bucket, delete_file(id)} end end)
+      |> Enum.map(fn {_path, id, bucket, _size} -> fn -> {id, bucket, delete_file(id, bucket)} end end)
       |> BookBank.Utils.Parallel.invoke()
-      |> Enum.filter(fn {id, bucket, tuple} -> match?({:error, _}, tuple) end)
+      |> Enum.filter(fn {_id, _bucket, tuple} -> match?({:error, _}, tuple) end)
       |> Enum.map(fn {id, bucket, {:error, e}} ->
         "Failed to remove file #{id} from bucket #{bucket}: #{e}"
       end)
@@ -412,14 +445,14 @@ defmodule BookBank.Utils.Mongo do
   end
 
   defp put_deep(document, [head | tail], term) do
-    document |> Map.put(head, document |> Map.get(head, %{}) |> insert_deep(tail, term))
+    document |> Map.put(head, document |> Map.get(head, %{}) |> put_deep(tail, term))
   end
 
   defp insert_with_files(collection, document, [], inserted) do
     document =
       inserted
-      |> Enum.reduce(document, fn {{path, id, _bucket(_size)}, acc} ->
-        acc |> put_deep(path, %{id: id, bucket: bucket})
+      |> Enum.reduce(document, fn {path, id, bucket, _size}, acc ->
+        acc |> put_deep(path, %{"gridfs_id" => id, "bucket" => bucket})
       end)
 
     case insert(collection, document) do
@@ -429,11 +462,11 @@ defmodule BookBank.Utils.Mongo do
       {:error, msg} ->
         case remove_documents(inserted) do
           :ok ->
-            {:error, message}
+            {:error, "Failed to insert document: #{msg}"}
 
           {:error, removal_message} ->
             {:inconsistent,
-             "Failed to insert document: #{message}, Also failed to remove the inserted files: #{
+             "Failed to insert document: #{msg}, Also failed to remove the inserted files: #{
                removal_message
              }"}
         end
@@ -470,12 +503,12 @@ defmodule BookBank.Utils.Mongo do
           String.t(),
           map(),
           list({list(String.t()), Stream.t(), String.t(), String.t()})
-        )
+        ) :: {:ok, String.t()} | {:error, String.t()}
   def insert_with_files(collection, document, files) do
     insert_with_files(collection, document, files, [])
   end
 
-  defp delete_files_from_document(%{"id" => id, "bucket" => bucket}) do
+  defp delete_files_from_document(%{"gridfs_id" => id, "bucket" => bucket}) do
     case delete_file(id, bucket) do
       :ok -> :ok
       {:error, e} -> {:error, "Failed to delete file #{id} from bucket #{bucket}: #{e}"}
@@ -486,7 +519,7 @@ defmodule BookBank.Utils.Mongo do
     errors =
       doc
       |> Enum.map(fn {key, _value} -> delete_files_from_document(doc[key]) end)
-      |> Enum.filter(&match({:error, e}, &1))
+      |> Enum.filter(&match?({:error, _e}, &1))
 
     if length(errors) > 0 do
       {:error, errors |> Enum.join(", ")}
@@ -499,9 +532,44 @@ defmodule BookBank.Utils.Mongo do
     :ok
   end
 
+  @spec delete_with_files(String.t(), map()) :: :ok | {:error, String.t()}
   def delete_with_files(collection, filter) do
     with {:ok, doc} <- delete(collection, filter) do
       delete_files_from_document(doc)
+    else
+      e -> e
+    end
+  end
+
+  defp get_file(%{"gridfs_id" => id, "bucket" => bucket}, []) do
+    {:ok, id, bucket}
+  end
+
+  defp get_file(_obj, []) do
+    {:error, "The path does not point to a {gridfs_id: ObjectID, bucket: string} object."}
+  end
+
+  defp get_file(map, [head | tail]) when is_map(map) do
+    map |> Map.get(head) |> get_file(tail)
+  end
+
+  defp get_file(_, _) do
+    {:error, "The given path does not exist in the document."}
+  end
+
+  @spec find_file(
+          String.t(),
+          map(),
+          list(String.t()),
+          list({:retry_count, non_neg_integer()} | {:read_concern, read_concern()})
+        ) :: {:ok, Stream.t()} | {:error, :does_not_exist | String.t()}
+  def find_file(collection, filter, path, opts \\ []) do
+    with {:ok, doc} <- find(collection, filter, opts),
+         {:ok, id, bucket} <- get_file(doc, path) do
+      case download_file(id, bucket) do
+        {:ok, stream} -> {:ok, stream, doc}
+        {:error, e} -> {:error, e}
+      end
     else
       e -> e
     end

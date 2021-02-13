@@ -32,82 +32,101 @@ defmodule BookBank.MongoDatabase do
       size: size
     }
 
-    with {:ok, cover, thumb} <- generate_thumbnails(pdf_file) do
-      case Utils.insert_with_files("books", doc, [
-             {["cover"], cover, "#{title}.jpg", "covers"},
-             {["thumbnail"], thumb, "#{title}.jpg", "thumbnails"},
-             {["body"], File.stream!(pdf_file, [], 4096), "#{title}.pdf", "files"}
-           ]) do
-        {:ok, id} -> {:ok, %BookBank.Book{id: id, title: title, metadata: metadata, size: size}}
-        {:error, e} -> {:error, e}
-      end
+    with {:thumb, {:ok, cover, thumb}} <- {:thumb, generate_thumbnails(pdf_file)},
+         {:insert, {:ok, id}} <-
+           {:insert,
+            Utils.insert_with_files("books", doc, [
+              {["cover"], cover, "#{title}.jpg", "covers"},
+              {["thumbnail"], thumb, "#{title}.jpg", "thumbnails"},
+              {["body"], File.stream!(pdf_file, [], 4096), "#{title}.pdf", "files"}
+            ])},
+         book <- %BookBank.Book{id: id, title: title, metadata: metadata, size: size},
+         {:search, :ok, _id, book} <-
+           {:search,
+            @search_service.insert_book(%BookBank.Book{
+              id: id,
+              title: title,
+              metadata: metadata,
+              size: size
+            }), id, book} do
+      {:ok, book}
     else
-      {:error, e} -> {:error, "Failed to generate thumbnails: #{e}"}
+      {:thumb, {:error, e}} ->
+        {:error, "Failed to generate thumbnails: #{e}"}
+
+      {:insert, {:error, e}} ->
+        {:error, "Failed to insert document and/or files: #{e}"}
+
+      {:search, {:error, e}, id, _book} ->
+        case Utils.delete("books", %{_id: id}) do
+          :ok ->
+            {:error, "Failed to insert document into Elasticsearch: #{e}"}
+
+          {:error, msg} ->
+            {:inconsistent,
+             "Failed to insert document into Elasticsearch: #{e}. Also failed to remove document from mongo: #{
+               msg
+             }."}
+        end
     end
+  end
+
+  defp doc_to_book(%{"_id" => id, "metadata" => metadata, "title" => title, "size" => size}) do
+    case metadata |> Utils.kvplist_to_kvpmap() do
+      {:ok, map} ->
+        {:ok, %BookBank.Book{id: id, metadata: map, title: title, size: size}}
+      {:error, _} ->
+        {:error, "The 'metadata' field is malformed: #{Kernel.inspect(metadata)}."}
+    end
+  end
+
+  defp doc_to_book(doc) do
+    {:error, "#{Kernel.inspect(doc)} cannot be converted into a book"}
   end
 
   @impl true
   def get_book_metadata(id) do
-    case Utils.find_one("books", %{_id: id}) do
-      {:ok, %{"_id" => id, "metadata" => metadata, "title" => title, "size" => size}} ->
-        {:ok, %BookBank.Book{id: id, metadata: metadata, title: title, size: size}}
+    case Utils.find("books", %{_id: id}) do
+      {:ok, doc} ->
+        doc_to_book(doc)
 
       {:error, e} ->
         {:error, e}
     end
   end
 
+  defp get_book_file_from_path(id, path) do
+    case Utils.find_file("books", %{_id: id}, path) do
+      {:ok, stream, doc} ->
+        case doc_to_book(doc) do
+          {:ok, book} -> {:ok, stream, book}
+          {:error, e} -> {:error, e}
+        end
+    end
+  end
+
   @impl true
   def get_book_cover(id) do
-    case Utils.find_one("books", %{_id: id}) do
-
-    end
-    with {:ok, %{"cover" => cover_id} = document} <- get_document(id_string) do
-      case download_file(cover_id) do
-        {:ok, stream} -> {:ok, stream, doc_to_book(document)}
-        {:error, _} = e -> e
-      end
-    else
-      {:error, _} = e -> e
-      {:ok, %{}} -> {:error, :does_not_exist}
-    end
+    get_book_file_from_path(id, ["cover"])
   end
 
   @impl true
-  def get_book_file(id_string) do
-    with {:ok, %{"body" => body_id} = document} <- get_document(id_string) do
-      case download_file(body_id) do
-        {:ok, stream} -> {:ok, stream, doc_to_book(document)}
-        {:error, _} = e -> e
-      end
-    else
-      {:error, _} = e -> e
-      {:ok, %{}} -> {:error, :does_not_exist}
-    end
+  def get_book_file(id) do
+    get_book_file_from_path(id, ["body"])
   end
 
   @impl true
-  def get_book_thumb(id_string) do
-    with {:ok, %{"thumb" => thumb_id} = document} <- get_document(id_string) do
-      case download_file(thumb_id) do
-        {:ok, stream} -> {:ok, stream, doc_to_book(document)}
-        {:error, _} = e -> e
-      end
-    else
-      {:error, _} = e -> e
-      {:ok, %{}} -> {:error, :does_not_exist}
-    end
+  def get_book_thumb(id) do
+    get_book_file_from_path(id, ["thumbnail"])
   end
 
   @impl true
   def update_book(id_string, updates) do
-    with {:ok, %{"_id" => id, "title" => title, "metadata" => metadata}} = document
-         when is_binary(title) and is_list(metadata) <-
-           get_document(id_string) do
-      if not BookBank.Utils.Mongo.is_kvplist(metadata) do
-        raise ArgumentError, message: "The database entry for #{id_string} is malformed."
-      end
-
+    with {:ok,
+          %{"_id" => id, "title" => title, "metadata" => metadata, "size" => size} = document}
+         when is_binary(title) and is_binary(metadata) <-
+           Utils.find("books", id_string),
+         {document, true} <- {document, BookBank.Utils.Mongo.is_kvplist(metadata)} do
       remove = (updates[:remove_roles] || []) |> MapSet.new()
 
       metadata =
@@ -126,131 +145,66 @@ defmodule BookBank.MongoDatabase do
 
       new_document = document |> Map.merge(%{"title" => title, "metadata" => metadata})
 
-      case Mongo.replace_one(:mongo, "books", %{_id: id}, new_document) do
-        {:ok, %Mongo.UpdateResult{acknowledged: true, matched_count: n}} when n > 0 ->
-          new_book = doc_to_book(document)
+      with {:replace, :ok} <- {:replace, Utils.replace("books", id, new_document)},
+           {:search, :ok} <-
+             {:search,
+              @search_service.update_book(%BookBank.Book{
+                id: id,
+                metadata: metadata,
+                title: title,
+                size: size
+              })} do
+        :ok
+      else
+        {:replace, {:error, e}} ->
+          {:error, "Failed to update document in mongo: #{e}."}
 
-          case @search_service.update_book(new_book) do
+        {:search, {:error, e}} ->
+          case Utils.replace("books", id, document) do
             :ok ->
-              :ok
+              {:error, "Failed to update document in Elasticsearch: #{e}"}
 
-            {:error, e} ->
-              Mongo.replace_one(:mongo, "books", %{_id: id}, document)
-              {:error, e}
+            {:error, msg} ->
+              {:inconsistent,
+               "Failed to update document in Elasticsearch: #{e}. Additionally failed to revert update in mongo: #{
+                 msg
+               }."}
           end
-
-          :ok
-
-        {:ok, %Mongo.UpdateResult{}} ->
-          {:error, "The update was not acknowledged"}
-
-        {:error, error} ->
-          {:error, error.message}
       end
+    else
+      {document, false} ->
+        {:error,
+         "The 'metadata' field of the database entry #{Kernel.inspect(document)} is malformed."}
+
+      {:ok, document} ->
+        {:error, "The database entry #{Kernel.inspect(document)} is malformed."}
+
+      {:error, e} ->
+        {:error, e}
     end
   end
 
   @impl true
-  def delete_book(id_string) do
-    with_object_id(id_string, fn id ->
-      case Mongo.delete_one(:mongo, "books", %{_id: id}) do
-        {:ok, %Mongo.DeleteResult{acknowledged: true, deleted_count: n}} when n > 0 ->
-          BookBank.Utils.Parallel.invoke(
-            ["fs", "thumbnails", "covers"]
-            |> Enum.map(fn bucket -> fn -> delete_file(id, bucket) end end)
-          )
-
-          @search_service.delete_book(id_string)
-
+  def delete_book(id) do
+    with {:ok, doc} <- Utils.delete("books", %{_id: id}) do
+      case @search_service.delete_book(id) do
+        :ok ->
           :ok
 
-        {:ok, %Mongo.DeleteResult{acknowledged: true}} ->
-          {:error, :does_not_exist}
+        {:error, e} ->
+          case Utils.insert(doc) do
+            {:ok, _id} ->
+              {:error, "Failed to delete document from Elasticsearch: #{e}."}
 
-        {:ok, %Mongo.DeleteResult{}} ->
-          {:error, "The deletion was not acknowledged"}
-
-        {:error, error} ->
-          {:error, error.message}
-      end
-    end)
-  end
-
-  defp pdf_thumbnail(pdf_path, out_path) do
-    case System.cmd(
-           "convert",
-           ["-density", "300", "-resize", "300x300", "#{pdf_path}[0]", "#{out_path}"],
-           stderr_to_stdout: true
-         ) do
-      {_, 0} -> :ok
-      {reason, _} -> {:error, reason}
-    end
-  end
-
-  defp pdf_cover(pdf_path, out_path) do
-    case System.cmd(
-           "convert",
-           ["-density", "300", "-resize", "1000x1000", "#{pdf_path}[0]", "#{out_path}"],
-           stderr_to_stdout: true
-         ) do
-      {_, 0} -> :ok
-      {reason, _} -> {:error, reason}
-    end
-  end
-
-  def generate_thumbnails(id_string) do
-    with_object_id(id_string, fn id ->
-      thumb_fn = Briefly.create!()
-      cover_fn = Briefly.create!()
-      pdf_path = Briefly.create!()
-
-      with {:ok, stream, _book} <-
-             get_book_file(id_string),
-           :ok <- stream |> Stream.into(File.stream!(pdf_path)) |> Stream.run(),
-           [{:ok, thumbnail}, {:ok, cover}] <-
-             BookBank.Utils.Parallel.invoke([
-               fn -> @thumbnail_service.create(File.stream!(pdf_path), 300, 300) end,
-               fn -> @thumbnail_service.create(File.stream!(pdf_path), 1000, 1000) end
-             ]),
-           {:ok, thumb_id, _size} <- create_file(thumb_fn, File.stream!(thumb_fn), "thumb"),
-           {:ok, cover_id, _size} <- create_file(cover_fn, File.stream!(cover_fn), "cover") do
-        result =
-          case Mongo.update_one(:mongo, "books", %{"_id" => id}, %{
-                 "$set" => %{
-                   "thumb" => thumb_id |> BSON.ObjectId.decode!(),
-                   "cover" => cover_id |> BSON.ObjectId.decode!()
-                 }
-               }) do
-            {:ok, %Mongo.UpdateResult{acknowledged: true}} ->
-              :ok
-
-            {:ok, %Mongo.UpdateResult{}} ->
-              {:error, "The update was not acknowledged"}
-
-            {:error, error} ->
-              {:error, error.message}
+            {:error, msg} ->
+              {:inconsistent,
+               "Failed to delete document from Elasticsearch: #{e}. Additionally failed to revert deletion in mongo: #{
+                 msg
+               }."}
           end
-
-        case result do
-          :ok ->
-            :ok
-
-          {:error, _} = e ->
-            BookBank.Utils.Parallel.invoke([
-              fn -> delete_file(thumb_id, "thumb") end,
-              fn -> delete_file(cover_id, "cover") end
-            ])
-
-            e
-        end
-      else
-        [{:error, e1}, {:error, e2}] -> {:error, [{:pdf, e1}, {:thumb, e2}]}
-        [{:error, e1}, _] -> {:error, :pdf, e1}
-        [_, {:error, e2}] -> {:error, :thumb, e2}
-        {:error, e} when is_binary(e) -> {:error, e}
-        {:error, :does_not_exist} -> {:error, :does_not_exist}
-        {:error, a} when is_atom(a) -> {:error, :file.format_error(a)}
       end
-    end)
+    else
+      {:error, e} -> {:error, "Failed to delete document from mongo: #{e}."}
+    end
   end
 end

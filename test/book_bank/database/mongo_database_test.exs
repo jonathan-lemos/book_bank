@@ -31,6 +31,7 @@ defmodule BookBank.MongoDatabaseTest do
 
   def assert_create_book(title, content, metadata \\ %{}) do
     expect(BookBank.MockSearch, :insert_book, fn %BookBank.Book{title: ^title, metadata: ^metadata} -> :ok end)
+    expect(BookBank.MockThumbnail, :create, 2, fn stream, _, _ -> {:ok, stream} end)
 
     len = String.length(content)
     content_stream = [content] |> Stream.map(& &1)
