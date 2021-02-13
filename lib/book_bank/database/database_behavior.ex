@@ -18,8 +18,8 @@ defmodule BookBank.DatabaseBehavior do
                   {:set_metadata,
                    %{String.t() => String.t()}}
                    | {:remove_metadata, list(String.t())}
-                   | {:update_metadata, %{String.t() => String.t()}}
-                   | {:update_title, String.t()}
+                   | {:add_metadata, %{String.t() => String.t()}}
+                   | {:set_title, String.t()}
                 )
             ) :: :ok | {:error, :does_not_exist | String.t()}
   @callback delete_book(id :: String.t()) :: :ok | {:error, :does_not_exist | String.t()}

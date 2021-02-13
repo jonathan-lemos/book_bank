@@ -52,25 +52,32 @@ defmodule BookBank.MongoAuth do
   end
 
   def update_user(username, updates) do
-    with {:ok, %BookBank.User{roles: roles}} <- get_user(username) do
+    with {:ok,
+          %{"username" => username, "password" => password_hash, "roles" => roles, "_id" => id}}
+         when is_binary(username) and is_list(roles) <-
+           Utils.find("users", %{username: username}, read_concern: Utils.read_concern_majority()) do
       roles =
         roles
         |> BookBank.Utils.Set.minus(updates[:remove_roles] || [])
         |> BookBank.Utils.Set.union(updates[:add_roles] || [])
 
-      obj = %{"$set" => %{"roles" => roles}}
-
-      obj =
+      password_hash =
         if updates[:set_password] !== nil do
-          BookBank.Utils.Mongo.object_merge(obj, %{
-            "$set" => %{"password" => updates[:set_password] |> Argon2.hash_pwd_salt()}
-          })
+          updates[:set_password] |> Argon2.hash_pwd_salt()
         else
-          obj
+          password_hash
         end
 
-      Utils.replace("users", %{username: username}, obj, write_concern: Utils.write_concern_majority())
+      username = updates[:set_username] || username
+
+      Utils.replace(
+        "users",
+        id,
+        %{"_id" => id, "username" => username, "password" => password_hash, "roles" => roles},
+        write_concern: Utils.write_concern_majority()
+      )
     else
+      {:ok, _doc} -> {:error, :does_not_exist}
       e -> e
     end
   end

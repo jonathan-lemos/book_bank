@@ -14,6 +14,7 @@ defmodule BookBank.AuthBehavior do
                   | {:add_roles, list(String.t())}
                   | {:remove_roles, list(String.t())}
                   | {:set_roles, list(String.t())}
+                  | {:set_username, String.t()}
                 )
             ) :: :ok | {:error, :does_not_exist | String.t()}
   @callback delete_user(username :: String.t()) :: :ok | {:error, :does_not_exist | String.t()}

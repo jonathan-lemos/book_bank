@@ -194,8 +194,8 @@ defmodule BookBank.Utils.Mongo do
         {:error, %Mongo.Error{message: message}} ->
           {:error, message}
 
-        _ ->
-          {:error, "Malformed response from the server."}
+        e ->
+          {:error, "Malformed response from the server: #{Kernel.inspect(e)}."}
       end
 
     case result do
@@ -280,7 +280,7 @@ defmodule BookBank.Utils.Mongo do
     write_concern = opts[:write_concern] || write_concern_2()
 
     result =
-      case Mongo.replace_one(:mongo, collection, %{_id: id}, new_object |> Map.merge(%{_id: id}) |> prepare_document(),
+      case Mongo.replace_one(:mongo, collection, %{_id: id |> BSON.ObjectId.decode!()}, new_object |> Map.merge(%{_id: id}) |> prepare_document(),
              write_concern: write_concern
            ) do
         {:ok, %Mongo.UpdateResult{acknowledged: true, matched_count: n}} when n > 0 ->
@@ -300,8 +300,8 @@ defmodule BookBank.Utils.Mongo do
       end
 
     case result do
-      {:ok, res} ->
-        {:ok, res}
+      :ok ->
+        :ok
 
       {:retry, msg} ->
         if retry_count > 0 do

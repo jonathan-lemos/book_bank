@@ -75,6 +75,7 @@ defmodule BookBank.MongoDatabase do
     case metadata |> Utils.kvplist_to_kvpmap() do
       {:ok, map} ->
         {:ok, %BookBank.Book{id: id, metadata: map, title: title, size: size}}
+
       {:error, _} ->
         {:error, "The 'metadata' field is malformed: #{Kernel.inspect(metadata)}."}
     end
@@ -120,28 +121,37 @@ defmodule BookBank.MongoDatabase do
     get_book_file_from_path(id, ["thumbnail"])
   end
 
+  defp update_metadata(metadata, add, remove, set) when map_size(set) === 0 do
+    remove_set = remove |> MapSet.new()
+
+    metadata
+    |> Enum.filter(fn %{"key" => k} -> not MapSet.member?(remove_set, k) end)
+    |> Utils.kvplist_to_kvpmap!()
+    |> Map.merge(add)
+    |> Utils.kvpmap_to_kvplist!()
+  end
+
+  defp update_metadata(_metadata, _add, _remove, set) do
+    set |> Utils.kvpmap_to_kvplist!()
+  end
+
   @impl true
   def update_book(id_string, updates) do
     with {:ok,
           %{"_id" => id, "title" => title, "metadata" => metadata, "size" => size} = document}
-         when is_binary(title) and is_binary(metadata) <-
-           Utils.find("books", id_string),
+         when is_binary(title) and size >= 0 <-
+           Utils.find("books", %{_id: id_string}),
          {document, true} <- {document, BookBank.Utils.Mongo.is_kvplist(metadata)} do
-      remove = (updates[:remove_roles] || []) |> MapSet.new()
 
       metadata =
-        metadata
-        |> Enum.filter(fn %{"key" => k} -> remove |> MapSet.member?(k) |> Kernel.not() end)
+        update_metadata(
+          metadata,
+          updates[:add_metadata] || %{},
+          updates[:remove_metadata] || [],
+          updates[:set_metadata] || %{}
+        )
 
-      add = updates[:update_roles] || %{}
-
-      metadata =
-        metadata
-        |> BookBank.Utils.Mongo.kvplist_to_kvpmap!()
-        |> Map.merge(add)
-        |> BookBank.Utils.Mongo.kvpmap_to_kvplist!()
-
-      title = updates[:update_title] || title
+      title = updates[:set_title] || title
 
       new_document = document |> Map.merge(%{"title" => title, "metadata" => metadata})
 
@@ -150,7 +160,7 @@ defmodule BookBank.MongoDatabase do
              {:search,
               @search_service.update_book(%BookBank.Book{
                 id: id,
-                metadata: metadata,
+                metadata: metadata |> Utils.kvplist_to_kvpmap!(),
                 title: title,
                 size: size
               })} do
