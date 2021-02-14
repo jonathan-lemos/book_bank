@@ -3,25 +3,23 @@ defmodule BookBank.ElasticSearch do
 
   defp es_url(endpoint) do
     base =
-      Application.get_env(:book_bank, BookBankWeb.SearchController, :url)
+      Application.get_env(:book_bank, BookBank.ElasticSearch)[:url]
       |> String.trim_trailing("/")
 
-    index = Application.get_env(:book_bank, BookBankWeb.SearchController, :index)
+    index = Application.get_env(:book_bank, BookBank.ElasticSearch)[:index]
     base <> "/" <> index <> "/" <> (endpoint |> String.trim_leading("/"))
   end
 
   defp parse_response(status, body) do
     if div(status, 100) !== 2 do
-      {:error, status, "The Elastic Search response was not 2XX. Response: '#{body}'"}
+      {:error, "The Elastic Search response was not 2XX. Response: '#{body}'"}
     else
-      status = BookBankWeb.Utils.status_code_to_atom(status)
-
       case Jason.decode(body) do
         {:ok, term} ->
-          {:ok, status, term}
+          {:ok, term}
 
         {:error, _} ->
-          {:error, status, "The Elasticsearch response '#{body}' was not valid JSON."}
+          {:error, "The Elasticsearch response '#{body}' was not valid JSON."}
       end
     end
   end
@@ -60,18 +58,17 @@ defmodule BookBank.ElasticSearch do
            "hits" =>
              {:list,
               %{
-                "_source" =>
-                  {:list,
-                   %{
-                     "id" => :string,
-                     "title" => :string,
-                     "metadata" =>
-                       {:list,
-                        %{
-                          "key" => :string,
-                          "value" => :string
-                        }}
-                   }}
+                "_source" => %{
+                  "id" => :string,
+                  "title" => :string,
+                  "metadata" =>
+                    {:list,
+                     %{
+                       "key" => :string,
+                       "value" => :string
+                     }},
+                  "size" => :non_neg_integer
+                }
               }}
          }
        }) do
@@ -80,13 +77,11 @@ defmodule BookBank.ElasticSearch do
         |> Enum.map(fn x ->
           src = x["_source"]
 
-          %{
+          %BookBank.Book{
             id: src["id"],
             title: src["title"],
-            metadata:
-              src["metadata"]
-              |> Enum.map(fn %{"key" => key, "value" => value} -> {key, value} end)
-              |> Map.new()
+            metadata: src["metadata"] |> BookBank.Utils.Mongo.kvplist_to_kvpmap!(),
+            size: src["size"]
           }
         end)
 
@@ -102,25 +97,39 @@ defmodule BookBank.ElasticSearch do
          {:ok, page} <- BookBankWeb.Validation.validate_integer(page, lower: 0) do
       from = page * size
 
+      _temp = %{
+        query: %{
+          multi_match: %{
+            query: query,
+            fields: ["title", "metadata.value^2"],
+            fuzziness: "AUTO"
+          }
+        },
+        sort: [
+          "_score"
+        ],
+        size: size,
+        from: from
+      }
+
       case hit_endpoint(:get, "/_search", %{
              query: %{
                multi_match: %{
                  query: query,
                  fields: ["title", "metadata.value^2"],
-                 fuzziness: "AUTO",
-                 _source: ["id", "title", "metadata"],
-                 sort: [
-                   %{"_score" => "desc"},
-                   %{"title" => "asc"}
-                 ]
+                 fuzziness: "AUTO"
                }
              },
+             sort: [
+               "_score"
+             ],
              size: size,
              from: from
            }) do
         {:ok, obj} ->
           case format_hits(obj) do
-            {:ok, hits} -> {:ok, %{"results" => hits}}
+            {:ok, hits} ->
+              {:ok, hits}
           end
 
         {:error, msg} ->
@@ -154,11 +163,12 @@ defmodule BookBank.ElasticSearch do
   end
 
   @impl true
-  def insert_book(%BookBank.Book{id: id, title: title, metadata: metadata}) do
-    case hit_endpoint(:put, "/books/_create/#{id}", %{
+  def insert_book(%BookBank.Book{id: id, title: title, metadata: metadata, size: size}) do
+    case hit_endpoint(:post, "/_doc", %{
            "id" => id,
            "title" => title,
-           "metadata" => metadata |> BookBank.Utils.Mongo.kvpmap_to_kvplist!()
+           "metadata" => metadata |> BookBank.Utils.Mongo.kvpmap_to_kvplist!(),
+           "size" => size
          }) do
       {:ok, %{"result" => "created"}} ->
         :ok
@@ -172,11 +182,12 @@ defmodule BookBank.ElasticSearch do
   end
 
   @impl true
-  def update_book(%BookBank.Book{id: id, title: title, metadata: metadata}) do
-    case hit_endpoint(:put, "/books/_doc/#{id}", %{
+  def update_book(%BookBank.Book{id: id, title: title, metadata: metadata, size: size}) do
+    case hit_endpoint(:put, "/_doc/#{id}", %{
            "id" => id,
            "title" => title,
-           "metadata" => metadata |> BookBank.Utils.Mongo.kvpmap_to_kvplist!()
+           "metadata" => metadata |> BookBank.Utils.Mongo.kvpmap_to_kvplist!(),
+           "size" => size
          }) do
       {:ok, %{"result" => "updated"}} ->
         :ok
@@ -191,7 +202,7 @@ defmodule BookBank.ElasticSearch do
 
   @impl true
   def delete_book(id) do
-    case hit_endpoint(:delete, "/books/_doc/#{id}") do
+    case hit_endpoint(:delete, "/_doc/#{id}") do
       {:ok, %{"result" => "deleted"}} ->
         :ok
 
@@ -200,6 +211,13 @@ defmodule BookBank.ElasticSearch do
 
       {:error, e} ->
         {:error, e}
+    end
+  end
+
+  def delete_book_index() do
+    case hit_endpoint(:delete, "/") do
+      {:ok, _} -> :ok
+      {:error, e} -> {:error, e}
     end
   end
 end

@@ -34,7 +34,7 @@ config :book_bank, BookBank.MongoDatabase,
   url: System.get_env("MONGO_CONNECTION_URL") || "mongodb://localhost:27017/book_bank",
   pool_size: (System.get_env("MONGO_POOL_SIZE") || "16") |> Integer.parse() |> elem(0)
 
-config :book_bank, BookBankWeb.SearchController,
+config :book_bank, BookBank.ElasticSearch,
   url: System.get_env("ELASTIC_CONNECTION_URL") || "http://localhost:9200",
   index: System.get_env("ELASTIC_BOOK_INDEX") || "books"
 

@@ -75,6 +75,7 @@ defmodule BookBankWeb.Validation do
     case schema do
       :string -> is_binary(value)
       :integer -> is_integer(value)
+      :non_neg_integer -> is_integer(value) and value >= 0
       s when is_map(s) -> validate_map(value, Map.to_list(s))
       l when is_list(l) -> validate_list(value, l)
       {:list, subschema} -> is_list(value) and Enum.all?(value, fn v -> validate_schema(v, subschema) end)

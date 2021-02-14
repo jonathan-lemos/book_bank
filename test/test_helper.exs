@@ -1,4 +1,4 @@
-ExUnit.configure(exclude: [:mongo])
+ExUnit.configure(exclude: [:elastic, :mongo])
 ExUnit.start()
 
 Application.get_env(:book_bank, :services) |> Enum.each(fn {behavior, mock} -> Mox.defmock(mock, for: behavior) end)
