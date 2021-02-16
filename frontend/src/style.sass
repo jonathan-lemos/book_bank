@@ -1,0 +1,29 @@
+@import "styles/prelude"
+
+@keyframes flicker
+  0%
+    text-shadow: 0 0 0.3em tomato
+  50%
+    text-shadow: 0 0 0.5em tomato
+  100%
+    text-shadow: 0 0 0.3em tomato
+
+.title
+  @extend .bold
+  @extend .monospace
+  color: tomato
+  text-shadow: 0 0 0.3em tomato
+
+  &.flicker
+    animation: flicker 4s ease infinite
+
+app-root
+  @extend .fluid
+  @extend .col
+  @extend .grow
+
+router-outlet + *
+  @extend .fluid
+  @extend .grow
+  @extend .col
+  @extend .center

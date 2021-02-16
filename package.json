@@ -8,7 +8,7 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "watch": "npm run watch && mix phoenix.server"
+    "watch": "ng build --watch & mix phx.server"
   },
   "private": true,
   "dependencies": {

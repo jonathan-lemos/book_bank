@@ -23,6 +23,9 @@ config :book_bank, BookBankWeb.Utils.Jwt,
   environment variable AUTH_SECRET is missing.
   """
 
+config :book_bank, BookBank.MongoAuth,
+  default_credentials: {System.get_env("DEFAULT_USERNAME") || "admin", System.get_env("DEFAULT_PASSWORD") || "hunter2"}
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix

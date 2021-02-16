@@ -7,6 +7,14 @@ defmodule BookBank.Utils.Mongo do
 
     Mongo.create_indexes(:mongo, "users", [[key: [username: 1], unique: true]])
 
+    if Application.get_env(:book_bank, BookBank.MongoAuth)[:default_credentials] !== nil and
+         Mongo.find_one(:mongo, "users", %{}) === nil do
+      {username, password} =
+        Application.get_env(:book_bank, BookBank.MongoAuth)[:default_credentials]
+
+      {:ok, _user} = BookBank.MongoAuth.create_user(username, password, ["admin"])
+    end
+
     :ok
   end
 
@@ -64,16 +72,23 @@ defmodule BookBank.Utils.Mongo do
     |> Stream.map(fn {key, value} ->
       key =
         cond do
-          is_atom(key) -> Atom.to_string(key)
-          is_binary(key) -> key
-          true -> raise ArgumentError, message: "Keys of a document must be strings or atoms, got #{Kernel.inspect(key)}"
+          is_atom(key) ->
+            Atom.to_string(key)
+
+          is_binary(key) ->
+            key
+
+          true ->
+            raise ArgumentError,
+              message: "Keys of a document must be strings or atoms, got #{Kernel.inspect(key)}"
         end
 
-      value = if key === "_id" and is_binary(value) do
-        value |> BSON.ObjectId.decode!()
-      else
-        value |> prepare_document()
-      end
+      value =
+        if key === "_id" and is_binary(value) do
+          value |> BSON.ObjectId.decode!()
+        else
+          value |> prepare_document()
+        end
 
       value = prepare_document(value)
 
@@ -93,7 +108,8 @@ defmodule BookBank.Utils.Mongo do
 
   def is_kvplist(list) do
     is_list(list) and
-      list |> Enum.all?(fn e ->
+      list
+      |> Enum.all?(fn e ->
         match?(%{"key" => k, "value" => v} when is_binary(k) and is_binary(v), e)
       end)
   end
@@ -181,7 +197,9 @@ defmodule BookBank.Utils.Mongo do
     read_concern = opts[:read_concern] || read_concern_local()
 
     result =
-      case Mongo.find_one(:mongo, collection, filter |> prepare_document(), read_concern: read_concern) do
+      case Mongo.find_one(:mongo, collection, filter |> prepare_document(),
+             read_concern: read_concern
+           ) do
         doc when is_map(doc) ->
           {:ok, doc |> Map.put("_id", doc["_id"] |> BSON.ObjectId.encode!())}
 
@@ -228,7 +246,9 @@ defmodule BookBank.Utils.Mongo do
     write_concern = opts[:write_concern] || write_concern_2()
 
     result =
-      case Mongo.insert_one(:mongo, collection, object |> prepare_document(), write_concern: write_concern) do
+      case Mongo.insert_one(:mongo, collection, object |> prepare_document(),
+             write_concern: write_concern
+           ) do
         {:ok, %Mongo.InsertOneResult{acknowledged: true, inserted_id: id}} ->
           {:ok, BSON.ObjectId.encode!(id)}
 
@@ -280,7 +300,11 @@ defmodule BookBank.Utils.Mongo do
     write_concern = opts[:write_concern] || write_concern_2()
 
     result =
-      case Mongo.replace_one(:mongo, collection, %{_id: id |> BSON.ObjectId.decode!()}, new_object |> Map.merge(%{_id: id}) |> prepare_document(),
+      case Mongo.replace_one(
+             :mongo,
+             collection,
+             %{_id: id |> BSON.ObjectId.decode!()},
+             new_object |> Map.merge(%{_id: id}) |> prepare_document(),
              write_concern: write_concern
            ) do
         {:ok, %Mongo.UpdateResult{acknowledged: true, matched_count: n}} when n > 0 ->
@@ -329,7 +353,9 @@ defmodule BookBank.Utils.Mongo do
     write_concern = opts[:write_concern] || write_concern_2()
 
     result =
-      case Mongo.find_one_and_delete(:mongo, collection, filter |> prepare_document(), write_concern: write_concern) do
+      case Mongo.find_one_and_delete(:mongo, collection, filter |> prepare_document(),
+             write_concern: write_concern
+           ) do
         {:ok, doc} ->
           {:ok, doc}
 
@@ -425,7 +451,9 @@ defmodule BookBank.Utils.Mongo do
   defp remove_documents(inserted) do
     error_message =
       inserted
-      |> Enum.map(fn {_path, id, bucket, _size} -> fn -> {id, bucket, delete_file(id, bucket)} end end)
+      |> Enum.map(fn {_path, id, bucket, _size} ->
+        fn -> {id, bucket, delete_file(id, bucket)} end
+      end)
       |> BookBank.Utils.Parallel.invoke()
       |> Enum.filter(fn {_id, _bucket, tuple} -> match?({:error, _}, tuple) end)
       |> Enum.map(fn {id, bucket, {:error, e}} ->

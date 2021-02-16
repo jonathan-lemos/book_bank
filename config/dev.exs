@@ -7,7 +7,7 @@ use Mix.Config
 # watchers to your application. For example, we use it
 # with webpack to recompile .js and .css sources.
 config :book_bank, BookBankWeb.Endpoint,
-  http: [port: (System.get_env("PHOENIX_PORT") || "4000") |> Integer.parse()],
+  http: [port: (System.get_env("PHOENIX_PORT") || "4000")],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
@@ -15,6 +15,9 @@ config :book_bank, BookBankWeb.Endpoint,
 
 config :book_bank, BookBankWeb.Utils.Jwt,
   secret: System.get_env("AUTH_SECRET") || "hunter2"
+
+config :book_bank, BookBank.MongoAuth,
+  default_credentials: {System.get_env("DEFAULT_USERNAME") || "admin", System.get_env("DEFAULT_PASSWORD") || "hunter2"}
 
 
 # ## SSL Support

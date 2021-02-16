@@ -27,7 +27,7 @@ defmodule BookBank.Application do
         # {BookBank.Worker, arg}
       ]
       |> add_if(
-        Application.get_env(:book_bank, BookBank.Database) == BookBank.MongoAuth,
+        Application.get_env(:book_bank, :services)[BookBank.AuthBehavior] === BookBank.MongoAuth,
         {Mongo,
          name: :mongo,
          database: "book_bank",
@@ -35,7 +35,7 @@ defmodule BookBank.Application do
          pool_size: 16}
       )
       |> add_if(
-        Application.get_env(:book_bank, BookBank.Auth.UserWhitelistBehavior) ===
+        Application.get_env(:book_bank, :services)[BookBank.Auth.UserWhitelistBehavior] ===
           BookBank.Auth.UserWhitelist,
           %{
             id: BookBank.Auth.UserWhitelist,
@@ -46,7 +46,13 @@ defmodule BookBank.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: BookBank.Supervisor]
-    Supervisor.start_link(children, opts)
+    res = Supervisor.start_link(children, opts)
+
+    if Application.get_env(:book_bank, :services)[BookBank.AuthBehavior] === BookBank.MongoAuth do
+      BookBank.Utils.Mongo.init()
+    end
+
+    res
   end
 
   # Tell Phoenix to update the endpoint configuration

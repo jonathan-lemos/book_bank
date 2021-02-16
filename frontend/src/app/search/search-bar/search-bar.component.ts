@@ -1,7 +1,9 @@
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
-import {ApiService} from "../../services/api/api.service";
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ApiService } from "../../services/api/api.service";
 import Suggestion from "../../services/api/schemas/suggestion";
-import {AuthService} from "../../services/auth.service";
+import { AuthService } from "../../services/auth.service";
+import { FontAwesomeModule, FaIconLibrary } from '@fortawesome/angular-fontawesome';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-search-bar',
@@ -14,7 +16,9 @@ export class SearchBarComponent implements OnInit {
 
   @Output() submit = new EventEmitter<string>()
 
-  constructor(private api: ApiService, private auth: AuthService) { }
+  constructor(private api: ApiService, private auth: AuthService, private library: FaIconLibrary) {
+    library.addIcons(faSearch);
+  }
 
   ngOnInit(): void {
   }

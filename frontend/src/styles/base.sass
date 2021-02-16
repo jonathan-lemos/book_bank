@@ -1,5 +1,6 @@
-@import "prelude"
-
+@import "color"
+@import "container"
+  
 *
   @extend .monospace
   border: none
@@ -7,7 +8,7 @@
   background-color: $color-bg
   color: $color-fg-muted
   outline: none
-  transition: 0.35s
+  transition: 0.2s
 
 @keyframes fade-in
   from
@@ -18,10 +19,18 @@
 html
   @extend .fade-in
   scroll-behavior: smooth
+  height: 100%
 
 html, body
-  min-height: 100%
   width: 100%
+  min-height: 100%
   padding: 0
   margin: 0
-  background-color: #EEEEEE
+
+body
+  @extend .col
+  @extend .center
+
+router-outlet + *
+  @extend .fluid
+  @extend .col

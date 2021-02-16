@@ -10,7 +10,7 @@ export function schema_stringify(s: Schema, pretty?: boolean): string {
     return s.sort().map(x => schema_stringify(x, pretty)).join(` or `);
   }
   if (typeof s === "object") {
-    const k = Object.keys(s).sort().filter(k => s.hasOwnProperty(k)).sort();
+    const k = Object.keys(s).filter(k => s.hasOwnProperty(k)).sort();
     if (pretty) {
 return `{
 ${k.map(x => `  ${x}: ${schema_stringify(x)}`).join(",\n  ")}
@@ -31,7 +31,7 @@ export default function validate<T>(a: any, schema: Schema): Result<T, string> {
     return new Success(a);
   }
 
-  if (["boolean", "number", "string", "null", "undefined"].some(t => schema === t && typeof a === t)) {
+  if (["boolean", "number", "string", "null", "undefined", "object"].some(t => schema === t && typeof a === t)) {
     return new Success(a);
   }
 
@@ -40,7 +40,7 @@ export default function validate<T>(a: any, schema: Schema): Result<T, string> {
     if (schema.length === 1) {
       // check if all of a are string
       if (!Array.isArray(a)) {
-        return new Failure("Expected an array.")
+        return new Failure(`Expected an array, got ${JSON.stringify(a)}.`)
       }
 
       const errorMessages = a.map((e, i) => {
@@ -65,7 +65,7 @@ export default function validate<T>(a: any, schema: Schema): Result<T, string> {
       return new Success(a);
     }
     else {
-      return new Failure(`Expected ${schema_stringify(schema)}, got ${JSON.stringify(a)}`);
+      return new Failure(`Expected at least one of ${schema_stringify(schema)}, got ${JSON.stringify(a)}`);
     }
   }
 

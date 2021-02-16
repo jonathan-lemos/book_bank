@@ -1,27 +1,25 @@
-import {Injectable} from '@angular/core';
-import {Failure, Result, Success} from "../../../utils/functional/result";
-import AuthenticateResponse, {AuthenticateResponseSchema,} from "./schemas/authenticate-response";
+import { Injectable } from '@angular/core';
+import { Failure, Result, Success } from "../../../utils/functional/result";
+import AuthenticateResponse, { AuthenticateResponseSchema, } from "./schemas/authenticate-response";
 import AuthenticateRequest from "./schemas/authenticate-request";
 import validate from "../../../utils/validator";
-import Suggestion, {SuggestionSchema} from "./schemas/suggestion";
-import RefreshResponse, {RefreshResponseSchema} from "./schemas/refresh-response";
-import Book, {BookSchema} from "./schemas/book";
-import UnauthorizedResponse, {UnauthorizedResponseSchema} from "./schemas/unauthorized-response";
-import {AuthService} from "../auth.service";
+import Suggestion, { SuggestionSchema } from "./schemas/suggestion";
+import Book, { BookSchema } from "./schemas/book";
+import { AuthService } from "../auth.service";
 import UploadResponse, { UploadResponseSchema } from './schemas/upload-response';
 
-type ApiResponse = {type: "no response", reason: string} |
-  {type: "json response", status: number, response: any} |
-  {type: "non json response", status: number, response: string};
+type ApiResponse = { type: "no response", reason: string } |
+{ type: "json response", status: number, response: any } |
+{ type: "non json response", status: number, response: string };
 
 type ApiMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
-  
+
 type ApiParams = Partial<{
   body: any,
   auth: AuthService,
   onProgress: (progress: number, total: number) => void;
 
-  headers: {[key: string]: string},
+  headers: { [key: string]: string },
 }>
 
 @Injectable({
@@ -33,23 +31,25 @@ export class ApiService {
     const xhr = new XMLHttpRequest();
     xhr.open(method, apiUrl, true);
 
-    for (const key in {"Accept": "application/json", ...(params.headers ?? {})}) {
-      if (!params.headers.hasOwnProperty(key)) {
+    const headers = { "Accept": "application/json", ...(params.headers ?? {}) };
+
+    for (const key in headers) {
+      if (!headers.hasOwnProperty(key)) {
         continue;
       }
 
-      xhr.setRequestHeader(key, params.headers[key]);
+      xhr.setRequestHeader(key, headers[key]);
     }
 
     if (params.onProgress) {
       xhr.onprogress = e => e.lengthComputable && params.onProgress(e.loaded, e.total);
     }
 
-    xhr.onerror = e => resolve({type: "no response", reason: "Network error"});
+    xhr.onerror = e => resolve({ type: "no response", reason: "Network error" });
 
     xhr.onreadystatechange = () => {
       if (xhr.readyState !== XMLHttpRequest.DONE) {
-        return; 
+        return;
       }
 
       const text = xhr.responseText;
@@ -104,8 +104,8 @@ export class ApiService {
   constructor() { }
 
   async authenticate(username: string, password: string, auth: AuthService): Promise<Result<void, string>> {
-    const resp = await this.post("/api/login", { username, password } as AuthenticateRequest).then(this.postProcess(res => {
-      return validate<AuthenticateResponse>(res, AuthenticateResponseSchema);
+    const resp = await this.post("/api/accounts/login", { username, password } as AuthenticateRequest).then(this.postProcess(res => {
+      return validate<AuthenticateResponse>(res.response, AuthenticateResponseSchema);
     }));
 
     if (resp.isSuccess()) {
@@ -126,7 +126,7 @@ export class ApiService {
     }
 
     return await this.get(`/api/books/metadata/${id}`).then(this.postProcess(res => {
-      return validate(res, BookSchema);
+      return validate(res.response, BookSchema);
     }))
   }
 
@@ -138,30 +138,13 @@ export class ApiService {
     return await this.del(`/api/books/${id}`).then(this.postProcess(_ => new Success(null)));
   }
 
-  async refresh(auth: AuthService): Promise<Result<void, string>> {
-    const resp = await this.post("/api/login/refresh", {}).then(this.postProcess(res => {
-      return validate<RefreshResponse>(res, RefreshResponseSchema);
-    }));
-
-    if (resp.isSuccess()) {
-      if (resp.value.token === null) {
-        return new Failure("The authentication response did not contain an access token.");
-      }
-
-      return auth.authenticate(resp.value.token).map_val(() => { });
-    }
-    else {
-      return resp.map_val(() => { });
-    }
-  }
-
   async search(query: string, auth: AuthService, count?: number, page?: number): Promise<Result<Book[], string>> {
     if (query === "") {
       return new Success([]);
     }
 
     return await this.get(`/api/search/${query}?count=${count}&page=${page}`, auth).then(this.postProcess(res => {
-      return validate(res, [BookSchema]);
+      return validate(res.response, [BookSchema]);
     }));
   }
 
@@ -171,7 +154,7 @@ export class ApiService {
     }
 
     return await this.get(`/api/search_count/${query}`, auth).then(this.postProcess(res => {
-      const r = validate<number>(res, "number");
+      const r = validate<number>(res.response, "number");
       if (r.isSuccess() && r.value < 0) {
         return new Failure(`Search count cannot be below 0 (was ${r.value}).`);
       }
@@ -185,7 +168,7 @@ export class ApiService {
     }
 
     return await this.get(`/api/suggestions/${encodeURIComponent(query)}/${count ?? 5}`, auth).then(this.postProcess(res => {
-      return validate(res, [SuggestionSchema])
+      return validate(res.response, [SuggestionSchema])
     }));
   }
 
@@ -202,7 +185,7 @@ export class ApiService {
     }
 
     return await this.post("/api/books", form, auth, onProgress).then(this.postProcess(res => {
-      return validate<UploadResponse>(res, UploadResponseSchema).map_val(x => x.id);
+      return validate<UploadResponse>(res.response, UploadResponseSchema).map_val(x => x.id);
     }));
   }
 }

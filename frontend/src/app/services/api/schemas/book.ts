@@ -4,7 +4,7 @@ export default interface Book {
   id: string,
   title: string,
   size: number,
-  metadata: {key: string, value: string}[],
+  metadata: {[key: string]: string},
 }
 
 export const BookSchema: Schema = {

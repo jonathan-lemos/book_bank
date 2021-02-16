@@ -1,4 +1,4 @@
-defmodule BookBank.MongoAuthTest do
+defmodule BookBank.ElasticSearchTest do
   use ExUnit.Case, async: false
   import Mox
   import BookBank.ElasticSearch

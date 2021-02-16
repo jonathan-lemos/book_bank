@@ -9,10 +9,10 @@
   </head>
   <body>
 	<app-root></app-root>
-	<script src="<%= Routes.static_path(@conn, "/frontend/runtime.js") %>" defer></script>
-	<script src="<%= Routes.static_path(@conn, "/frontend/polyfills.js") %>" defer></script>
-	<script src="<%= Routes.static_path(@conn, "/frontend/styles.js") %>" defer></script>
-	<script src="<%= Routes.static_path(@conn, "/frontend/vendor.js") %>" defer></script>
-	<script src="<%= Routes.static_path(@conn, "/frontend/main.js") %>" defer></script>
+	<script src="<%= Routes.static_path(@conn, "/runtime.js") %>" defer></script>
+	<script src="<%= Routes.static_path(@conn, "/polyfills.js") %>" defer></script>
+	<script src="<%= Routes.static_path(@conn, "/styles.js") %>" defer></script>
+	<script src="<%= Routes.static_path(@conn, "/vendor.js") %>" defer></script>
+	<script src="<%= Routes.static_path(@conn, "/main.js") %>" defer></script>
   </body>
 </html>

@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {ActivatedRouteSnapshot, CanActivate, Router,} from '@angular/router';
 import {Failure, Result, Success} from '../../utils/functional/result';
-import {Roles} from "../app-routing.module";
+import {Roles, RoleType} from "../roles";
 
 @Injectable({
   providedIn: 'root'
@@ -11,13 +11,13 @@ export class AuthService implements CanActivate {
   }
 
   allowed(roles: Roles): boolean {
-    if (roles === "*") {
+    if (roles === RoleType.Any) {
       return true;
     }
-    if (roles === "no-auth") {
+    if (roles === RoleType.Unauthenticated) {
       return !this.isAuthenticated();
     }
-    if (roles === "auth") {
+    if (roles === RoleType.Authenticated) {
       return this.isAuthenticated();
     }
     return this.hasRole(...roles);
@@ -108,10 +108,10 @@ export class AuthenticationContext {
 
     let object;
     try {
-      object = atob(components[1]);
+      object = JSON.parse(atob(components[1]));
     }
     catch (e) {
-      return new Failure("Malformed JWT. Expected a base64 body.");
+      return new Failure("Malformed JWT. Expected a base64-encoded object.");
     }
 
     if (!object.hasOwnProperty("sub")) {
@@ -121,7 +121,6 @@ export class AuthenticationContext {
     if (typeof sub !== "string") {
       return new Failure("Malformed JWT. Expected 'sub' to be a string.");
     }
-
 
     if (!object.hasOwnProperty("iat")) {
       return new Failure("Malformed JWT. Expected a 'iat' field in the body.");

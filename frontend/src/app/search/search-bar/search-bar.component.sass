@@ -14,12 +14,18 @@ div.searchbar
     @extend .row
     @extend .w-100
 
-    & input[type=text]
+    label
+      @extend .w-100
       @extend .grow
       @extend .mx-none
 
-    & button
-      @extend .hover-glow
+      input[type=text]
+        @extend .w-100
+        @extend .mx-none
+
+    button
+      @extend .border
+      @extend .glow-hover
       @extend .accent
 
 

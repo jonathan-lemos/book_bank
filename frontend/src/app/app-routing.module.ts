@@ -1,27 +1,46 @@
-import {NgModule} from '@angular/core';
-import {Route, RouterModule} from '@angular/router';
-import {LoginComponent} from "./login/login.component";
-import {HomeComponent} from "./home/home.component";
-import {SearchComponent} from "./search/search/search.component";
-import {UploadComponent} from "./upload/upload.component";
-import {AuthService} from "./services/auth.service";
+import { NgModule } from '@angular/core';
+import { Data, Route, RouterModule } from '@angular/router';
+import { LoginComponent } from "./login/login.component";
+import { HomeComponent } from "./home/home.component";
+import { SearchComponent } from "./search/search/search.component";
+import { UploadComponent } from "./upload/upload.component";
+import { AuthService } from "./services/auth.service";
+import { Roles, RoleType } from './roles';
+import { BookComponent } from './book/book.component';
 
-export type Roles = "no-auth" | "auth" | "*" | string[];
+export type RoutingEntry = {
+  route: Route & { data: Data, path: string },
+  auth: { name: string } & Partial<{ putInNavbar: boolean, roles: Roles }>
+}
 
-export const routes: (Route & {
-  path: string,
-  name: string,
-  putInNavbar: boolean,
-  roles: Roles,
-  data: { roles: Roles },
-  canActivate: any[]
-})[] = [
-  {path: "login", name: "Login", component: LoginComponent, putInNavbar: true, roles: "no-auth"},
-  {path: "home", name: "Home", component: HomeComponent, putInNavbar: true, roles: "auth"},
-  {path: "search", name: "Search", component: SearchComponent, putInNavbar: true, roles: "auth"},
-  {path: "upload", name: "Upload", component: UploadComponent, putInNavbar: true, canActivate: [AuthService], roles: ["admin", "librarian"]},
-  {path: "**", name: "Default", putInNavbar: false, redirectTo: "home", pathMatch: "full", roles: "*"}
-].map(x => ({...x, roles: x.roles as Roles, data: {roles: x.roles as Roles}, canActivate: [AuthService]}));
+export const routingEntries: RoutingEntry[] = [
+  {
+    route: { path: "login", component: LoginComponent, canActivate: [AuthService] },
+    auth: { name: "Login", putInNavbar: true, roles: RoleType.Unauthenticated }
+  },
+  {
+    route: { path: "home", component: HomeComponent, canActivate: [AuthService] },
+    auth: { name: "Home", putInNavbar: true, roles: RoleType.Authenticated }
+  },
+  {
+    route: { path: "search", component: SearchComponent, canActivate: [AuthService] },
+    auth: { name: "Search", putInNavbar: false, roles: RoleType.Authenticated }
+  },
+  {
+    route: { path: "upload", component: UploadComponent, canActivate: [AuthService] },
+    auth: { name: "Upload", putInNavbar: true, roles: ["admin", "librarian"] }
+  },
+  {
+    route: { path: "book", component: BookComponent, canActivate: [AuthService] },
+    auth: { name: "Book", putInNavbar: false, roles: RoleType.Authenticated }
+  },
+  {
+    route: { path: "**", redirectTo: "home", pathMatch: "full" },
+    auth: { name: "Default", putInNavbar: false, roles: RoleType.Any }
+  }
+].map(x => ({ auth: x.auth, route: { ...x.route, data: x.auth } }))
+
+const routes: Route[] = routingEntries.map(x => x.route);
 
 @NgModule({
   imports: [RouterModule.forRoot(routes, { relativeLinkResolution: 'legacy' })],

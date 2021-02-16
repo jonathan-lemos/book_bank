@@ -13,12 +13,6 @@ defmodule BookBankWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", BookBankWeb do
-    pipe_through :browser
-
-    get "/", PageController, :index
-  end
-
   scope "/api/accounts", BookBankWeb do
     pipe_through :api
 
@@ -52,6 +46,17 @@ defmodule BookBankWeb.Router do
 
     get "/query/:query", SearchController, :get_query
     get "/count/:query", SearchController, :get_count
+  end
+
+  scope "/", BookBankWeb do
+    pipe_through :browser
+
+    get "/api", PageController, :index
+    get "/book", PageController, :index
+    get "/home", PageController, :index
+    get "/login", PageController, :index
+    get "/search", PageController, :index
+    get "/upload", PageController, :index
   end
 
   # Other scopes may use custom stacks.

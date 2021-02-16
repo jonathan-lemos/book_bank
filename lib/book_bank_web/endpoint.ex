@@ -22,9 +22,9 @@ defmodule BookBankWeb.Endpoint do
   # when deploying your static files in production.
   plug Plug.Static,
     at: "/",
-    from: :book_bank,
-    gzip: false,
-    only: ~w(css fonts images js map favicon.ico robots.txt frontend)
+    from: {:book_bank, "priv/static/frontend"},
+    gzip: false
+    # only: ~w(css fonts images js map favicon.ico robots.txt frontend)
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
