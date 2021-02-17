@@ -2,11 +2,13 @@ import { Injectable } from '@angular/core';
 import { Failure, Result, Success } from "../../../utils/functional/result";
 import AuthenticateResponse, { AuthenticateResponseSchema, } from "./schemas/authenticate-response";
 import AuthenticateRequest from "./schemas/authenticate-request";
-import validate from "../../../utils/validator";
-import Suggestion, { SuggestionSchema } from "./schemas/suggestion";
 import Book, { BookSchema } from "./schemas/book";
 import { AuthService } from "../auth.service";
 import UploadResponse, { UploadResponseSchema } from './schemas/upload-response';
+import Schema from 'src/utils/validation/schema';
+import List from 'src/utils/validation/list';
+import SearchResponse, { SearchResponseSchema } from './schemas/search-response';
+import SearchCountResponse, { SearchCountResponseSchema } from './schemas/search-count-response';
 
 type ApiResponse = { type: "no response", reason: string } |
 { type: "json response", status: number, response: any } |
@@ -21,6 +23,10 @@ type ApiParams = Partial<{
 
   headers: { [key: string]: string },
 }>
+
+function validate<T>(a: any, schema: Schema): Result<T, string> {
+  return schema.validate(a).map_val(() => a as T);
+}
 
 @Injectable({
   providedIn: 'root'
@@ -144,7 +150,7 @@ export class ApiService {
     }
 
     return await this.get(`/api/search/${query}?count=${count}&page=${page}`, auth).then(this.postProcess(res => {
-      return validate(res.response, [BookSchema]);
+      return validate<SearchResponse>(res.response, SearchResponseSchema).map_val(x => x.results);
     }));
   }
 
@@ -154,29 +160,25 @@ export class ApiService {
     }
 
     return await this.get(`/api/search_count/${query}`, auth).then(this.postProcess(res => {
-      const r = validate<number>(res.response, "number");
-      if (r.isSuccess() && r.value < 0) {
-        return new Failure(`Search count cannot be below 0 (was ${r.value}).`);
-      }
-      return r;
+      return validate<SearchCountResponse>(res.response, SearchCountResponseSchema).map_val(x => x.count);
     }))
   }
 
-  async suggestions(query: string, auth: AuthService, count?: number): Promise<Result<Suggestion[], string>> {
+  async suggestions(query: string, auth: AuthService, count: number = 5): Promise<Result<Book[], string>> {
     if (query === "") {
       return new Success([]);
     }
 
-    return await this.get(`/api/suggestions/${encodeURIComponent(query)}/${count ?? 5}`, auth).then(this.postProcess(res => {
-      return validate(res.response, [SuggestionSchema])
+    return await this.get(`/api/search/query/${encodeURIComponent(query)}?count=${count}`, auth).then(this.postProcess(res => {
+      return validate<SearchResponse>(res.response, SearchResponseSchema).map_val(v => v.results);
     }));
   }
 
-  async updateBookMetadata(bookId: string, title: string, metadata: { key: string, value: string }[], auth: AuthService): Promise<Result<void, string>> {
+  async updateBookMetadata(bookId: string, title: string, metadata: { [key: string]: string }, auth: AuthService): Promise<Result<void, string>> {
     if (bookId === "") {
       return new Failure("The book id cannot be blank");
     }
-    return await this.post(`/api/books/metadata/${bookId}`, { title, metadata }, auth).then(this.postProcess(_ => new Success(null)))
+    return await this.put(`/api/books/metadata/${bookId}`, { title, metadata }, auth).then(this.postProcess(_ => new Success(null)))
   }
 
   async uploadBook(form: FormData, auth: AuthService, onProgress?: (progress: number, total: number) => void): Promise<Result<string, string>> {

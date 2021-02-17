@@ -1,9 +1,9 @@
-import {Component, Input, OnInit} from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import Book from "../services/api/schemas/book";
-import {AuthService} from "../services/auth.service";
-import {ApiService} from "../services/api/api.service";
-import {Result} from "../../utils/functional/result";
-import {Router} from "@angular/router";
+import { AuthService } from "../services/auth.service";
+import { ApiService } from "../services/api/api.service";
+import { Result } from "../../utils/functional/result";
+import { Router } from "@angular/router";
 
 @Component({
   selector: 'app-book',
@@ -21,7 +21,7 @@ export class BookComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  async submitChanges(req: {title: string, metadata: {key: string, value: string}[]}): Promise<void> {
+  async submitChanges(req: { title: string, metadata: { [key: string]: string } }): Promise<void> {
     if (this.promiseSource !== null) {
       return;
     }

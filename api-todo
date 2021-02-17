@@ -44,7 +44,7 @@ GET /api/books/cover/:id
     output: image
 
 GET /api/books/metadata/:id
-	output: { id: string, title: string, size: number, metadata: { key: string, value: string }[] }
+	output: { status: number, response: string, id: string, title: string, size: number, metadata: { [key: string]: string } }
 
 GET /api/books/thumbnail/:id
     output: image
@@ -79,7 +79,7 @@ DELETE /api/books/:id
 	output: { status: number, response: string }
 
 GET /api/search/query/:query?count=num&page=num
-	output: { status: number, response: string, results: { id: string, title: string, metadata: [string, string][] }}
+	output: { status: number, response: string, results: { id: string, title: string, size: number, metadata: { [key: string]: string } }[] }
 
 GET /api/search/count/:query
 	output: { status: number, response: string, count: number }

@@ -1,8 +1,6 @@
 import { Component, ElementRef, OnInit, Renderer2, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import fetchProgress from 'src/utils/ajax';
 import { Result } from 'src/utils/functional/result';
-import validate from 'src/utils/validator';
 import { ApiService } from '../services/api/api.service';
 import { AuthService } from '../services/auth.service';
 

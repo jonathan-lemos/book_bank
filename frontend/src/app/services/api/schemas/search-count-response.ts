@@ -2,14 +2,14 @@ import Record from "src/utils/validation/record";
 import Schema from "src/utils/validation/schema";
 import Type from "src/utils/validation/type";
 
-export default interface UploadResponse {
+export default interface SearchCountResponse {
   status: number,
   response: string,
-  id: string
+  count: number
 }
 
-export const UploadResponseSchema: Schema = new Record({
+export const SearchCountResponseSchema: Schema = new Record({
   status: new Type("number"),
   response: new Type("string"),
-  id: new Type("string")
+  count: new Type("number")
 });
