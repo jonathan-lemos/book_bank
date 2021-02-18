@@ -9,18 +9,16 @@ services:
     depends_on:
       - elastic
       - mongo
-      - mongo-rs-initiator
-      - mongo-connector
   elastic:
     image: elasticsearch:7.10.1
     environment:
       - discovery.type=single-node
-    ports:
-      - "9200:9200"
-      - "9300:9300"
+    expose:
+      - "9200"
+      - "9300"
     restart: always
   mongo:
     image: mongo:latest
-    ports:
-      - "27017:27017"
+    expose:
+      - "27017"
     restart: always

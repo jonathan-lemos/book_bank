@@ -13,20 +13,32 @@ div.searchbar
   & > div.input
     @extend .row
     @extend .w-100
+    @extend .border
 
     label
       @extend .w-100
       @extend .grow
-      @extend .mx-none
+      @extend .m-none
 
       input[type=text]
         @extend .w-100
-        @extend .mx-none
+        @extend .m-none
+        @extend .p-m
+        position: relative
+        border: none
+
+        &:focus
+          z-index: 1
 
     button
-      @extend .border
       @extend .glow-hover
       @extend .accent
+      @extend .py-m
+      position: relative
+      border: none
+
+      &:hover
+        z-index: 1
 
 
   & > div.suggestions

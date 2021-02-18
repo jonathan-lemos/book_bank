@@ -1,11 +1,11 @@
 <div [class]="this.class + ' relative ' + this.stateClass">
   <ng-content></ng-content>
-  <div class="dialog" *ngIf="this.state !== 'not-loading'">
-    <div class="col my-m" *ngIf="this.state === 'loading'">
+  <div [class]="'dialog ' + this.state === 'not-loading' ? 'hidden' : ''">
+    <div class="loading" *ngIf="this.state === 'loading'">
       <b class="size-200 my-s" *ngIf="this.state === 'loading'">{{this.spinnerState}}</b>
       <span class="size-150" *ngIf="this.progress !== null && this.total !== null">{{this.pctString}}</span>
     </div>
-    <div *ngIf="this.result !== null">
+    <div class="results" *ngIf="this.result !== null">
       <span class="close" (click)="this.close()">X</span>
       <b class="size-200 success pb-s" *ngIf="this.result.isSuccess()">success</b>
       <b class="size-200 failure pb-s" *ngIf="this.result.isError()">error</b>

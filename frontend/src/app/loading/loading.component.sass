@@ -1,3 +1,4 @@
+@import "../../styles/border"
 @import "../../styles/color"
 @import "../../styles/container"
 @import "../../styles/sizing"
@@ -10,13 +11,25 @@
   @extend .col
   @extend .center
   @extend .fluid
-  z-index: 1
-  background-color: #88888888
+  @extend .border
   position: absolute
   top: 0
   bottom: 0
   left: 0
   right: 0
+  z-index: 1
+  background-color: scale-color($color-bg, $alpha: -50%)
+
+.loading
+  @extend .col
+
+  &.hidden
+    opacity: 0
+    z-index: -1
+
+.results
+  @extend .col
+  position: relative
 
 .success
   color: $green
@@ -32,3 +45,5 @@
   cursor: pointer
   user-select: none
   color: $red
+  @extend .text-glow-hover
+  @extend .red

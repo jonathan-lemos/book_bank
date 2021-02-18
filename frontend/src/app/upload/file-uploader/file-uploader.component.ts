@@ -1,7 +1,10 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, OnInit, Output, Renderer2, ViewChild} from '@angular/core';
 import * as pdfjs from "pdfjs-dist";
-import {fileToBase64} from "../../../utils/file";
+import { round } from 'src/utils/format';
+import {fileToBinaryString} from "../../../utils/file";
 import {sizeUnit} from "../../../utils/size";
+import { FontAwesomeModule, FaIconLibrary } from '@fortawesome/angular-fontawesome';
+import { faUpload } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-file-uploader',
@@ -12,12 +15,14 @@ export class FileUploaderComponent implements OnInit, AfterViewInit {
   @ViewChild("file_input") file: ElementRef;
   @ViewChild("pdf_preview") pdf: ElementRef;
 
-  filename: string | null = null;
+  filename: string = "";
   size: number | null = null;
   @Output() newFilename = new EventEmitter<string>();
   @Output() upload = new EventEmitter<{filename: string, size: number}>();
 
-  constructor(private renderer: Renderer2) { }
+  constructor(private renderer: Renderer2, private library: FaIconLibrary) {
+    library.addIcons(faUpload);
+  }
 
   ngOnInit(): void {
   }
@@ -33,8 +38,9 @@ export class FileUploaderComponent implements OnInit, AfterViewInit {
       }
 
       const file = fileRef.files[0];
-      const b64 = await fileToBase64(file);
-      const doc = await pdfjs.getDocument(b64).promise;
+      const b64 = await fileToBinaryString(file);
+      pdfjs.GlobalWorkerOptions.workerSrc = 'pdf.worker.js';
+      const doc = await pdfjs.getDocument({data: b64}).promise;
       const cover = await doc.getPage(1);
 
       const viewportUnscaled = cover.getViewport({scale: 1});
@@ -44,6 +50,7 @@ export class FileUploaderComponent implements OnInit, AfterViewInit {
       canvas.height = canvas.offsetHeight;
 
       const scale = canvas.offsetWidth / viewportUnscaled.width;
+      canvas.height = viewportUnscaled.height * scale;
 
       const viewport = cover.getViewport({scale: scale});
       const ctx = canvas.getContext("2d");
@@ -66,6 +73,8 @@ export class FileUploaderComponent implements OnInit, AfterViewInit {
   }
 
   get uploadText(): string {
-    return this.size === null || this.filename === null ? "Upload" : `Upload ${this.filename} (${sizeUnit(this.size).join(" ")})`;
+    const [n, unit] = sizeUnit(this.size);
+    const nstr = round(n, 2);
+    return this.size === null || this.filename === null ? "Upload" : `Upload ${this.filename} (${nstr} ${unit})`;
   }
 }

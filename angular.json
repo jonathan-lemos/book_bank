@@ -25,7 +25,12 @@
             "aot": true,
             "assets": [
               "frontend/src/favicon.ico",
-              "frontend/src/assets"
+              "frontend/src/assets",
+              {
+                "glob": "pdf.worker.*",
+                "input": "node_modules/pdfjs-dist/build/",
+                "output": ""
+              }
             ],
             "styles": [
               "frontend/src/style.sass"

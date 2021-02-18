@@ -7,6 +7,8 @@ import {Roles, RoleType} from "../roles";
   providedIn: 'root'
 })
 export class AuthService implements CanActivate {
+  private authCallbacks: ((event: "login" | "logout") => void)[] = [];
+
   constructor(private router: Router) {
   }
 
@@ -30,6 +32,7 @@ export class AuthService implements CanActivate {
       localStorage.setItem("Auth-iat", res.value.iat.toISOString());
       localStorage.setItem("Auth-exp", res.value.exp.toISOString());
       localStorage.setItem("Auth-roles", res.value.roles.join(","));
+      this.authCallbacks.forEach(cb => cb("login"));
     }
     return res;
   }
@@ -90,7 +93,12 @@ export class AuthService implements CanActivate {
     window.localStorage.removeItem("Auth-iat");
     window.localStorage.removeItem("Auth-exp");
     window.localStorage.removeItem("Auth-roles");
+    this.authCallbacks.forEach(cb => cb("logout"));
     this.router.navigate(["login"]);
+  }
+
+  subscribe(callback: (event: "login" | "logout") => void) {
+    this.authCallbacks.push(callback);
   }
 }
 

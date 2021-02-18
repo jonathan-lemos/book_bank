@@ -57,6 +57,7 @@ defmodule BookBankWeb.Router do
     get "/login", PageController, :index
     get "/search", PageController, :index
     get "/upload", PageController, :index
+    get "/", PageController, :index
   end
 
   # Other scopes may use custom stacks.
