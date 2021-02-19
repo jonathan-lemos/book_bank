@@ -182,9 +182,6 @@ export class ApiService {
   }
 
   async uploadBook(form: FormData, auth: AuthService, onProgress?: (progress: number, total: number) => void): Promise<Result<string, string>> {
-    console.log(form);
-    console.log(form.get("title"));
-
     if (["title", "book", "filename"].some(t => form.get(t) === null)) {
       return new Failure("The form must have 'title', 'book', and 'filename' keys.");
     }

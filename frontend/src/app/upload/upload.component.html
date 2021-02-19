@@ -1,8 +1,8 @@
-<app-loading class="fluid col center align-center" [promise]="this.promise" (closed)="this.onClose()" [progress]="this.progress" [total]="this.total">
-  <form #upload_form class="w-50 h-100 col center" method="post" enctype="multipart/form-data">
-    <label class="w-100">
-      <input class="w-100" type="text" name="title" placeholder="Title" [(ngModel)]="this.title">
-    </label>
-    <app-file-uploader class="w-100" (newFilename)="this.title = $event" (upload)="this.upload()"></app-file-uploader>
-  </form>
-</app-loading>
+<form #upload_form class="w-50 h-100 col center" method="post" enctype="multipart/form-data">
+  <label class="w-100">
+    <input class="w-100" type="text" name="title" placeholder="Title" [(ngModel)]="this.title">
+  </label>
+  <app-file-uploader class="w-100" (newFilename)="this.title = $event" (upload)="this.upload()"></app-file-uploader>
+</form>
+<app-loading class="fluid col center align-center" [promise]="this.promise" (closed)="this.onClose()"
+  [progress]="this.progress" [total]="this.total">

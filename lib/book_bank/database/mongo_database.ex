@@ -6,17 +6,47 @@ defmodule BookBank.MongoDatabase do
   alias BookBank.Utils.Mongo, as: Utils
 
   defp generate_thumbnails(filename) do
+    thumb = Briefly.create!()
+    cover = Briefly.create!()
+
+    handle_error = fn file ->
+      case File.read(file) do
+        {:ok, string} -> string
+        {:error, _} -> "The output file #{file} no longer exists."
+      end
+    end
+
+    IO.puts("generating thumbnails")
+
     case BookBank.Utils.Parallel.invoke([
            fn ->
-             @thumbnail_service.create(File.stream!(filename), 1000, 1000)
+             @thumbnail_service.create(
+               File.stream!(filename, [], 4096),
+               File.stream!(cover, [], 4096),
+               1000,
+               1000
+             )
            end,
            fn ->
-             @thumbnail_service.create(File.stream!(filename), 300, 300)
+             @thumbnail_service.create(
+               File.stream!(filename, [], 4096),
+               File.stream!(thumb, [], 4096),
+               300,
+               300
+             )
            end
          ]) do
-      [{:ok, cover}, {:ok, thumb}] -> {:ok, cover, thumb}
-      [{:error, e}, _] -> {:error, e}
-      [_, {:error, e}] -> {:error, e}
+      [{:ok, _cover}, {:ok, _thumb}] ->
+        IO.puts("generated thumbnails")
+        {:ok, File.stream!(cover, [], 4096), File.stream!(thumb, [], 4096)}
+
+      [{:error, _e}, _] ->
+        IO.puts("failed")
+        {:error, handle_error.(thumb)}
+
+      [_, {:error, _e}] ->
+        IO.puts("failed")
+        {:error, handle_error.(cover)}
     end
   end
 
@@ -142,7 +172,6 @@ defmodule BookBank.MongoDatabase do
          when is_binary(title) and size >= 0 <-
            Utils.find("books", %{_id: id_string}),
          {document, true} <- {document, BookBank.Utils.Mongo.is_kvplist(metadata)} do
-
       metadata =
         update_metadata(
           metadata,

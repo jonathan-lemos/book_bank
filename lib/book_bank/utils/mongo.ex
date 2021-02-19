@@ -385,6 +385,8 @@ defmodule BookBank.Utils.Mongo do
   @spec insert_file(Stream.t(), String.t(), String.t()) ::
           {:ok, BSON.ObjectId.t(), non_neg_integer()} | {:error, String.t()}
   def insert_file(file_stream, filename, bucket_name \\ "fs") do
+    IO.puts("inserting #{filename}")
+
     bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
     upload_stream = Mongo.GridFs.Upload.open_upload_stream(bucket, filename)
 

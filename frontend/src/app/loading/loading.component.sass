@@ -2,48 +2,99 @@
 @import "../../styles/color"
 @import "../../styles/container"
 @import "../../styles/sizing"
+@import "../../styles/spacing"
 @import "../../styles/text"
 
-.relative
-  position: relative
-
-.dialog
+.outer
+  @extend .fluid
   @extend .col
   @extend .center
-  @extend .fluid
-  @extend .border
   position: absolute
+  z-index: 100
   top: 0
   bottom: 0
   left: 0
   right: 0
-  z-index: 1
   background-color: scale-color($color-bg, $alpha: -50%)
 
-.loading
-  @extend .col
+  &.loading
+    cursor: wait
 
-  &.hidden
+  &.finished
+    cursor: pointer
+
+  &.not-loading
+    background: none
     opacity: 0
     z-index: -1
 
-.results
-  @extend .col
-  position: relative
+  .inner
+    @extend .border
+    @extend .p-s
+    max-width: 90%
+    background-color: $color-bg
+    cursor: auto 
 
-.success
-  color: $green
+    z-index: 101
+    & *
+      z-index: 101
 
-.failure
-  color: $red
+    .loading
+      @extend .col
+      @extend .center
 
-.close
-  position: absolute
-  right: 0.5em
-  top: 0.5em
-  @extend .size-150
-  cursor: pointer
-  user-select: none
-  color: $red
-  @extend .text-glow-hover
-  @extend .red
+      cursor: wait
+
+      .spinner
+        @extend .m-m
+        font-size: 200%
+        user-select: none
+
+      .progress
+        user-select: none
+
+    .finished
+      @extend .col
+      @extend .center
+
+      .title-bar
+        @extend .pb-s
+        @extend .border-bottom
+        @extend .row
+        @extend .w-100
+  
+        .spacer
+          @extend .row
+          @extend .grow
+          @extend .w-100
+
+          .grow
+            @extend .w-100
+  
+        .success
+          color: $green
+          font-size: 150%
+        
+        .error
+          color: $red
+          font-size: 150%
+  
+        .close
+          @extend .text-glow-hover
+          @extend .red
+          @extend .p-s
+          cursor: pointer
+          user-select: none
+
+          & path
+            color: $red
+  
+      .body
+        @extend .w-100
+        @extend .p-s
+        @extend .my-s
+        word-wrap: anywhere
+  
+      .close
+        @extend .red
+        @extend .glow-hover

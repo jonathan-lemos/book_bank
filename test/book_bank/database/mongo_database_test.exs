@@ -38,8 +38,12 @@ defmodule BookBank.MongoDatabaseTest do
     end)
 
     expect(BookBank.MockThumbnail, :create, 2, fn
-      stream, 300, 300 -> {:ok, (opts[:thumbnail] || stream) |> Stream.map(& &1)}
-      stream, 1000, 1000 -> {:ok, (opts[:cover] || stream) |> Stream.map(& &1)}
+      stream, coll, 300, 300 ->
+        {:ok,
+         (opts[:thumbnail] || stream) |> Stream.map(& &1) |> Stream.into(coll) |> Stream.run()}
+
+      stream, coll, 1000, 1000 ->
+        {:ok, (opts[:cover] || stream) |> Stream.map(& &1) |> Stream.into(coll) |> Stream.run()}
     end)
 
     len = String.length(content)
@@ -189,12 +193,12 @@ defmodule BookBank.MongoDatabaseTest do
   end
 
   test "Can get book body" do
-    %BookBank.Book{id: id} = book =
-      assert_create_book("Green Eggs and Ham", "sam", %{"Author" => "Dr. Seuss"})
+    %BookBank.Book{id: id} =
+      book = assert_create_book("Green Eggs and Ham", "sam", %{"Author" => "Dr. Seuss"})
 
-      assert {:ok, stream, ^book} = get_book_file(id)
+    assert {:ok, stream, ^book} = get_book_file(id)
 
-      assert "sam" = stream |> Enum.join()
+    assert "sam" = stream |> Enum.join()
   end
 
   test "Can get book thumbnail" do

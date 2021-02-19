@@ -24,7 +24,8 @@ defmodule BookBankWeb.Endpoint do
     at: "/",
     from: {:book_bank, "priv/static/frontend"},
     gzip: false
-    # only: ~w(css fonts images js map favicon.ico robots.txt frontend)
+
+  # only: ~w(css fonts images js map favicon.ico robots.txt frontend)
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
@@ -42,7 +43,11 @@ defmodule BookBankWeb.Endpoint do
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
   plug Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json],
+    parsers: [
+      :urlencoded,
+      {:multipart, length: 17_179_869_184},
+      :json
+    ],
     pass: ["*/*"],
     json_decoder: Phoenix.json_library()
 

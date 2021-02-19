@@ -51,8 +51,8 @@ defmodule BookBank.MixProject do
       {:mox, "~> 1.0", only: :test},
       {:joken, "~> 2.0"},
       {:httpoison, "~> 1.7"},
-      {:ex2ms, "~> 1.6"},
-      {:briefly, "~> 0.3.0"}
+      {:briefly, "~> 0.3.0"},
+      {:porcelain, "~> 2.0"}
     ]
   end
 

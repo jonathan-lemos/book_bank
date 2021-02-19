@@ -1,17 +1,23 @@
-<div [class]="this.class + ' relative ' + this.stateClass">
-  <ng-content></ng-content>
-  <div [class]="'dialog ' + this.state === 'not-loading' ? 'hidden' : ''">
+<div [class]="this.outerClass" (click)="this.close($event)">
+  <div [class]="this.innerClass">
     <div class="loading" *ngIf="this.state === 'loading'">
-      <b class="size-200 my-s" *ngIf="this.state === 'loading'">{{this.spinnerState}}</b>
-      <span class="size-150" *ngIf="this.progress !== null && this.total !== null">{{this.pctString}}</span>
+      <b class="spinner" *ngIf="this.state === 'loading'">{{this.spinnerState}}</b>
+      <span class="progress" *ngIf="this.progress !== null && this.total !== null">{{this.pctString}}</span>
     </div>
-    <div class="results" *ngIf="this.result !== null">
-      <span class="close" (click)="this.close()">X</span>
-      <b class="size-200 success pb-s" *ngIf="this.result.isSuccess()">success</b>
-      <b class="size-200 failure pb-s" *ngIf="this.result.isError()">error</b>
-      <p class="w-50" *ngIf="this.result.isError()">
+    <div class="finished" *ngIf="this.result !== null">
+      <div class="title-bar">
+        <div class="spacer"></div>
+        <b class="success" *ngIf="this.result.isSuccess()">success</b>
+        <b class="error" *ngIf="this.result.isError()">error</b>
+        <div class="spacer">
+          <div class="grow"></div>
+          <fa-icon [icon]="['fas', 'times']" class="close" (click)="this.close()"></fa-icon>
+        </div>
+      </div>
+      <div class="body">
         {{this.result.value}}
-      </p>
+      </div>
+      <button class="close" (click)="this.close()">Close</button>
     </div>
   </div>
 </div>

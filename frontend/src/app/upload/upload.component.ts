@@ -16,7 +16,7 @@ export class UploadComponent implements OnInit {
   progress: number | null = null;
   total: number | null = null;
 
-  constructor(private renderer: Renderer2, private api: ApiService, private auth: AuthService, private router: Router) { }
+  constructor(private api: ApiService, private auth: AuthService, private router: Router) { }
 
   ngOnInit(): void {
   }
@@ -26,7 +26,7 @@ export class UploadComponent implements OnInit {
   }
 
   upload() {
-    const formEl = this.renderer.selectRootElement(this.element.nativeElement);
+    const formEl = this.element.nativeElement;
     const fd = new FormData(formEl);
 
     this.promise = this.api.uploadBook(fd, this.auth, (progress, total) => {
