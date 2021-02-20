@@ -48,8 +48,6 @@ config :phoenix, :json_library, Jason
 
 config :joken, :current_time_adapter, BookBankWeb.Utils.JwtTime
 
-config :porcelain, driver: Porcelain.Driver.Basic
-
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

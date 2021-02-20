@@ -41,15 +41,21 @@ div.searchbar
         z-index: 1
 
 
-  & > div.suggestions
+  & div.suggestions
     @extend .col
     @extend .w-100
+    @extend .border
     position: absolute
+
 
     & > div.suggestion
       @extend .w-100
       @extend .row
-      @extend .p-m
+      @extend .px-m
+      @extend .py-s
+      @extend .accent
+      @extend .glow-hover
+      @extend .border-bottom
 
       &:after
         height: 1px

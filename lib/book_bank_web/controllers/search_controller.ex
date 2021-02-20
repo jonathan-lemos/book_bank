@@ -8,8 +8,23 @@ defmodule BookBankWeb.SearchController do
         with {:ok, count} <- BookBankWeb.Validation.validate_integer(count, lower: 1),
              {:ok, page} <- BookBankWeb.Validation.validate_integer(page, lower: 0) do
           case @search_service.search(query, count, page) do
-            {:ok, hits} -> {:ok, :ok, %{"results" => hits}}
-            {:error, e} -> {:error, :internal_server_error, e}
+            {:ok, hits} ->
+              {:ok, :ok,
+               %{
+                 "results" =>
+                   hits
+                   |> Enum.map(fn %BookBank.Book{
+                                    id: id,
+                                    metadata: metadata,
+                                    size: size,
+                                    title: title
+                                  } ->
+                     %{"id" => id, "metadata" => metadata, "size" => size, "title" => title}
+                   end)
+               }}
+
+            {:error, e} ->
+              {:error, :internal_server_error, e}
           end
         else
           {:error, e} -> {:error, :bad_request, e}

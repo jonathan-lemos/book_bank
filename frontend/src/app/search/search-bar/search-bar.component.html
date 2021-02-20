@@ -7,10 +7,12 @@
       <fa-icon [icon]="['fas', 'search']"></fa-icon>
     </button>
   </div>
-  <div *ngIf="this.suggestions.length > 0" class="suggestions">
-    <div *ngFor="let suggestion of suggestions" class="suggestion">
-      <div class="text">{{suggestion.title}}</div>
-      <div class="type"></div>
+  <div class="my-s w-100 relative">
+    <div *ngIf="this.suggestions.length > 0" class="suggestions">
+      <div *ngFor="let suggestion of suggestions" class="suggestion">
+        <div class="text">{{suggestion.title}}</div>
+        <div class="type"></div>
+      </div>
     </div>
   </div>
 </div>

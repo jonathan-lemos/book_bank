@@ -225,6 +225,8 @@ defmodule BookBankWeb.Utils do
           Kernel.reraise e, __STACKTRACE__
         end
 
+        IO.inspect(e)
+
         conn
         |> Plug.Conn.put_status(:internal_server_error)
         |> Phoenix.Controller.json(

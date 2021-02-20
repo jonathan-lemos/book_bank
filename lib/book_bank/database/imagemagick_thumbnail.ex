@@ -3,15 +3,23 @@ defmodule BookBank.ImageMagickThumbnail do
 
   def create(input, output, max_width, max_height)
       when is_integer(max_width) and is_integer(max_height) do
-    case Porcelain.exec(
-           "convert",
-           ["-resize", "#{max_width}x#{max_height}>", "pdf:-[0]", "jpeg:-"],
-           in: input,
-           out: output,
-           err: :out
-         ) do
-      %Porcelain.Result{status: 0, out: collectable} -> {:ok, collectable}
-      %Porcelain.Result{out: collectable} -> {:error, collectable}
+    file_in = Briefly.create!()
+    input |> Stream.into(File.stream!(file_in)) |> Stream.run()
+
+    case System.cmd(
+      "convert",
+      [
+        "-resize",
+        "#{max_width}x#{max_height}>",
+        "pdf:#{file_in}[0]",
+        "jpeg:-"
+      ],
+      into: output,
+      stderr_to_stdout: true,
+      parallelism: true
+    ) do
+      {coll, 0} -> {:ok, coll}
+      {coll, _} -> {:error, coll}
     end
   end
 end

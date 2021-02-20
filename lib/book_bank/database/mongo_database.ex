@@ -16,8 +16,6 @@ defmodule BookBank.MongoDatabase do
       end
     end
 
-    IO.puts("generating thumbnails")
-
     case BookBank.Utils.Parallel.invoke([
            fn ->
              @thumbnail_service.create(
@@ -37,15 +35,12 @@ defmodule BookBank.MongoDatabase do
            end
          ]) do
       [{:ok, _cover}, {:ok, _thumb}] ->
-        IO.puts("generated thumbnails")
         {:ok, File.stream!(cover, [], 4096), File.stream!(thumb, [], 4096)}
 
       [{:error, _e}, _] ->
-        IO.puts("failed")
         {:error, handle_error.(thumb)}
 
       [_, {:error, _e}] ->
-        IO.puts("failed")
         {:error, handle_error.(cover)}
     end
   end
