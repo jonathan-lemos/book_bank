@@ -157,6 +157,15 @@ defmodule BookBankWeb.Utils do
   end
 
   defp with_valid_opts({:ok, conn, extra}, func) do
+    send_stream = fn conn, stream ->
+      stream |> Enum.reduce_while(conn, fn (chunk, conn) ->
+        case conn |> @chunk_service.send_chunk(chunk) do
+          {:ok, conn} -> {:cont, conn}
+          {:error, _e} -> {:halt, conn}
+        end
+      end)
+    end
+
     try do
       case func.(conn, extra) do
         {conn, {:ok, status, :stream, stream, list}} when is_list(list) and (is_atom(status) or is_integer(status)) ->
@@ -164,15 +173,13 @@ defmodule BookBankWeb.Utils do
           |> download_opts(list)
           |> Plug.Conn.send_chunked(status)
 
-          Stream.scan(stream, conn, fn chunk, conn_acc -> @chunk_service.send_chunk(conn_acc, chunk) end) |> Stream.run()
-          conn
+          send_stream.(conn, stream)
 
         {conn, {:ok, status, :stream, stream}} when is_atom(status) or is_integer(status) ->
           conn = conn
           |> Plug.Conn.send_chunked(status)
 
-          Stream.scan(stream, conn, fn chunk, conn_acc -> @chunk_service.send_chunk(conn_acc, chunk) end) |> Stream.run()
-          conn
+          send_stream.(conn, stream)
 
         {conn, {:ok, status, map}} when is_map(map) and (is_atom(status) or is_integer(status)) ->
           conn
@@ -273,11 +280,16 @@ defmodule BookBankWeb.Utils do
 end
 
 defmodule BookBankWeb.Utils.ChunkBehavior do
-  @callback send_chunk(Plug.Conn.t(), binary()) :: Plug.Conn.t()
+  @callback send_chunk(Plug.Conn.t(), binary()) :: {:ok, Plug.Conn.t()} | {:error, String.t()}
 end
 
 defmodule BookBankWeb.Utils.Chunk do
   def send_chunk(conn, chunk) do
-    conn |> Plug.Conn.chunk(chunk)
+    case conn |> Plug.Conn.chunk(chunk) do
+      {:ok, conn} -> {:ok, conn}
+      {:error, e} when is_atom(e) -> {:error, Atom.to_string(e)}
+      {:error, e} when is_binary(e) -> {:error, e}
+      {:error, e} -> {:error, Kernel.inspect(e)}
+    end
   end
 end

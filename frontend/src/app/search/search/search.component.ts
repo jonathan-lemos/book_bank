@@ -57,17 +57,4 @@ export class SearchComponent implements OnInit {
       }
     );
   }
-
-  prevPage() {
-
-  }
-
-  nextPage() {
-
-  }
-
-  setPage(n: number) {
-
-  }
-
 }

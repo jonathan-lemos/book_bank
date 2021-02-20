@@ -15,7 +15,8 @@ export class SearchBarComponent implements OnInit {
   suggestions: Book[] = [];
   lastQuery: number = Date.now();
 
-  @Output() submit = new EventEmitter<string>()
+  @Output() search = new EventEmitter<string>()
+  @Output() onClickSuggestion = new EventEmitter<Book>()
 
   constructor(private api: ApiService, private auth: AuthService, private library: FaIconLibrary) {
     library.addIcons(faSearch);
@@ -26,7 +27,7 @@ export class SearchBarComponent implements OnInit {
 
   async onKeyUp(e: KeyboardEvent): Promise<void> {
     if (e.key === "Enter") {
-      this.submit.emit(this.searchText);
+      this.search.emit(this.searchText);
       return;
     }
 
@@ -36,7 +37,7 @@ export class SearchBarComponent implements OnInit {
 
     const now = Date.now();
 
-    if (now - this.lastQuery < 200) {
+    if (now - this.lastQuery < 500) {
       return;
     }
 

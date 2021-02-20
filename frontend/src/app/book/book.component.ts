@@ -2,8 +2,8 @@ import { Component, Input, OnInit } from '@angular/core';
 import Book from "../services/api/schemas/book";
 import { AuthService } from "../services/auth.service";
 import { ApiService } from "../services/api/api.service";
-import { Result } from "../../utils/functional/result";
-import { Router } from "@angular/router";
+import { Failure, Result } from "../../utils/functional/result";
+import { ActivatedRoute, Router } from "@angular/router";
 
 @Component({
   selector: 'app-book',
@@ -11,14 +11,21 @@ import { Router } from "@angular/router";
   styleUrls: ['./book.component.sass']
 })
 export class BookComponent implements OnInit {
-  @Input() book: Book;
+  book: Result<Book, string> | null = null;
   editing = false;
   promise: Promise<Result<string, string>> | null = null;
   promiseSource: "submit" | "delete" | null = null;
 
-  constructor(private auth: AuthService, private api: ApiService, private router: Router) { }
+  constructor(private auth: AuthService, private api: ApiService, private router: Router, private av: ActivatedRoute) { }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    const id = this.av.snapshot.paramMap.get("id");
+    if (id == null) {
+      this.book = new Failure("No book given.");
+      return;
+    }
+
+    this.book = await this.api.book(id);
   }
 
   async submitChanges(req: { title: string, metadata: { [key: string]: string } }): Promise<void> {
@@ -26,7 +33,11 @@ export class BookComponent implements OnInit {
       return;
     }
 
-    this.promise = this.api.updateBookMetadata(this.book.id, req.title, req.metadata, this.auth)
+    if (!this.book?.isSuccess()) {
+      return;
+    }
+
+    this.promise = this.api.updateBookMetadata(this.book.value.id, req.title, req.metadata, this.auth)
       .then(x => x.map_val(() => "The book metadata was updated successfully."));
     this.promiseSource = "submit";
   }
@@ -36,7 +47,11 @@ export class BookComponent implements OnInit {
       return;
     }
 
-    this.promise = this.api.deleteBook(this.book.id, this.auth)
+    if (!this.book?.isSuccess()) {
+      return;
+    }
+
+    this.promise = this.api.deleteBook(this.book.value.id, this.auth)
       .then(r => r.map_val(() => "The book was deleted successfully"));
     this.promiseSource = "delete";
   }
@@ -45,7 +60,9 @@ export class BookComponent implements OnInit {
     await this.promise.then(async r => {
       if (r.isSuccess()) {
         if (this.promiseSource === "submit") {
-          await this.router.navigate([`book/${this.book.id}`])
+          if (this.book?.isSuccess()) {
+            await this.router.navigate([`book/${this.book.value.id}`])
+          }
         }
         else {
           await this.router.navigate(["home"]);
@@ -55,6 +72,10 @@ export class BookComponent implements OnInit {
         console.log(r.value);
       }
     })
+  }
+
+  hasBook(): boolean {
+    return this.book !== null && this.book.isSuccess();
   }
 
 }

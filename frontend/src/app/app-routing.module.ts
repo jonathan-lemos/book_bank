@@ -23,7 +23,7 @@ export const routingEntries: RoutingEntry[] = [
     auth: { name: "Home", putInNavbar: true, roles: RoleType.Authenticated }
   },
   {
-    route: { path: "search", component: SearchComponent, canActivate: [AuthService] },
+    route: { path: "search/:query", component: SearchComponent, canActivate: [AuthService] },
     auth: { name: "Search", putInNavbar: false, roles: RoleType.Authenticated }
   },
   {
@@ -31,7 +31,7 @@ export const routingEntries: RoutingEntry[] = [
     auth: { name: "Upload", putInNavbar: true, roles: ["admin", "librarian"] }
   },
   {
-    route: { path: "book", component: BookComponent, canActivate: [AuthService] },
+    route: { path: "book/:id", component: BookComponent, canActivate: [AuthService] },
     auth: { name: "Book", putInNavbar: false, roles: RoleType.Authenticated }
   },
   {
