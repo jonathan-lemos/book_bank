@@ -25,6 +25,10 @@ export class UploadComponent implements OnInit {
     return `${window.location.origin}/api/books`;
   }
 
+  get loadingPromise() {
+    return this.promise?.then(id => id.map_val(val => `New book id: ${val}`))
+  }
+
   upload() {
     const formEl = this.element.nativeElement;
     const fd = new FormData(formEl);
@@ -32,7 +36,7 @@ export class UploadComponent implements OnInit {
     this.promise = this.api.uploadBook(fd, this.auth, (progress, total) => {
       this.progress = progress;
       this.total = total;
-    });
+    }).then(id => id.map_val(val => `New book id: ${val}`));
   }
 
   async onClose(): Promise<void> {

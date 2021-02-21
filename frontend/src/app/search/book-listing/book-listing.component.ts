@@ -1,6 +1,7 @@
-import {Component, Input, OnInit} from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import Book from "../../services/api/schemas/book";
-import {thumbnail} from "../../../utils/routing";
+import { thumbnail } from "../../../utils/routing";
+import { mapToList } from 'src/utils/misc';
 
 @Component({
   selector: 'app-book-listing',
@@ -9,6 +10,10 @@ import {thumbnail} from "../../../utils/routing";
 })
 export class BookListingComponent implements OnInit {
   @Input() book: Book;
+
+  get metadataList() {
+    return mapToList(this.book.metadata);
+  }
 
   constructor() { }
 

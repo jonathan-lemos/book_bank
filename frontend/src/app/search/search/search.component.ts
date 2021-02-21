@@ -43,10 +43,11 @@ export class SearchComponent implements OnInit {
       return;
     }
 
-    const res = await this.api.search(this.query, this.auth, this.per_page_count);
+    const res = await this.api.search(this.query, this.auth, this.per_page_count, this.page);
     res.match(
       s => {
         this.books.push(...s);
+        this.page++;
         if (s.length === 0) {
           this.done = true;
         }

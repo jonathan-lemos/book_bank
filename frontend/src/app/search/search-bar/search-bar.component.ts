@@ -4,6 +4,7 @@ import { AuthService } from "../../services/auth.service";
 import { FontAwesomeModule, FaIconLibrary } from '@fortawesome/angular-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import Book from 'src/app/services/api/schemas/book';
+import throttle from 'src/utils/throttle';
 
 @Component({
   selector: 'app-search-bar',
@@ -13,17 +14,26 @@ import Book from 'src/app/services/api/schemas/book';
 export class SearchBarComponent implements OnInit {
   searchText: string = "";
   suggestions: Book[] = [];
-  lastQuery: number = Date.now();
 
   @Output() search = new EventEmitter<string>()
   @Output() onClickSuggestion = new EventEmitter<Book>()
 
   constructor(private api: ApiService, private auth: AuthService, private library: FaIconLibrary) {
-    library.addIcons(faSearch);
+    this.library.addIcons(faSearch);
   }
 
   ngOnInit(): void {
   }
+
+  throttledKeyUpHandler = throttle(async (query: string, auth: AuthService) => {
+    const res = await this.api.suggestions(query, auth);
+    res.match(
+      success => {
+        this.suggestions = success;
+      },
+      failure => console.log(failure)
+    );
+  }, 250);
 
   async onKeyUp(e: KeyboardEvent): Promise<void> {
     if (e.key === "Enter") {
@@ -35,20 +45,6 @@ export class SearchBarComponent implements OnInit {
       return;
     }
 
-    const now = Date.now();
-
-    if (now - this.lastQuery < 500) {
-      return;
-    }
-
-    this.lastQuery = now;
-
-    const res = await this.api.suggestions(this.searchText, this.auth);
-    res.match(
-      success => {
-        this.suggestions = success;
-      },
-      failure => console.log(failure)
-    );
+    this.throttledKeyUpHandler(this.searchText, this.auth);
   }
 }

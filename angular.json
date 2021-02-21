@@ -97,8 +97,7 @@
               "frontend/src/assets"
             ],
             "styles": [
-              "frontend/src/styles/base.sass",
-              "frontend/src/styles/style.sass"
+              "frontend/src/style.sass"
             ],
             "scripts": []
           }

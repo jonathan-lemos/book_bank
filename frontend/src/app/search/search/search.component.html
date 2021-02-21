@@ -1,4 +1,5 @@
-<div class="fluid">
+<app-navbar></app-navbar>
+<div class="fluid col center">
   <span *ngIf="this.books !== undefined && this.books.length === 0">No books found matching '{{this.query}}'.</span>
   <app-book-listing *ngFor="let book of books" [book]="book"></app-book-listing>
   <div class="intersection-observer" appIntersectionObserver (change)="this.onIntersectChange($event)"></div>

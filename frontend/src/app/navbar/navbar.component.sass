@@ -1,34 +1,41 @@
 @import "../../styles/border"
+@import "../../styles/container"
 @import "../../styles/sizing"
 @import "../../styles/spacing"
 @import "../../styles/text"
 
-div.spacer
-    height: 1em
+:host
+    width: 100%
 
-nav
-    &.hidden
-        display: none
+    nav
+        @extend .row
+        @extend .p-m
 
-    @extend .py-m
+        &.hidden
+            display: none
 
-    .title
-        @extend .size-150
-        @extend .no-decoration
-        @extend .bold
-        @extend .pr-s
-        @extend .mr-s
-        @extend .pl-xs
-        @extend .ml-xs
+        .title
+            @extend .size-150
+            @extend .no-decoration
+            @extend .bold
+            @extend .pr-s
+            @extend .mr-s
+            @extend .pl-xs
+            @extend .ml-xs
 
-    .menu-item
-        @extend .no-decoration
-        @extend .px-xs
-        @extend .mx-s
-        color: gray
-        
-        &:hover
-            color: black
-        
-        &.active
-            color: black
+        .menu-item
+            @extend .no-decoration
+            @extend .px-xs
+            @extend .mx-s
+            color: gray
+
+            &:hover
+                color: black
+
+            &.active
+                color: black
+
+    &.fixed
+        nav
+            position: fixed
+            top: 0

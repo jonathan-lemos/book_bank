@@ -144,12 +144,12 @@ export class ApiService {
     return await this.del(`/api/books/${id}`).then(this.postProcess(_ => new Success(null)));
   }
 
-  async search(query: string, auth: AuthService, count?: number, page?: number): Promise<Result<Book[], string>> {
+  async search(query: string, auth: AuthService, count: number = 5, page: number = 0): Promise<Result<Book[], string>> {
     if (query === "") {
       return new Success([]);
     }
 
-    return await this.get(`/api/search/${query}?count=${count}&page=${page}`, auth).then(this.postProcess(res => {
+    return await this.get(`/api/search/query/${query}?count=${count}&page=${page}`, auth).then(this.postProcess(res => {
       return validate<SearchResponse>(res.response, SearchResponseSchema).map_val(x => x.results);
     }));
   }
@@ -159,7 +159,7 @@ export class ApiService {
       return new Success(0);
     }
 
-    return await this.get(`/api/search_count/${query}`, auth).then(this.postProcess(res => {
+    return await this.get(`/api/search/count/${query}`, auth).then(this.postProcess(res => {
       return validate<SearchCountResponse>(res.response, SearchCountResponseSchema).map_val(x => x.count);
     }))
   }

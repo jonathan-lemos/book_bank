@@ -91,6 +91,40 @@ defmodule BookBank.ElasticSearch do
     end
   end
 
+  def init() do
+      case hit_endpoint(:put, "/", %{
+        settings: %{
+          analysis: %{
+            analyzer: %{
+              autocomplete: %{
+                tokenizer: "lowercase",
+                filter: ["autocomplete_truncate", "autocomplete"]
+              }
+            },
+            filter: %{
+              autocomplete: %{
+                type: "edge_ngram",
+                min_gram: 3,
+                max_gram: 20,
+              },
+              autocomplete_truncate: %{
+                type: "truncate",
+                length: 20
+              }
+            }
+          }
+        }
+      }) do
+        {:ok, _} -> :ok
+        {:error, e} ->
+          if e |> String.contains?("resource_already_exists_exception") do
+            :ok
+          else
+            {:error, e}
+          end
+    end
+  end
+
   @impl true
   def search(query, count, page) do
     with {:ok, size} <- BookBankWeb.Validation.validate_integer(count, lower: 1),
@@ -117,7 +151,8 @@ defmodule BookBank.ElasticSearch do
                multi_match: %{
                  query: query,
                  fields: ["title", "metadata.value^2"],
-                 fuzziness: "AUTO"
+                 fuzziness: "AUTO",
+                 analyzer: "autocomplete"
                }
              },
              sort: [
@@ -147,7 +182,8 @@ defmodule BookBank.ElasticSearch do
              multi_match: %{
                query: query,
                fields: ["title", "metadata.value^2"],
-               fuzziness: "AUTO"
+               fuzziness: "AUTO",
+               analyzer: "autocomplete"
              }
            }
          }) do

@@ -49,7 +49,11 @@ defmodule BookBank.Application do
     res = Supervisor.start_link(children, opts)
 
     if Application.get_env(:book_bank, :services)[BookBank.AuthBehavior] === BookBank.MongoAuth do
-      BookBank.Utils.Mongo.init()
+      :ok = BookBank.Utils.Mongo.init()
+    end
+
+    if Application.get_env(:book_bank, :services)[BookBank.SearchBehavior] === BookBank.ElasticSearch do
+      :ok = BookBank.ElasticSearch.init()
     end
 
     res

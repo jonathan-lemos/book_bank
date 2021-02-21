@@ -49,7 +49,7 @@ defmodule BookBankWeb.SearchController do
   def get_count(conn, %{"query" => query}) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
       obj =
-        case @search_service.count(query) do
+        case @search_service.search_count(query) do
           {:ok, count} -> {:ok, :ok, %{"count" => count}}
           {:error, e} -> {:error, :internal_server_error, e}
         end

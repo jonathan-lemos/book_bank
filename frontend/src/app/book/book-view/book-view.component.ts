@@ -4,6 +4,7 @@ import {cover} from "../../../utils/routing";
 import {sizeUnit} from "../../../utils/size";
 import {round} from "../../../utils/format";
 import {AuthService} from "../../services/auth.service";
+import { mapToList } from 'src/utils/misc';
 
 @Component({
   selector: 'app-book-view',
@@ -17,6 +18,10 @@ export class BookViewComponent implements OnInit {
   constructor(public auth: AuthService) { }
 
   ngOnInit(): void {
+  }
+
+  get metadataList() {
+    return mapToList(this.book.metadata);
   }
 
   cover_url(): string {
