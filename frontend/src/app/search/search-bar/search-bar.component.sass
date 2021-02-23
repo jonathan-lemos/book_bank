@@ -13,7 +13,7 @@ div.searchbar
   & > div.input
     @extend .row
     @extend .w-100
-    @extend .border
+    @extend .border-fg
 
     label
       @extend .w-100
@@ -31,8 +31,7 @@ div.searchbar
           z-index: 1
 
     button
-      @extend .glow-hover
-      @extend .accent
+      @extend .glow-accent-hover
       @extend .py-m
       position: relative
       border: none
@@ -44,7 +43,7 @@ div.searchbar
   & div.suggestions
     @extend .col
     @extend .w-100
-    @extend .border
+    @extend .border-fg
     position: absolute
 
 
@@ -53,9 +52,8 @@ div.searchbar
       @extend .row
       @extend .px-m
       @extend .py-s
-      @extend .accent
-      @extend .glow-hover
-      @extend .border-bottom
+      @extend .glow-accent-hover
+      @extend .border-bottom-fg
 
       &:after
         height: 1px

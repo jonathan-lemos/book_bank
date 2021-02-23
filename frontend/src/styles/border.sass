@@ -3,72 +3,56 @@
 =glow-small($color)
   box-shadow: 0 0 0.02em 0 $color, 0 0 0.05em 0 $color
 
+  &:disabled
+    box-shadow: none
+
 =glow-large($color)
   box-shadow: 0 0 0.2em 0.01em $color, 0 0 0.5em 0.05em $color
 
-=border($dir)
-  .border-#{$dir}
-    border-#{$dir}: 1px solid $color-fg-muted
+  &:disabled
+    box-shadow: none
 
-    &.accent
-      border-#{$dir}-color: $color-accent
-
-    &.red
-      border-#{$dir}-color: $red
-
-    &.green
-      border-#{$dir}-color: $green
+=border-dir($dir, $color, $name)
+  .border-#{$dir}-#{$name}
+    border-#{$dir}: 1px solid $color
 
     &:disabled
       border-#{$dir}-color: $color-bg-muted
 
+=border($color, $name)
+  @each $dir in ('left', 'right', 'top', 'bottom')
+    +border-dir($dir, $color, $name)
 
-+border('left')
-+border('right')
-+border('top')
-+border('bottom')
+  .border-x-#{$name}
+    @extend .border-left-#{$name}
+    @extend .border-right-#{$name}
 
-.border-y
-  @extend .border-bottom
-  @extend .border-top
+  .border-y-#{$name}
+    @extend .border-top-#{$name}
+    @extend .border-bottom-#{$name}
 
-.border-x
-  @extend .border-left
-  @extend .border-right
+  .border-#{$name}
+    @extend .border-x-#{$name}
+    @extend .border-y-#{$name}
 
-.border
-  @extend .border-y
-  @extend .border-x
+=glow($color, $name)
+  .glow-#{$name}
+    +glow-large($color)
 
-  &:disabled
-    box-shadow: none
+  .glow-#{$name}-hover:hover
+    +glow-large($color)
 
-.glow
-  +glow-large($color-fg-muted)
+  .glow-small-#{$name}
+    +glow-small($color)
 
-  &.accent
-    +glow-large($color-accent)
+  .glow-small-#{$name}-hover:hover
+    +glow-small($color)
 
-  &.red
-    +glow-large($red)
+=colored-styles($color, $name)
+  +border($color, $name)
+  +glow($color, $name)
 
-  &.green
-    +glow-large($green)
-
-  &:disabled
-    box-shadow: none
-
-.glow-hover:hover
-  +glow-large($color-fg-muted)
-
-  &.accent
-    +glow-large($color-accent)
-
-  &.red
-    +glow-large($red)
-
-  &.green
-    +glow-large($green)
-
-  &:disabled
-    box-shadow: none
++colored-styles($color-fg, 'fg')
++colored-styles($color-accent, 'accent')
++colored-styles($red, 'red')
++colored-styles($green, 'green')

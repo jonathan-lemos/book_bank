@@ -19,14 +19,20 @@
   .size-#{$i}
     font-size: percentage($i / 100)
 
-.text-glow-hover:hover
-  text-shadow: 0 0 0.1em $color-fg
+=text-glow($color, $name)
+  .text-glow-#{$name}
+    text-shadow: 0 0 0.1em $color
 
-  &.accent
-    text-shadow: 0 0 0.1em $color-accent
+    &:disabled
+      text-shadow: none
 
-  &.red
-    text-shadow: 0 0 0.1em $red
+  .text-glow-#{$name}-hover:hover
+    text-shadow: 0 0 0.1em $color
 
-  &.green
-    text-shadow: 0 0 0.1em $green
+    &:disabled
+      text-shadow: none
+
++text-glow($color-fg, 'fg')
++text-glow($color-accent, 'accent')
++text-glow($green, 'green')
++text-glow($red, 'red')

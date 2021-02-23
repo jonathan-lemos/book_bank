@@ -7,7 +7,7 @@
     <input type="hidden" name="filename" [(ngModel)]="this.filename">
     <canvas #pdf_preview></canvas>
   </div>
-  <button class="accent border glow-hover w-100 mt-m" [disabled]="this.filename === null" (click)="this.tryUpload()">
+  <button class="border-accent glow-accent-hover w-100 mt-m" [disabled]="this.filename === null" (click)="this.tryUpload()">
     <fa-icon class="mr-xs" [icon]="['fas', 'upload']"></fa-icon>
     {{this.uploadText}}
   </button>

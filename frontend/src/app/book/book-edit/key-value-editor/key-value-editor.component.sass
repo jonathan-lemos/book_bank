@@ -1,0 +1,21 @@
+@import "../../../../styles/border"
+@import "../../../../styles/container"
+@import "../../../../styles/sizing"
+@import "../../../../styles/spacing"
+
+:host
+    @extend .fluid
+    @extend .col
+
+    .kvp-row
+        @extend .w-100
+        @extend .m-s
+
+        .key, .value
+            @extend .grow
+            @extend .w-100
+            @extend .glow-accent-hover
+
+        fa-icon
+            @extend .glow-red-hover
+            cursor: pointer

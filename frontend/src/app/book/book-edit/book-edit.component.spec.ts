@@ -17,6 +17,7 @@ describe('BookEditComponent', () => {
 
   beforeEach(() => {
     fixture = TestBed.createComponent(BookEditComponent);
+
     component = fixture.componentInstance;
     component.book = {
       id: "1",
@@ -27,6 +28,7 @@ describe('BookEditComponent', () => {
       },
       size: 69
     };
+
     fixture.detectChanges();
   });
 

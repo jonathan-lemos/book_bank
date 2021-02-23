@@ -34,7 +34,7 @@
     z-index: -1
 
   .inner
-    @extend .border
+    @extend .border-fg
     @extend .p-s
     max-width: 90%
     background-color: $color-bg
@@ -64,7 +64,7 @@
 
       .title-bar
         @extend .pb-s
-        @extend .border-bottom
+        @extend .border-bottom-fg
         @extend .row
         @extend .w-100
   
@@ -85,8 +85,7 @@
           font-size: 150%
   
         .close
-          @extend .text-glow-hover
-          @extend .red
+          @extend .text-glow-red-hover
           @extend .p-s
           cursor: pointer
           user-select: none
@@ -101,5 +100,4 @@
         word-wrap: anywhere
   
       .close
-        @extend .red
-        @extend .glow-hover
+        @extend .glow-red-hover

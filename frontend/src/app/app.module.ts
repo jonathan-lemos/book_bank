@@ -19,6 +19,7 @@ import {BookComponent} from './book/book.component';
 import {LoadingComponent} from './loading/loading.component';
 import {UploadComponent} from './upload/upload.component';
 import {FileUploaderComponent} from './upload/file-uploader/file-uploader.component';
+import { KeyValueEditorComponent } from './book/book-edit/key-value-editor/key-value-editor.component';
 
 @NgModule({
     declarations: [
@@ -38,6 +39,7 @@ import {FileUploaderComponent} from './upload/file-uploader/file-uploader.compon
         LoadingComponent,
         UploadComponent,
         FileUploaderComponent,
+        KeyValueEditorComponent,
     ],
     imports: [
         BrowserModule,
