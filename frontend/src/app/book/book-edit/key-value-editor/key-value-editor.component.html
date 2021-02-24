@@ -1,5 +1,7 @@
-<div class="kvp-row" *ngFor="let kvp of this.internalKeyValueListing; index as i">
-    <input class="key" [placeholder]="this.placeholderKey(kvp.key)" [(ngModel)]="kvp.key" (ngModelChange)="this.afterMutateKvp(i)">
-    <input class="value" [placeholder]="this.placeholderValue(kvp.value)" [(ngModel)]="kvp.value" (ngModelChange)="this.afterMutateKvp(i)">
-    <fa-icon class="delete-button" [icon]="['fas', 'trash']" (click)="this.deleteKvp(i)"></fa-icon>
+<div *ngFor="let kvp of this.internalKeyValueListing; index as i" class="kvp-row">
+  <input (ngModelChange)="this.afterMutateKvp(i)" [(ngModel)]="kvp.key" [placeholder]="this.placeholderKey(kvp.key)"
+         class="key">
+  <input (ngModelChange)="this.afterMutateKvp(i)" [(ngModel)]="kvp.value" [placeholder]="this.placeholderValue(kvp.value)"
+         class="value">
+  <fa-icon (click)="this.deleteKvp(i)" [icon]="['fas', 'trash']" class="delete-button"></fa-icon>
 </div>

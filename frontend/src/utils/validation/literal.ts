@@ -1,4 +1,4 @@
-import { Failure, Result, Success } from "../functional/result";
+import {Failure, Result, Success} from "../functional/result";
 import Schema from "./schema";
 
 type LiteralType = boolean | string | number | null;
@@ -13,10 +13,9 @@ export default class Literal extends Schema {
 
   public validate(a: any): Result<void, string> {
     if (a === this.value) {
-        return new Success(null);
-    }
-    else {
-        return new Failure(`${JSON.stringify(a)} !== ${this.toString()}.`);
+      return new Success(null);
+    } else {
+      return new Failure(`${JSON.stringify(a)} !== ${this.toString()}.`);
     }
   }
 

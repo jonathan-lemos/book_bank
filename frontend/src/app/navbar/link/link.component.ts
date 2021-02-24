@@ -12,7 +12,8 @@ export class LinkComponent implements OnInit {
   @Input() active: boolean;
   @Output() click = new EventEmitter<string>();
 
-  constructor() { }
+  constructor() {
+  }
 
   ngOnInit(): void {
   }

@@ -1,4 +1,6 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {FormsModule} from '@angular/forms';
+import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 
 import {FileUploaderComponent} from './file-uploader.component';
 
@@ -8,9 +10,11 @@ describe('FileUploaderComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ FileUploaderComponent ]
+      imports: [FontAwesomeModule, FormsModule],
+      declarations: [FileUploaderComponent],
+      providers: [FaIconLibrary]
     })
-    .compileComponents();
+      .compileComponents();
   });
 
   beforeEach(() => {

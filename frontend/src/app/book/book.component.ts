@@ -1,9 +1,9 @@
-import { Component, Input, OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import Book from "../services/api/schemas/book";
-import { AuthService } from "../services/auth.service";
-import { ApiService } from "../services/api/api.service";
-import { Failure, Result } from "../../utils/functional/result";
-import { ActivatedRoute, Router } from "@angular/router";
+import {AuthService} from "../services/auth.service";
+import {ApiService} from "../services/api/api.service";
+import {Failure, Result} from "../../utils/functional/result";
+import {ActivatedRoute, Router} from "@angular/router";
 
 @Component({
   selector: 'app-book',
@@ -16,7 +16,8 @@ export class BookComponent implements OnInit {
   promise: Promise<Result<string, string>> | null = null;
   promiseSource: "submit" | "delete" | null = null;
 
-  constructor(private auth: AuthService, private api: ApiService, private router: Router, private av: ActivatedRoute) { }
+  constructor(private auth: AuthService, private api: ApiService, private router: Router, private av: ActivatedRoute) {
+  }
 
   async ngOnInit(): Promise<void> {
     const id = this.av.snapshot.paramMap.get("id");
@@ -63,12 +64,10 @@ export class BookComponent implements OnInit {
           if (this.book?.isSuccess()) {
             await this.router.navigate([`book/${this.book.value.id}`])
           }
-        }
-        else {
+        } else {
           await this.router.navigate(["home"]);
         }
-      }
-      else {
+      } else {
         console.log(r.value);
       }
     })

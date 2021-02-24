@@ -3,12 +3,13 @@
     <div class="text">
       <p>Click here or drag a pdf.</p>
     </div>
-    <input #file_input type="file" name="book" accept="application/pdf">
-    <input type="hidden" name="filename" [(ngModel)]="this.filename">
+    <input #file_input accept="application/pdf" name="book" type="file">
+    <input [(ngModel)]="this.filename" name="filename" type="hidden">
     <canvas #pdf_preview></canvas>
   </div>
-  <button class="border-accent glow-accent-hover w-100 mt-m" [disabled]="this.filename === null" (click)="this.tryUpload()">
-    <fa-icon class="mr-xs" [icon]="['fas', 'upload']"></fa-icon>
+  <button (click)="this.tryUpload()" [disabled]="this.filename === null"
+          class="border-accent glow-accent-hover w-100 mt-m">
+    <fa-icon [icon]="['fas', 'upload']" class="mr-xs"></fa-icon>
     {{this.uploadText}}
   </button>
 </div>

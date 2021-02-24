@@ -1,8 +1,8 @@
-import { Component, ElementRef, OnInit, Renderer2, ViewChild } from '@angular/core';
-import { Router } from '@angular/router';
-import { Result } from 'src/utils/functional/result';
-import { ApiService } from '../services/api/api.service';
-import { AuthService } from '../services/auth.service';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Router} from '@angular/router';
+import {Result} from 'src/utils/functional/result';
+import {ApiService} from '../services/api/api.service';
+import {AuthService} from '../services/auth.service';
 
 @Component({
   selector: 'app-upload',
@@ -16,9 +16,7 @@ export class UploadComponent implements OnInit {
   progress: number | null = null;
   total: number | null = null;
 
-  constructor(private api: ApiService, private auth: AuthService, private router: Router) { }
-
-  ngOnInit(): void {
+  constructor(private api: ApiService, private auth: AuthService, private router: Router) {
   }
 
   get url() {
@@ -27,6 +25,9 @@ export class UploadComponent implements OnInit {
 
   get loadingPromise() {
     return this.promise?.then(id => id.map_val(val => `New book id: ${val}`))
+  }
+
+  ngOnInit(): void {
   }
 
   upload() {
@@ -43,8 +44,7 @@ export class UploadComponent implements OnInit {
     await this.promise.then(async r => {
       if (r.isSuccess()) {
         await this.router.navigate([`book/${r.value}`])
-      }
-      else {
+      } else {
         console.log(r.value);
       }
     })

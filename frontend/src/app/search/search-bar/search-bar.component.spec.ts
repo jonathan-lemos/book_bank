@@ -1,7 +1,9 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {FormsModule} from '@angular/forms';
+import {RouterTestingModule} from '@angular/router/testing';
+import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 
-import { SearchBarComponent } from './search-bar.component';
+import {SearchBarComponent} from './search-bar.component';
 
 describe('SearchBarComponent', () => {
   let component: SearchBarComponent;
@@ -9,8 +11,9 @@ describe('SearchBarComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RouterTestingModule],
-      declarations: [SearchBarComponent]
+      imports: [RouterTestingModule, FontAwesomeModule, FormsModule],
+      declarations: [SearchBarComponent],
+      providers: [FaIconLibrary]
     })
       .compileComponents();
   });

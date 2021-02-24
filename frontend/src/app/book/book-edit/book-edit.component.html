@@ -5,27 +5,27 @@
     </div>
     <app-key-value-editor [(keyValuePairs)]="this.book.metadata"></app-key-value-editor>
   </div>
-  <div class="row space-evenly" *ngIf="!this.confirm_delete">
-    <button class="border-accent hover-glow-accent grow" (click)="this.cancel.emit()">
-      <fa-icon class="mr-xs" [icon]="['fas', 'ban']"></fa-icon>
+  <div *ngIf="!this.confirm_delete" class="row space-evenly">
+    <button (click)="this.cancel.emit()" class="border-accent hover-glow-accent grow">
+      <fa-icon [icon]="['fas', 'ban']" class="mr-xs"></fa-icon>
       Cancel
     </button>
-    <button class="hover-glow-red grow" (click)="this.handleSubmit()">
-      <fa-icon class="mr-xs" [icon]="['fas', 'save']"></fa-icon>
+    <button (click)="this.handleSubmit()" class="hover-glow-red grow">
+      <fa-icon [icon]="['fas', 'save']" class="mr-xs"></fa-icon>
       Save
     </button>
-    <button class="hover-glow-red grow" (click)="this.confirm_delete = true" *ngIf="this.auth.hasRole('admin')">
-      <fa-icon class="mr-xs" [icon]="['fas', 'trash']"></fa-icon>
+    <button (click)="this.confirm_delete = true" *ngIf="this.auth.hasRole('admin')" class="hover-glow-red grow">
+      <fa-icon [icon]="['fas', 'trash']" class="mr-xs"></fa-icon>
       Delete
     </button>
   </div>
-  <div class="row" *ngIf="this.confirm_delete">
-    <button class="glow-hover-red grow" (click)="this.del.emit()">
-      <fa-icon class="mr-xs" [icon]="['fas', 'trash']"></fa-icon>
+  <div *ngIf="this.confirm_delete" class="row">
+    <button (click)="this.del.emit()" class="glow-hover-red grow">
+      <fa-icon [icon]="['fas', 'trash']" class="mr-xs"></fa-icon>
       Confirm Delete
     </button>
-    <button class="border-accent glow-hover-accent grow" (click)="this.confirm_delete = false">
-      <fa-icon class="mr-xs" [icon]="['fas', 'ban']"></fa-icon>
+    <button (click)="this.confirm_delete = false" class="border-accent glow-hover-accent grow">
+      <fa-icon [icon]="['fas', 'ban']" class="mr-xs"></fa-icon>
       Cancel
     </button>
   </div>

@@ -18,7 +18,8 @@ export class SearchComponent implements OnInit {
   max_count: number = 0;
   done: boolean = false;
 
-  constructor(private auth: AuthService, private api: ApiService, private av: ActivatedRoute) { }
+  constructor(private auth: AuthService, private api: ApiService, private av: ActivatedRoute) {
+  }
 
   async ngOnInit(): Promise<void> {
     this.query = this.av.snapshot.paramMap.get("query") ?? "";

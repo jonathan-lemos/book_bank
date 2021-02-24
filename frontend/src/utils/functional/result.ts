@@ -5,6 +5,8 @@ export abstract class Result<T, E> {
     }
   }
 
+  abstract get value(): T | E;
+
   isError(): this is Failure<T, E> {
     return this instanceof Failure;
   }
@@ -29,8 +31,6 @@ export abstract class Result<T, E> {
     const val = this.value;
     return typeof val === "string" ? val : JSON.stringify(val);
   }
-
-  abstract get value(): T | E;
 }
 
 export class Success<T, E> extends Result<T, E> {

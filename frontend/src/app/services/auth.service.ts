@@ -48,8 +48,7 @@ export class AuthService implements CanActivate {
     }
     if (this.isAuthenticated()) {
       return this.router.parseUrl("/home");
-    }
-    else {
+    } else {
       return this.router.parseUrl("/login");
     }
   }
@@ -70,8 +69,7 @@ export class AuthService implements CanActivate {
       }
       const roles = localStorage.getItem("Auth-roles").split(",");
       return new AuthenticationContext(sub, iat, exp, roles);
-    }
-    catch (e) {
+    } catch (e) {
       return null;
     }
   }
@@ -108,6 +106,13 @@ export class AuthenticationContext {
   public readonly exp: Date;
   public readonly roles: string[];
 
+  constructor(sub: string, iat: Date, exp: Date, roles: string[]) {
+    this.sub = sub;
+    this.iat = iat;
+    this.exp = exp;
+    this.roles = roles;
+  }
+
   public static tryCreate(token: string): Result<AuthenticationContext, string> {
     const components = token.split(".");
     if (components.length !== 3) {
@@ -117,8 +122,7 @@ export class AuthenticationContext {
     let object;
     try {
       object = JSON.parse(atob(components[1]));
-    }
-    catch (e) {
+    } catch (e) {
       return new Failure("Malformed JWT. Expected a base64-encoded object.");
     }
 
@@ -141,8 +145,7 @@ export class AuthenticationContext {
     let iat: Date;
     try {
       iat = new Date(iat_num * 1000);
-    }
-    catch (e) {
+    } catch (e) {
       return new Failure(`Malformed JWT. 'iat' of ${iat_num} does not represent a valid UNIX time.`);
     }
     if (iat.getTime() > Date.now()) {
@@ -161,8 +164,7 @@ export class AuthenticationContext {
     let exp: Date;
     try {
       exp = new Date(exp_num * 1000);
-    }
-    catch (e) {
+    } catch (e) {
       return new Failure(`Malformed JWT. 'exp' of ${exp_num} does not represent a valid UNIX time.`);
     }
     if (exp.getTime() <= Date.now()) {
@@ -177,13 +179,6 @@ export class AuthenticationContext {
     }
 
     return new Success(new AuthenticationContext(sub, iat, exp, object.roles.map(x => x.toString())));
-  }
-
-  constructor(sub: string, iat: Date, exp: Date, roles: string[]) {
-    this.sub = sub;
-    this.iat = iat;
-    this.exp = exp;
-    this.roles = roles;
   }
 
   isExpired() {

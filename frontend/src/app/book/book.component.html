@@ -1,12 +1,12 @@
 <app-navbar></app-navbar>
 <div class="fluid col center">
-  <app-book-view *ngIf="this.hasBook() && !this.editing" [book]="this.book.value" (edit)="this.editing = true">
+  <app-book-view (edit)="this.editing = true" *ngIf="this.hasBook() && !this.editing" [book]="this.book.value">
   </app-book-view>
-  <app-book-edit *ngIf="this.hasBook() && this.editing" [book]="this.book.value" (cancel)="this.editing = false"
-    (submit)="this.submitChanges($event)" (del)="this.deleteBook()"></app-book-edit>
-  <div class="w-50 col error" *ngIf="this.book !== null && this.book.isError()">
+  <app-book-edit (cancel)="this.editing = false" (del)="this.deleteBook()" (submit)="this.submitChanges($event)"
+                 *ngIf="this.hasBook() && this.editing" [book]="this.book.value"></app-book-edit>
+  <div *ngIf="this.book !== null && this.book.isError()" class="w-50 col error">
     <h2 class="p-s">error</h2>
     <p>{{this.book.value}}</p>
   </div>
 </div>
-<app-loading class="fluid col center" [promise]="this.promise" (closed)="this.onClose()"></app-loading>
+<app-loading (closed)="this.onClose()" [promise]="this.promise" class="fluid col center"></app-loading>

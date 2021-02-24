@@ -1,8 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
-import { round } from 'src/utils/format';
-import { sizeUnit } from 'src/utils/size';
+import {FaIconLibrary} from '@fortawesome/angular-fontawesome';
+import {faTimes} from '@fortawesome/free-solid-svg-icons';
+import {round} from 'src/utils/format';
 import {Result} from "../../utils/functional/result";
 
 @Component({
@@ -13,13 +12,20 @@ import {Result} from "../../utils/functional/result";
 export class LoadingComponent implements OnInit {
   @Input() progress: number | null = null;
   @Input() total: number | null = null;
-  _state: "not-loading" | "loading" | "finished" = "not-loading";
   result: Result<string, string> | null = null;
   spinnerPhases = ["|", "/", "-", "\\"];
   spinnerIndex = 0;
+  @Output() finished = new EventEmitter<Result<string, string>>();
+  @Output() closed = new EventEmitter<void>();
 
   constructor(private library: FaIconLibrary) {
     library.addIcons(faTimes);
+  }
+
+  _state: "not-loading" | "loading" | "finished" = "not-loading";
+
+  get state(): "not-loading" | "loading" | "finished" {
+    return this._state;
   }
 
   @Input() set promise(value: Promise<Result<string, string>> | null) {
@@ -34,8 +40,7 @@ export class LoadingComponent implements OnInit {
         this.setState(r);
         this.finished.emit(r);
       });
-    }
-    else {
+    } else {
       this.setState("not-loading");
     }
   }
@@ -54,14 +59,9 @@ export class LoadingComponent implements OnInit {
     }
     return `${round(100 * this.progress / this.total, 1)}%`
   }
-  
 
   get spinnerState() {
     return this.spinnerPhases[this.spinnerIndex];
-  }
-
-  get state(): "not-loading" | "loading" | "finished" {
-    return this._state;
   }
 
   get stateClass(): string {
@@ -72,24 +72,20 @@ export class LoadingComponent implements OnInit {
     if (typeof value === "string") {
       this._state = value;
       this.result = null;
-    }
-    else {
+    } else {
       this._state = "finished";
       this.result = value;
     }
 
     if (value === "loading") {
-        (async () => {
-          while (this.state === "loading") {
-            await new Promise(res => setTimeout(res, 250));
-            this.spinnerIndex = (this.spinnerIndex + 1) % this.spinnerPhases.length;
-          }
-        })();
+      (async () => {
+        while (this.state === "loading") {
+          await new Promise(res => setTimeout(res, 250));
+          this.spinnerIndex = (this.spinnerIndex + 1) % this.spinnerPhases.length;
+        }
+      })();
     }
   }
-
-  @Output() finished = new EventEmitter<Result<string, string>>();
-  @Output() closed = new EventEmitter<void>();
 
   close(e?: MouseEvent): void {
     if (this.state !== "finished") {

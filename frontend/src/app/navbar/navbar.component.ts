@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
-import { routingEntries } from '../app-routing.module';
-import { AuthService } from '../services/auth.service';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute, NavigationEnd, Router} from '@angular/router';
+import {routingEntries} from '../app-routing.module';
+import {AuthService} from '../services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -14,14 +14,6 @@ export class NavbarComponent implements OnInit {
   url: string;
 
   constructor(public auth: AuthService, public router: Router, private route: ActivatedRoute) {
-  }
-
-  private updateState(): void {
-    const entries = routingEntries
-      .filter(x => x.auth && x.auth.putInNavbar && x.auth.roles && this.auth.allowed(x.auth.roles))
-      .map(x => ({ path: x.route.path, name: x.auth.name, active: this.url.replace(/^\//, "").startsWith(x.route.path) }));
-
-    this.links = entries;
   }
 
   ngOnInit(): void {
@@ -37,5 +29,17 @@ export class NavbarComponent implements OnInit {
     });
 
     this.auth.subscribe(this.updateState.bind(this));
+  }
+
+  private updateState(): void {
+    const entries = routingEntries
+      .filter(x => x.auth && x.auth.putInNavbar && x.auth.roles && this.auth.allowed(x.auth.roles))
+      .map(x => ({
+        path: x.route.path,
+        name: x.auth.name,
+        active: this.url.replace(/^\//, "").startsWith(x.route.path)
+      }));
+
+    this.links = entries;
   }
 }

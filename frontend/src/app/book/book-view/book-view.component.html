@@ -15,11 +15,11 @@
   </div>
   <div class="w-100 row">
     <button class="accent border hover-glow">
-      <fa-icon class="mr-xs" [icon]="['fas', 'download']"></fa-icon>
+      <fa-icon [icon]="['fas', 'download']" class="mr-xs"></fa-icon>
       Download ({{this.size_string}})
     </button>
-    <button class="red border hover-glow" *ngIf="this.auth.hasRole('librarian', 'admin')" (click)="this.edit.emit()">
-      <fa-icon class="mr-xs" [icon]="['fas', 'edit']"></fa-icon>
+    <button (click)="this.edit.emit()" *ngIf="this.auth.hasRole('librarian', 'admin')" class="red border hover-glow">
+      <fa-icon [icon]="['fas', 'edit']" class="mr-xs"></fa-icon>
       Edit
     </button>
   </div>

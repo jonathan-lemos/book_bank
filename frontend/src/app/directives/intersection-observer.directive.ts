@@ -8,7 +8,8 @@ export class IntersectionObserverDirective implements OnInit {
 
   observer: IntersectionObserver;
 
-  constructor(private el: ElementRef) { }
+  constructor(private el: ElementRef) {
+  }
 
   ngOnInit() {
     this.observer = new IntersectionObserver(e => {

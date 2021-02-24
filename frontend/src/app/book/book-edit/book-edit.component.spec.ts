@@ -1,7 +1,10 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import {FormsModule} from '@angular/forms';
+import {RouterTestingModule} from '@angular/router/testing';
+import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 
 import {BookEditComponent} from './book-edit.component';
+import {KeyValueEditorComponent} from './key-value-editor/key-value-editor.component';
 
 describe('BookEditComponent', () => {
   let component: BookEditComponent;
@@ -9,10 +12,11 @@ describe('BookEditComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ RouterTestingModule ],
-      declarations: [ BookEditComponent ]
+      imports: [RouterTestingModule, FontAwesomeModule, FormsModule],
+      declarations: [BookEditComponent, KeyValueEditorComponent],
+      providers: [FaIconLibrary]
     })
-    .compileComponents();
+      .compileComponents();
   });
 
   beforeEach(() => {

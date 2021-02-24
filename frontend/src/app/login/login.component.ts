@@ -13,7 +13,8 @@ export class LoginComponent implements OnInit {
   password: string = "";
   error: string = "";
 
-  constructor(private api: ApiService, private auth: AuthService, private router: Router, private av: ActivatedRoute) { }
+  constructor(private api: ApiService, private auth: AuthService, private router: Router, private av: ActivatedRoute) {
+  }
 
   ngOnInit(): void {
     if (this.auth.isAuthenticated() !== null) {

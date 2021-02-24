@@ -6,8 +6,7 @@ export function flatten<T>(a: NestedList<T>) {
   for (const elem of a) {
     if (Array.isArray(elem)) {
       ret.push(...flatten(elem));
-    }
-    else {
+    } else {
       ret.push(elem);
     }
   }
@@ -34,8 +33,7 @@ export function range(n: number, end?: number, step?: number): number[] {
       for (let i = n; i < end; ++i) {
         ret.push(i);
       }
-    }
-    else {
+    } else {
       for (let i = n; i > end; --i) {
         ret.push(i);
       }
@@ -52,8 +50,7 @@ export function range(n: number, end?: number, step?: number): number[] {
     for (let i = n; i < end; i += step) {
       ret.push(i);
     }
-  }
-  else {
+  } else {
     if (step > 0) {
       step = -step;
     }

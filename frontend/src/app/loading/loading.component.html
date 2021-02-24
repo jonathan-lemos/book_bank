@@ -1,23 +1,23 @@
-<div [class]="this.outerClass" (click)="this.close($event)">
+<div (click)="this.close($event)" [class]="this.outerClass">
   <div [class]="this.innerClass">
-    <div class="loading" *ngIf="this.state === 'loading'">
-      <b class="spinner" *ngIf="this.state === 'loading'">{{this.spinnerState}}</b>
-      <span class="progress" *ngIf="this.progress !== null && this.total !== null">{{this.pctString}}</span>
+    <div *ngIf="this.state === 'loading'" class="loading">
+      <b *ngIf="this.state === 'loading'" class="spinner">{{this.spinnerState}}</b>
+      <span *ngIf="this.progress !== null && this.total !== null" class="progress">{{this.pctString}}</span>
     </div>
-    <div class="finished" *ngIf="this.result !== null">
+    <div *ngIf="this.result !== null" class="finished">
       <div class="title-bar">
         <div class="spacer"></div>
-        <b class="success" *ngIf="this.result.isSuccess()">success</b>
-        <b class="error" *ngIf="this.result.isError()">error</b>
+        <b *ngIf="this.result.isSuccess()" class="success">success</b>
+        <b *ngIf="this.result.isError()" class="error">error</b>
         <div class="spacer">
           <div class="grow"></div>
-          <fa-icon [icon]="['fas', 'times']" class="close" (click)="this.close()"></fa-icon>
+          <fa-icon (click)="this.close()" [icon]="['fas', 'times']" class="close"></fa-icon>
         </div>
       </div>
       <div class="body">
         {{this.result.value}}
       </div>
-      <button class="close" (click)="this.close()">Close</button>
+      <button (click)="this.close()" class="close">Close</button>
     </div>
   </div>
 </div>

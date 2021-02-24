@@ -1,9 +1,7 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { NgModel } from '@angular/forms';
-import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
-import { Library } from '@fortawesome/fontawesome-svg-core';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
-import { mapToList } from 'src/utils/misc';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {FaIconLibrary} from '@fortawesome/angular-fontawesome';
+import {faTrash} from '@fortawesome/free-solid-svg-icons';
+import {mapToList} from 'src/utils/misc';
 
 @Component({
   selector: 'app-key-value-editor',
@@ -16,11 +14,15 @@ export class KeyValueEditorComponent implements OnInit {
 
   internalKeyValueListing: { key: string, value: string, new: boolean }[];
 
+  constructor(library: FaIconLibrary) {
+    library.addIcons(faTrash);
+  }
+
   outputInternalKeyValueListing() {
     this.keyValuePairsChange.emit(
       this.internalKeyValueListing
         .filter(x => x.key !== "" && x.value !== "")
-        .reduce((a, c) => Object.assign(a, { [c.key]: c.value }), {})
+        .reduce((a, c) => Object.assign(a, {[c.key]: c.value}), {})
     );
   }
 
@@ -33,7 +35,7 @@ export class KeyValueEditorComponent implements OnInit {
   }
 
   addKvp() {
-    this.internalKeyValueListing.push({ key: "", value: "", new: true });
+    this.internalKeyValueListing.push({key: "", value: "", new: true});
   }
 
   deleteKvp(index: number) {
@@ -49,12 +51,8 @@ export class KeyValueEditorComponent implements OnInit {
     initialValue === "" ? "[value]" : initialValue;
   }
 
-  constructor(private library: FaIconLibrary) {
-    library.addIcons(faTrash);
-  }
-
   ngOnInit(): void {
-    this.internalKeyValueListing = mapToList(this.keyValuePairs).map(x => ({ ...x, new: false }));
+    this.internalKeyValueListing = mapToList(this.keyValuePairs).map(x => ({...x, new: false}));
     this.addKvp();
   }
 }

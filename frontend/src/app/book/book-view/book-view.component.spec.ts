@@ -1,7 +1,8 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {RouterTestingModule} from '@angular/router/testing';
+import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 
-import { BookViewComponent } from './book-view.component';
+import {BookViewComponent} from './book-view.component';
 
 describe('BookViewComponent', () => {
   let component: BookViewComponent;
@@ -9,8 +10,9 @@ describe('BookViewComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RouterTestingModule],
-      declarations: [BookViewComponent]
+      imports: [RouterTestingModule, FontAwesomeModule],
+      declarations: [BookViewComponent],
+      providers: [FaIconLibrary]
     })
       .compileComponents();
   });

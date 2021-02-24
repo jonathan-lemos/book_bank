@@ -1,8 +1,8 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { ApiService } from "../../services/api/api.service";
-import { AuthService } from "../../services/auth.service";
-import { FontAwesomeModule, FaIconLibrary } from '@fortawesome/angular-fontawesome';
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import {Component, EventEmitter, OnInit, Output} from '@angular/core';
+import {ApiService} from "../../services/api/api.service";
+import {AuthService} from "../../services/auth.service";
+import {FaIconLibrary} from '@fortawesome/angular-fontawesome';
+import {faSearch} from '@fortawesome/free-solid-svg-icons';
 import Book from 'src/app/services/api/schemas/book';
 import throttle from 'src/utils/throttle';
 
@@ -17,14 +17,6 @@ export class SearchBarComponent implements OnInit {
 
   @Output() search = new EventEmitter<string>()
   @Output() onClickSuggestion = new EventEmitter<Book>()
-
-  constructor(private api: ApiService, private auth: AuthService, private library: FaIconLibrary) {
-    this.library.addIcons(faSearch);
-  }
-
-  ngOnInit(): void {
-  }
-
   throttledKeyUpHandler = throttle(async (query: string, auth: AuthService) => {
     const res = await this.api.suggestions(query, auth);
     res.match(
@@ -34,6 +26,13 @@ export class SearchBarComponent implements OnInit {
       failure => console.log(failure)
     );
   }, 250);
+
+  constructor(private api: ApiService, private auth: AuthService, library: FaIconLibrary) {
+    library.addIcons(faSearch);
+  }
+
+  ngOnInit(): void {
+  }
 
   async onKeyUp(e: KeyboardEvent): Promise<void> {
     if (e.key === "Enter") {

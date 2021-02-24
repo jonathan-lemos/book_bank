@@ -2,7 +2,7 @@ import List from "src/utils/validation/list";
 import Record from "src/utils/validation/record";
 import Schema from "src/utils/validation/schema";
 import Type from "src/utils/validation/type";
-import Book, { BookSchema } from "./book";
+import Book, {BookSchema} from "./book";
 
 export default interface SearchResponse {
   status: number,

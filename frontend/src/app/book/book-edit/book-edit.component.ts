@@ -1,7 +1,9 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import Book from "../../services/api/schemas/book";
-import { cover } from "../../../utils/routing";
-import { AuthService } from "../../services/auth.service";
+import {cover} from "../../../utils/routing";
+import {AuthService} from "../../services/auth.service";
+import {FaIconLibrary} from '@fortawesome/angular-fontawesome';
+import {faBan, faSave, faTrash} from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-book-edit',
@@ -18,10 +20,15 @@ export class BookEditComponent implements OnInit {
   @Output() cancel = new EventEmitter<void>();
   @Output() del = new EventEmitter<void>();
 
-  constructor(public auth: AuthService) { }
+  constructor(public auth: AuthService, library: FaIconLibrary) {
+    library.addIcons(faBan, faSave, faTrash);
+  }
 
   ngOnInit(): void {
-    this.new_meta = [...Object.keys(this.book.metadata).map(key => ({ key: key, value: this.book.metadata[key] }))].map((x, i) => ({ number: i, ...x }));
+    this.new_meta = [...Object.keys(this.book.metadata).map(key => ({
+      key: key,
+      value: this.book.metadata[key]
+    }))].map((x, i) => ({number: i, ...x}));
     this.new_title = this.book.title;
   }
 
@@ -34,7 +41,7 @@ export class BookEditComponent implements OnInit {
     if (t.number === null && t.key === "" && t.value === "") {
       return;
     }
-    this.new_meta.push({ number: null, key: "", value: "" });
+    this.new_meta.push({number: null, key: "", value: ""});
   }
 
   deleteRow(row: number): void {
@@ -42,6 +49,9 @@ export class BookEditComponent implements OnInit {
   }
 
   handleSubmit(): void {
-    this.submit.emit({ title: this.new_title, metadata: this.new_meta.reduce((a, c) => Object.assign(a, { [c.key]: c.value }), {}) });
+    this.submit.emit({
+      title: this.new_title,
+      metadata: this.new_meta.reduce((a, c) => Object.assign(a, {[c.key]: c.value}), {})
+    });
   }
 }

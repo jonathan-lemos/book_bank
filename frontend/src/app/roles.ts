@@ -3,4 +3,5 @@ export enum RoleType {
   Authenticated,
   Any
 }
+
 export type Roles = RoleType | string[];

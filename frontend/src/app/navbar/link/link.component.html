@@ -1,3 +1,4 @@
-<a [routerLink]="[this.href]" class="menu-item" [ngClass]="{'active': this.active}" (click)="this.click.emit(this.href)">
-    {{this.title}}
+<a (click)="this.click.emit(this.href)" [ngClass]="{'active': this.active}" [routerLink]="[this.href]"
+   class="menu-item">
+  {{this.title}}
 </a>

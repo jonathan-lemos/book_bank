@@ -1,10 +1,10 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, OnInit, Output, Renderer2, ViewChild} from '@angular/core';
 import * as pdfjs from "pdfjs-dist";
-import { round } from 'src/utils/format';
+import {round} from 'src/utils/format';
 import {fileToBinaryString} from "../../../utils/file";
 import {sizeUnit} from "../../../utils/size";
-import { FontAwesomeModule, FaIconLibrary } from '@fortawesome/angular-fontawesome';
-import { faUpload } from '@fortawesome/free-solid-svg-icons';
+import {FaIconLibrary} from '@fortawesome/angular-fontawesome';
+import {faUpload} from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-file-uploader',
@@ -18,10 +18,16 @@ export class FileUploaderComponent implements OnInit, AfterViewInit {
   filename: string = "";
   size: number | null = null;
   @Output() newFilename = new EventEmitter<string>();
-  @Output() upload = new EventEmitter<{filename: string, size: number}>();
+  @Output() upload = new EventEmitter<{ filename: string, size: number }>();
 
-  constructor(private renderer: Renderer2, private library: FaIconLibrary) {
+  constructor(private renderer: Renderer2, library: FaIconLibrary) {
     library.addIcons(faUpload);
+  }
+
+  get uploadText(): string {
+    const [n, unit] = sizeUnit(this.size);
+    const nstr = round(n, 2);
+    return this.size === null || this.filename === null ? "Upload" : `Upload ${this.filename} (${nstr} ${unit})`;
   }
 
   ngOnInit(): void {
@@ -70,11 +76,5 @@ export class FileUploaderComponent implements OnInit, AfterViewInit {
     if (this.filename !== null && this.size !== null) {
       this.upload.emit({filename: this.filename, size: this.size});
     }
-  }
-
-  get uploadText(): string {
-    const [n, unit] = sizeUnit(this.size);
-    const nstr = round(n, 2);
-    return this.size === null || this.filename === null ? "Upload" : `Upload ${this.filename} (${nstr} ${unit})`;
   }
 }

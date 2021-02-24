@@ -1,7 +1,7 @@
 <div class="searchbar">
   <div class="input">
     <label>
-      <input type="text" placeholder="Search" [(ngModel)]="searchText" (keyup)="onKeyUp($event)">
+      <input (keyup)="onKeyUp($event)" [(ngModel)]="searchText" placeholder="Search" type="text">
     </label>
     <button (click)="this.searchText.length > 0 && this.search.emit(searchText)">
       <fa-icon [icon]="['fas', 'search']"></fa-icon>
@@ -9,7 +9,7 @@
   </div>
   <div class="my-s w-100 relative">
     <div *ngIf="this.suggestions.length > 0" class="suggestions">
-      <div *ngFor="let suggestion of suggestions" class="suggestion" (click)="this.onClickSuggestion.emit(suggestion)">
+      <div (click)="this.onClickSuggestion.emit(suggestion)" *ngFor="let suggestion of suggestions" class="suggestion">
         <div class="text">{{suggestion.title}}</div>
         <div class="type"></div>
       </div>

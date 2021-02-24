@@ -1,12 +1,10 @@
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
-import { By } from '@angular/platform-browser';
-import { FaIconLibrary, FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { assert } from 'pdfjs-dist/types/shared/util';
+import {DebugElement} from '@angular/core';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
+import {FormsModule} from '@angular/forms';
+import {By} from '@angular/platform-browser';
+import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 
-import { KeyValueEditorComponent } from './key-value-editor.component';
+import {KeyValueEditorComponent} from './key-value-editor.component';
 
 describe('KeyValueEditorComponent', () => {
   let component: KeyValueEditorComponent;
@@ -47,7 +45,7 @@ describe('KeyValueEditorComponent', () => {
   });
 
   it('should add a row', done => {
-    const expected = { ...pairs, Test: "Value" };
+    const expected = {...pairs, Test: "Value"};
 
     component.addKvp();
     const lastIndex = component.internalKeyValueListing.length - 1;
@@ -65,7 +63,7 @@ describe('KeyValueEditorComponent', () => {
 
   it('should remove a row', done => {
     let remainingValue = component.internalKeyValueListing[1];
-    let expected = { [remainingValue.key]: remainingValue.value };
+    let expected = {[remainingValue.key]: remainingValue.value};
 
     component.deleteKvp(0);
 
@@ -111,19 +109,17 @@ describe('KeyValueEditorComponent', () => {
 
     for (const key in update) {
       switch (key) {
-        case "key":
-          {
-            let input = row.query(By.css(".key"));
-            input.nativeElement.value = update.key;
-            input.nativeElement.dispatchEvent(new Event("input"));
-          }
+        case "key": {
+          let input = row.query(By.css(".key"));
+          input.nativeElement.value = update.key;
+          input.nativeElement.dispatchEvent(new Event("input"));
+        }
           break;
-        case "value":
-          {
-            let input = row.query(By.css(".value"));
-            input.nativeElement.value = update.value;
-            input.nativeElement.dispatchEvent(new Event("input"));
-          }
+        case "value": {
+          let input = row.query(By.css(".value"));
+          input.nativeElement.value = update.value;
+          input.nativeElement.dispatchEvent(new Event("input"));
+        }
           break;
         default:
           break;

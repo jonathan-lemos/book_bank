@@ -1,9 +1,9 @@
 <app-navbar></app-navbar>
-<form #upload_form class="w-50 h-100 col center" method="post" enctype="multipart/form-data">
+<form #upload_form class="w-50 h-100 col center" enctype="multipart/form-data" method="post">
   <label class="w-100">
-    <input class="w-100" type="text" name="title" placeholder="Title" [(ngModel)]="this.title">
+    <input [(ngModel)]="this.title" class="w-100" name="title" placeholder="Title" type="text">
   </label>
-  <app-file-uploader class="w-100" (newFilename)="this.title = $event" (upload)="this.upload()"></app-file-uploader>
+  <app-file-uploader (newFilename)="this.title = $event" (upload)="this.upload()" class="w-100"></app-file-uploader>
 </form>
-<app-loading [promise]="this.loadingPromise" (closed)="this.onClose()"
-  [progress]="this.progress" [total]="this.total">
+<app-loading (closed)="this.onClose()" [progress]="this.progress"
+             [promise]="this.loadingPromise" [total]="this.total">

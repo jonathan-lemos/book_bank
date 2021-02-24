@@ -19,35 +19,36 @@ import {BookComponent} from './book/book.component';
 import {LoadingComponent} from './loading/loading.component';
 import {UploadComponent} from './upload/upload.component';
 import {FileUploaderComponent} from './upload/file-uploader/file-uploader.component';
-import { KeyValueEditorComponent } from './book/book-edit/key-value-editor/key-value-editor.component';
+import {KeyValueEditorComponent} from './book/book-edit/key-value-editor/key-value-editor.component';
 
 @NgModule({
-    declarations: [
-        AppComponent,
-        LoginComponent,
-        SearchBarComponent,
-        HomeComponent,
-        SearchComponent,
-        BookListingComponent,
-        IntersectionObserverDirective,
-        IntersectionObserverDirective,
-        NavbarComponent,
-        LinkComponent,
-        BookViewComponent,
-        BookEditComponent,
-        BookComponent,
-        LoadingComponent,
-        UploadComponent,
-        FileUploaderComponent,
-        KeyValueEditorComponent,
-    ],
-    imports: [
-        BrowserModule,
-        AppRoutingModule,
-        FontAwesomeModule,
-        FormsModule
-    ],
+  declarations: [
+    AppComponent,
+    LoginComponent,
+    SearchBarComponent,
+    HomeComponent,
+    SearchComponent,
+    BookListingComponent,
+    IntersectionObserverDirective,
+    IntersectionObserverDirective,
+    NavbarComponent,
+    LinkComponent,
+    BookViewComponent,
+    BookEditComponent,
+    BookComponent,
+    LoadingComponent,
+    UploadComponent,
+    FileUploaderComponent,
+    KeyValueEditorComponent,
+  ],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    FontAwesomeModule,
+    FormsModule
+  ],
   providers: [],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {
+}
