@@ -1,4 +1,8 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { NgModel } from '@angular/forms';
+import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
+import { Library } from '@fortawesome/fontawesome-svg-core';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { mapToList } from 'src/utils/misc';
 
 @Component({
@@ -20,13 +24,7 @@ export class KeyValueEditorComponent implements OnInit {
     );
   }
 
-  mutateKvpEvent(index: number, event: KeyboardEvent, fn: (object: { key: string, value: string, new: boolean }, text: string) => void) {
-    if (!(event.currentTarget instanceof HTMLInputElement)) {
-      return;
-    }
-
-    fn(this.internalKeyValueListing[index], event.currentTarget.value);
-
+  afterMutateKvp(index: number) {
     if (index >= this.internalKeyValueListing.length - 1) {
       this.addKvp();
     }
@@ -34,20 +32,13 @@ export class KeyValueEditorComponent implements OnInit {
     this.outputInternalKeyValueListing();
   }
 
-  setKvpKey(index: number, event: KeyboardEvent) {
-    this.mutateKvpEvent(index, event, (obj, text) => obj.key = text);
-  }
-
-  setKvpValue(index: number, event: KeyboardEvent) {
-    this.mutateKvpEvent(index, event, (obj, text) => obj.value = text);
-  }
-
   addKvp() {
-    this.internalKeyValueListing.push()
+    this.internalKeyValueListing.push({ key: "", value: "", new: true });
   }
 
   deleteKvp(index: number) {
-    this.internalKeyValueListing = this.internalKeyValueListing.splice(index, 1);
+    this.internalKeyValueListing.splice(index, 1);
+    this.outputInternalKeyValueListing();
   }
 
   placeholderKey(initialKey: string) {
@@ -58,10 +49,12 @@ export class KeyValueEditorComponent implements OnInit {
     initialValue === "" ? "[value]" : initialValue;
   }
 
-  constructor() {
+  constructor(private library: FaIconLibrary) {
+    library.addIcons(faTrash);
   }
 
   ngOnInit(): void {
     this.internalKeyValueListing = mapToList(this.keyValuePairs).map(x => ({ ...x, new: false }));
+    this.addKvp();
   }
 }
