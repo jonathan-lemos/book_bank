@@ -1,12 +1,14 @@
 @import "color"
 
-=glow-small($color)
+=glow-small($color, $name)
+  @extend .border-#{$name}
   box-shadow: 0 0 0.02em 0 $color, 0 0 0.05em 0 $color
 
   &:disabled
     box-shadow: none
 
-=glow-large($color)
+=glow-large($color, $name)
+  @extend .border-#{$name}
   box-shadow: 0 0 0.2em 0.01em $color, 0 0 0.5em 0.05em $color
 
   &:disabled
@@ -37,16 +39,16 @@
 
 =glow($color, $name)
   .glow-#{$name}
-    +glow-large($color)
+    +glow-large($color, $name)
 
   .glow-#{$name}-hover:hover
-    +glow-large($color)
+    +glow-large($color, $name)
 
   .glow-small-#{$name}
-    +glow-small($color)
+    +glow-small($color, $name)
 
   .glow-small-#{$name}-hover:hover
-    +glow-small($color)
+    +glow-small($color, $name)
 
 =colored-styles($color, $name)
   +border($color, $name)
@@ -56,3 +58,4 @@
 +colored-styles($color-accent, 'accent')
 +colored-styles($red, 'red')
 +colored-styles($green, 'green')
++border(rgba(0, 0, 0, 0), 'invis')

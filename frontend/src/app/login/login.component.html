@@ -1,14 +1,14 @@
 <div class="col w-50">
-  <h1 class="title flicker">book_bank</h1>
+  <h1 class="title flicker size-350 my-s">book_bank</h1>
   <label class="w-100">
-    <input [(ngModel)]="username" class="w-100" name="username" placeholder="Username" type="text">
+    <input [(ngModel)]="username" class="w-100 glow-fg-hover" name="username" placeholder="Username" type="text">
   </label>
   <label class="w-100">
-    <input (keydown)="this.keydown($event)" [(ngModel)]="password" class="w-100" name="password" placeholder="Password"
+    <input (keydown)="this.keydown($event)" [(ngModel)]="password" class="w-100 glow-fg-hover" name="password" placeholder="Password"
            type="password">
   </label>
   <div class="col m-s">
-    <button (click)="this.login()" class="glow-accent-hover mb-m">Login</button>
+    <button (click)="this.login()" class="border-fg glow-accent-hover mb-m">Login</button>
     <span *ngIf="this.error.length > 0" class="error">{{this.error}}</span>
   </div>
 </div>

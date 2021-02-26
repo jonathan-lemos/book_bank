@@ -35,7 +35,7 @@ export class NavbarComponent implements OnInit {
     this.links = routingEntries
       .filter(x => x.auth && x.auth.putInNavbar && x.auth.roles && this.auth.allowed(x.auth.roles))
       .map(x => ({
-        path: x.route.path,
+        path: x.route.path.replace(/^(?!\/)/, "/"),
         name: x.auth.name,
         active: this.url.replace(/^\//, "").startsWith(x.route.path)
       }));

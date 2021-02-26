@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>BookBank · Phoenix Framework</title>
-	<base href="/">
-  </head>
-  <body>
-	<app-root></app-root>
-	<script src="<%= Routes.static_path(@conn, "/runtime.js") %>" defer></script>
-	<script src="<%= Routes.static_path(@conn, "/polyfills.js") %>" defer></script>
-	<script src="<%= Routes.static_path(@conn, "/styles.js") %>" defer></script>
-	<script src="<%= Routes.static_path(@conn, "/vendor.js") %>" defer></script>
-	<script src="<%= Routes.static_path(@conn, "/main.js") %>" defer></script>
-  </body>
+    <title>book_bank</title>
+    <base href="/">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@300;400;700&family=VT323&display=swap"
+          rel="stylesheet">
+    <link href="/favicon.ico" rel="icon" type="image/x-icon">
+</head>
+<body>
+<app-root></app-root>
+<script src="<%= Routes.static_path(@conn, "/runtime.js") %>" defer></script>
+<script src="<%= Routes.static_path(@conn, "/polyfills.js") %>" defer></script>
+<script src="<%= Routes.static_path(@conn, "/styles.js") %>" defer></script>
+<script src="<%= Routes.static_path(@conn, "/vendor.js") %>" defer></script>
+<script src="<%= Routes.static_path(@conn, "/main.js") %>" defer></script>
+</body>
 </html>

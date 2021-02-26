@@ -24,17 +24,21 @@ div.searchbar
         @extend .w-100
         @extend .m-none
         @extend .p-m
+        @extend .border-invis
+        @extend .glow-accent-hover
         position: relative
-        border: none
+
+        &:hover
+          z-index: 1
 
         &:focus
           z-index: 1
 
     button
+      @extend .border-invis
       @extend .glow-accent-hover
       @extend .py-m
       position: relative
-      border: none
 
       &:hover
         z-index: 1
