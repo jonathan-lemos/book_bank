@@ -1,9 +1,9 @@
 <div class="w-100 row">
   <div class="img-container">
-    <img [src]="this.thumbnail(this.book.id)">
+    <img [src]="this.thumbnail()">
   </div>
   <div class="w-100 grow col">
-    <b>{{this.book.title}}</b>
+    <b>{{this.title()}}</b>
     <span *ngFor="let kvp of this.metadataList">{{kvp.key}}: {{kvp.value}}</span>
   </div>
 </div>

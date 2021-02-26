@@ -58,14 +58,18 @@ export class BookComponent implements OnInit {
   }
 
   async onClose(): Promise<void> {
+    if (!this.promise) {
+      return;
+    }
+
     await this.promise.then(async r => {
       if (r.isSuccess()) {
         if (this.promiseSource === "submit") {
           if (this.book?.isSuccess()) {
-            await this.router.navigate([`book/${this.book.value.id}`])
+            await this.router.navigate([`/book/${this.book.value.id}`]).catch(console.error)
           }
         } else {
-          await this.router.navigate(["home"]);
+          await this.router.navigate(["/home"]).catch(console.error);
         }
       } else {
         console.log(r.value);
@@ -75,6 +79,10 @@ export class BookComponent implements OnInit {
 
   hasBook(): boolean {
     return this.book !== null && this.book.isSuccess();
+  }
+
+  getBook(): Book {
+    return this.book?.value as Book;
   }
 
 }

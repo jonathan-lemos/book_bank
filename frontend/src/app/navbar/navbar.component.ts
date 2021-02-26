@@ -9,9 +9,9 @@ import {AuthService} from '../services/auth.service';
   styleUrls: ['./navbar.component.sass']
 })
 export class NavbarComponent implements OnInit {
-  links: { path: string, name: string, active: boolean }[];
+  links: { path: string, name: string, active: boolean }[] = [];
 
-  url: string;
+  url: string = "";
 
   constructor(public auth: AuthService, public router: Router, private route: ActivatedRoute) {
   }
@@ -32,14 +32,12 @@ export class NavbarComponent implements OnInit {
   }
 
   private updateState(): void {
-    const entries = routingEntries
+    this.links = routingEntries
       .filter(x => x.auth && x.auth.putInNavbar && x.auth.roles && this.auth.allowed(x.auth.roles))
       .map(x => ({
         path: x.route.path,
         name: x.auth.name,
         active: this.url.replace(/^\//, "").startsWith(x.route.path)
       }));
-
-    this.links = entries;
   }
 }

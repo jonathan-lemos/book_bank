@@ -70,7 +70,7 @@ export class ApiService {
       return new Failure("The id cannot be blank.");
     }
 
-    return await this.del(`/api/books/${id}`).then(this.postProcess(_ => new Success(null)));
+    return await this.del(`/api/books/${id}`).then(this.postProcess(_ => new Success(undefined)));
   }
 
   async search(query: string, auth: AuthService, count: number = 5, page: number = 0): Promise<Result<Book[], string>> {
@@ -110,7 +110,7 @@ export class ApiService {
     return await this.put(`/api/books/metadata/${bookId}`, {
       title,
       metadata
-    }, auth).then(this.postProcess(_ => new Success(null)))
+    }, auth).then(this.postProcess(_ => new Success(undefined)))
   }
 
   async uploadBook(form: FormData, auth: AuthService, onProgress?: (progress: number, total: number) => void): Promise<Result<string, string>> {
@@ -128,7 +128,7 @@ export class ApiService {
     const xhr = new XMLHttpRequest();
     xhr.open(method, apiUrl, true);
 
-    const headers = {"Accept": "application/json", ...(params.headers ?? {})};
+    const headers: {[key: string]: string} = {"Accept": "application/json", ...(params.headers ?? {})};
 
     for (const key in headers) {
       if (!headers.hasOwnProperty(key)) {
@@ -139,7 +139,8 @@ export class ApiService {
     }
 
     if (params.onProgress) {
-      xhr.onprogress = e => e.lengthComputable && params.onProgress(e.loaded, e.total);
+      const op = params.onProgress;
+      xhr.onprogress = e => e.lengthComputable && op(e.loaded, e.total);
     }
 
     xhr.onerror = e => resolve({type: "no response", reason: "Network error"});

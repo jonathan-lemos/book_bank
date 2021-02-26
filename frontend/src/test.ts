@@ -16,6 +16,14 @@ getTestBed().initTestEnvironment(
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting()
 );
+
+const cerr = console.error;
+
+console.error = function (...args: any[]) {
+  cerr.apply(args);
+  fail(`console.error cannot be called during a test. Was called with [${args.join(", ")}].`);
+};
+
 // Then we find all the tests.
 const context = require.context('./', true, /\.spec\.ts$/);
 // And load the modules.

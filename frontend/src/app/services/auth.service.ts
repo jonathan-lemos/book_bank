@@ -55,19 +55,23 @@ export class AuthService implements CanActivate {
 
   context(): AuthenticationContext | null {
     try {
+      const epoch = new Date(0).toString();
       const sub = localStorage.getItem("Auth-sub");
       if (sub === null) {
         return null;
       }
-      const iat = new Date(localStorage.getItem("Auth-iat"));
+      const iat = new Date(localStorage.getItem("Auth-iat") ?? epoch);
       if (iat.getTime() > Date.now()) {
         return null;
       }
-      const exp = new Date(localStorage.getItem("Auth-exp"));
+      const exp = new Date(localStorage.getItem("Auth-exp") ?? epoch);
       if (exp.getTime() <= Date.now()) {
         return null;
       }
-      const roles = localStorage.getItem("Auth-roles").split(",");
+      const roles = localStorage.getItem("Auth-roles" ?? epoch)?.split(",");
+      if (roles == null) {
+        return null;
+      }
       return new AuthenticationContext(sub, iat, exp, roles);
     } catch (e) {
       return null;
@@ -92,7 +96,7 @@ export class AuthService implements CanActivate {
     window.localStorage.removeItem("Auth-exp");
     window.localStorage.removeItem("Auth-roles");
     this.authCallbacks.forEach(cb => cb("logout"));
-    this.router.navigate(["login"]);
+    this.router.navigate(["/login"]).catch(console.error);
   }
 
   subscribe(callback: (event: "login" | "logout") => void) {
@@ -178,7 +182,7 @@ export class AuthenticationContext {
       return new Failure("Malformed JWT. Expected the 'roles' field to be an array of strings.");
     }
 
-    return new Success(new AuthenticationContext(sub, iat, exp, object.roles.map(x => x.toString())));
+    return new Success(new AuthenticationContext(sub, iat, exp, object.roles.map((x: any) => x.toString())));
   }
 
   isExpired() {

@@ -13,7 +13,7 @@ export default class Type extends Schema {
 
   public validate(a: any): Result<void, string> {
     if (this.type === "any" || typeof a === this.type) {
-      return new Success(null);
+      return new Success(undefined);
     } else {
       return new Failure(`${JSON.stringify(a)} is not a ${this.type}`);
     }

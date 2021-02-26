@@ -35,12 +35,12 @@ export const routingEntries: RoutingEntry[] = [
     auth: {name: "Book", putInNavbar: false, roles: RoleType.Authenticated}
   },
   {
-    route: {path: "**", redirectTo: "home", pathMatch: "full"},
+    route: {path: "**", redirectTo: "/home", pathMatch: "full"},
     auth: {name: "Default", putInNavbar: false, roles: RoleType.Any}
   }
 ].map(x => ({auth: x.auth, route: {...x.route, data: x.auth}}))
 
-const routes: Route[] = routingEntries.map(x => x.route);
+export const routes: Route[] = routingEntries.map(x => x.route);
 
 @NgModule({
   imports: [RouterModule.forRoot(routes, {relativeLinkResolution: 'legacy'})],

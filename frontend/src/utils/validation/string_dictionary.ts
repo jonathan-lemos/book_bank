@@ -24,7 +24,7 @@ export default class StringDictionary extends Schema {
       }
     }
 
-    return new Success(null);
+    return new Success(undefined);
   }
 
   public toString() {

@@ -1,30 +1,30 @@
 <div class="w-80 col">
-  <div class="book-edit-content">
+  <div class="book-edit-content" *ngIf="this.book !== null">
     <div class="img-container fill-height fluid grow">
       <img [src]="this.coverUrl()" alt="Book Cover">
     </div>
     <app-key-value-editor [(keyValuePairs)]="this.book.metadata"></app-key-value-editor>
   </div>
   <div *ngIf="!this.confirm_delete" class="row space-evenly">
-    <button (click)="this.cancel.emit()" class="border-accent hover-glow-accent grow">
+    <button (click)="this.cancel.emit()" class="cancel border-accent hover-glow-accent grow">
       <fa-icon [icon]="['fas', 'ban']" class="mr-xs"></fa-icon>
       Cancel
     </button>
-    <button (click)="this.handleSubmit()" class="hover-glow-red grow">
+    <button (click)="this.handleSubmit()" class="save hover-glow-red grow">
       <fa-icon [icon]="['fas', 'save']" class="mr-xs"></fa-icon>
       Save
     </button>
-    <button (click)="this.confirm_delete = true" *ngIf="this.auth.hasRole('admin')" class="hover-glow-red grow">
+    <button (click)="this.confirm_delete = true" *ngIf="this.auth.hasRole('admin')" class="delete hover-glow-red grow">
       <fa-icon [icon]="['fas', 'trash']" class="mr-xs"></fa-icon>
       Delete
     </button>
   </div>
   <div *ngIf="this.confirm_delete" class="row">
-    <button (click)="this.del.emit()" class="glow-hover-red grow">
+    <button (click)="this.del.emit()" class="confirm-delete glow-hover-red grow">
       <fa-icon [icon]="['fas', 'trash']" class="mr-xs"></fa-icon>
       Confirm Delete
     </button>
-    <button (click)="this.confirm_delete = false" class="border-accent glow-hover-accent grow">
+    <button (click)="this.confirm_delete = false" class="cancel-delete border-accent glow-hover-accent grow">
       <fa-icon [icon]="['fas', 'ban']" class="mr-xs"></fa-icon>
       Cancel
     </button>

@@ -1,6 +1,6 @@
-type NestedList<T> = T[] | NestedList<T[]>[]
+type NestedList<T> = (T | NestedList<T>)[]
 
-export function flatten<T>(a: NestedList<T>) {
+export function flatten<T>(a: NestedList<T>): T[] {
   const ret = [];
 
   for (const elem of a) {
@@ -29,12 +29,12 @@ export function range(n: number, end?: number, step?: number): number[] {
 
   if (step === undefined) {
     const ret = [];
-    if (n <= end) {
-      for (let i = n; i < end; ++i) {
+    if (n <= end!) {
+      for (let i = n; i < end!; ++i) {
         ret.push(i);
       }
     } else {
-      for (let i = n; i > end; --i) {
+      for (let i = n; i > end!; --i) {
         ret.push(i);
       }
     }
@@ -42,12 +42,12 @@ export function range(n: number, end?: number, step?: number): number[] {
   }
 
   const ret = [];
-  if (n <= end) {
+  if (n <= end!) {
     if (step < 0) {
       step = -step;
     }
 
-    for (let i = n; i < end; i += step) {
+    for (let i = n; i < end!; i += step) {
       ret.push(i);
     }
   } else {
@@ -55,7 +55,7 @@ export function range(n: number, end?: number, step?: number): number[] {
       step = -step;
     }
 
-    for (let i = n; i > end; i += step) {
+    for (let i = n; i > end!; i += step) {
       ret.push(i);
     }
   }

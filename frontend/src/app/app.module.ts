@@ -10,7 +10,6 @@ import {FormsModule} from "@angular/forms";
 import {HomeComponent} from './home/home.component';
 import {SearchComponent} from './search/search/search.component';
 import {BookListingComponent} from './search/book-listing/book-listing.component';
-import {IntersectionObserverDirective} from "./directives/intersection-observer.directive";
 import {NavbarComponent} from './navbar/navbar.component';
 import {LinkComponent} from './navbar/link/link.component';
 import {BookViewComponent} from './book/book-view/book-view.component';
@@ -20,6 +19,7 @@ import {LoadingComponent} from './loading/loading.component';
 import {UploadComponent} from './upload/upload.component';
 import {FileUploaderComponent} from './upload/file-uploader/file-uploader.component';
 import {KeyValueEditorComponent} from './book/book-edit/key-value-editor/key-value-editor.component';
+import {InfiniteScrollModule} from "ngx-infinite-scroll";
 
 @NgModule({
   declarations: [
@@ -29,8 +29,6 @@ import {KeyValueEditorComponent} from './book/book-edit/key-value-editor/key-val
     HomeComponent,
     SearchComponent,
     BookListingComponent,
-    IntersectionObserverDirective,
-    IntersectionObserverDirective,
     NavbarComponent,
     LinkComponent,
     BookViewComponent,
@@ -41,12 +39,13 @@ import {KeyValueEditorComponent} from './book/book-edit/key-value-editor/key-val
     FileUploaderComponent,
     KeyValueEditorComponent,
   ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    FontAwesomeModule,
-    FormsModule
-  ],
+    imports: [
+        BrowserModule,
+        AppRoutingModule,
+        FontAwesomeModule,
+        FormsModule,
+        InfiniteScrollModule
+    ],
   providers: [],
   bootstrap: [AppComponent]
 })

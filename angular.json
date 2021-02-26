@@ -98,8 +98,7 @@
             ],
             "styles": [
               "frontend/src/style.sass"
-            ],
-            "scripts": ["frontend/src/test/prelude.ts"]
+            ]
           }
         },
         "lint": {

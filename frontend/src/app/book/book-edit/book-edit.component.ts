@@ -11,9 +11,8 @@ import {faBan, faSave, faTrash} from '@fortawesome/free-solid-svg-icons';
   styleUrls: ['./book-edit.component.sass']
 })
 export class BookEditComponent implements OnInit {
-  @Input() book: Book;
-  new_meta: { number: number | null, key: string, value: string }[] = [];
-  new_title: string;
+  @Input() book: Book | null = null;
+  new_title: string = "";
   confirm_delete = false;
 
   @Output() submit = new EventEmitter<{ title: string, metadata: { [key: string]: string } }>();
@@ -25,33 +24,21 @@ export class BookEditComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.new_meta = [...Object.keys(this.book.metadata).map(key => ({
-      key: key,
-      value: this.book.metadata[key]
-    }))].map((x, i) => ({number: i, ...x}));
-    this.new_title = this.book.title;
+    this.new_title = this.book?.title ?? "";
   }
 
   coverUrl(): string {
-    return cover(this.book.id);
-  }
-
-  addRow(): void {
-    const t = this.new_meta[this.new_meta.length - 1];
-    if (t.number === null && t.key === "" && t.value === "") {
-      return;
-    }
-    this.new_meta.push({number: null, key: "", value: ""});
-  }
-
-  deleteRow(row: number): void {
-    this.new_meta.splice(row, 1);
+    return cover(this.book?.id ?? "[null]");
   }
 
   handleSubmit(): void {
+    if (this.book == null) {
+      return;
+    }
+
     this.submit.emit({
       title: this.new_title,
-      metadata: this.new_meta.reduce((a, c) => Object.assign(a, {[c.key]: c.value}), {})
+      metadata: this.book.metadata
     });
   }
 }

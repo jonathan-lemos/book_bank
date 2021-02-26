@@ -3,6 +3,7 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {NavbarComponent} from 'src/app/navbar/navbar.component';
 
 import {SearchComponent} from './search.component';
+import {InfiniteScrollModule} from "ngx-infinite-scroll";
 
 describe('SearchComponent', () => {
   let component: SearchComponent;
@@ -10,7 +11,7 @@ describe('SearchComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RouterTestingModule],
+      imports: [RouterTestingModule, InfiniteScrollModule],
       declarations: [SearchComponent, NavbarComponent]
     })
       .compileComponents();

@@ -9,20 +9,24 @@ import {mapToList} from 'src/utils/misc';
   styleUrls: ['./book-listing.component.sass']
 })
 export class BookListingComponent implements OnInit {
-  @Input() book: Book;
+  @Input() book: Book | null = null;
 
   constructor() {
   }
 
   get metadataList() {
-    return mapToList(this.book.metadata);
+    return mapToList(this.book?.metadata ?? {});
   }
 
   ngOnInit(): void {
   }
 
-  thumbnail(a: string): string {
-    return thumbnail(a);
+  thumbnail(): string {
+    return thumbnail(this.book?.id ?? "");
+  }
+
+  title(): string {
+    return this.book?.title ?? "";
   }
 
 }

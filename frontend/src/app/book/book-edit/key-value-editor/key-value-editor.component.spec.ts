@@ -1,5 +1,4 @@
-import {DebugElement} from '@angular/core';
-import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
+import {ComponentFixture, discardPeriodicTasks, fakeAsync, flush, TestBed, tick} from '@angular/core/testing';
 import {FormsModule} from '@angular/forms';
 import {By} from '@angular/platform-browser';
 import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome';
@@ -95,56 +94,67 @@ describe('KeyValueEditorComponent', () => {
     return rows.length;
   }
 
-  const getRow = (i: number): DebugElement => {
+  const getRow = (i: number): HTMLDivElement => {
     const rows = [...fixture.debugElement.queryAll(By.css(".kvp-row"))];
-    return rows[i];
+    return rows[i].nativeElement;
   };
 
-  const lastRow = (): DebugElement => {
+  const lastRow = (): HTMLDivElement => {
     return getRow(numRows() - 1);
   };
 
-  const setRowFields = async (row: DebugElement, update: Partial<{ key: string, value: string }>) => {
+  const setRowFields = (row: HTMLDivElement, update: Partial<{ key: string, value: string }>) => {
     fixture.detectChanges();
 
-    for (const key in update) {
-      switch (key) {
-        case "key": {
-          let input = row.query(By.css(".key"));
-          input.nativeElement.value = update.key;
-          input.nativeElement.dispatchEvent(new Event("input"));
-        }
-          break;
-        case "value": {
-          let input = row.query(By.css(".value"));
-          input.nativeElement.value = update.value;
-          input.nativeElement.dispatchEvent(new Event("input"));
-        }
-          break;
-        default:
-          break;
-      }
-      tick();
-      fixture.detectChanges();
-      await fixture.whenStable();
+    if (update.key !== undefined) {
+      let input = row.querySelector<HTMLInputElement>(".key")!;
+      input.value = update.key;
+      input.dispatchEvent(new Event("input"));
     }
+    if (update.value !== undefined) {
+      let input = row.querySelector<HTMLInputElement>(".value")!;
+      input.value = update.value;
+      input.dispatchEvent(new Event("input"));
+    }
+
+    tick();
+    fixture.detectChanges();
+    tick();
   };
 
   it('should add new row upon modifying last row', fakeAsync(async () => {
-    const spy = spyOn(component, 'afterMutateKvp').and.callThrough();
-
     const numRowsStart = Object.keys(pairs).length + 1;
-
     expect(numRows()).toBe(numRowsStart);
 
-    await setRowFields(lastRow(), {key: "Aids"});
+    setRowFields(lastRow(), {key: "Aids"});
+
+    expect(component.internalKeyValueListing[numRowsStart - 1].key).toEqual("Aids");
+    expect(numRows()).toBe(numRowsStart + 1);
+  }));
+
+  it('should delete row upon clicking delete button', fakeAsync(() => {
+    const spy = spyOn(component, "deleteKvp");
+
+    getRow(1).querySelector<HTMLElement>("fa-icon")!.click();
 
     tick();
 
-    expect(spy).toHaveBeenCalledWith(numRowsStart - 1);
-
-    expect(component.internalKeyValueListing[numRowsStart - 1].key).toEqual("Aids");
-
-    expect(numRows()).toBe(numRowsStart + 1);
+    expect(spy).toHaveBeenCalledWith(1);
   }));
+
+  it('should modify a row correctly', done => fakeAsync(() => {
+    const spy = spyOn(component, "outputInternalKeyValueListing").and.callThrough();
+
+    setRowFields(getRow(1), {key: "ABC", value: "DEF"});
+
+    expect(spy).toHaveBeenCalled();
+
+    component.keyValuePairsChange.subscribe(value => {
+      expect(value["ABC"]).toBe("DEF");
+      expect(Object.keys(value).length).toBe(Object.keys(pairs).length);
+      done();
+    });
+
+    component.outputInternalKeyValueListing();
+  })());
 });

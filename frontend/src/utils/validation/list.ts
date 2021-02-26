@@ -21,7 +21,7 @@ export default class List extends Schema {
       }
     }
 
-    return new Success(null);
+    return new Success(undefined);
   }
 
   public toString() {

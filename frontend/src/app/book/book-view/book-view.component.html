@@ -4,7 +4,7 @@
       <img [src]="this.cover_url()" alt="Book Cover">
     </div>
     <div class="w-80 col">
-      <b class="size-150 m-m">{{this.book.title}}</b>
+      <b class="size-150 m-m">{{this.title()}}</b>
       <table>
         <tr *ngFor="let kvp of this.metadataList">
           <td>{{kvp.key}}</td>

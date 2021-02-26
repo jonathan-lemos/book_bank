@@ -9,10 +9,10 @@ import {mapToList} from 'src/utils/misc';
   styleUrls: ['./key-value-editor.component.sass']
 })
 export class KeyValueEditorComponent implements OnInit {
-  @Input() keyValuePairs: { [key: string]: string }
+  @Input() keyValuePairs: { [key: string]: string } = {}
   @Output() keyValuePairsChange = new EventEmitter<{ [key: string]: string }>();
 
-  internalKeyValueListing: { key: string, value: string, new: boolean }[];
+  internalKeyValueListing: { key: string, value: string, new: boolean }[] = [];
 
   constructor(library: FaIconLibrary) {
     library.addIcons(faTrash);
@@ -44,11 +44,11 @@ export class KeyValueEditorComponent implements OnInit {
   }
 
   placeholderKey(initialKey: string) {
-    initialKey === "" ? "[key]" : initialKey;
+    return initialKey === "" ? "[key]" : initialKey;
   }
 
   placeholderValue(initialValue: string) {
-    initialValue === "" ? "[value]" : initialValue;
+    return initialValue === "" ? "[value]" : initialValue;
   }
 
   ngOnInit(): void {

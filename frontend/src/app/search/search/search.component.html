@@ -1,7 +1,12 @@
 <app-navbar></app-navbar>
-<div class="fluid col center">
-  <span *ngIf="this.books !== undefined && this.books.length === 0">No books found matching '{{this.query}}'.</span>
-  <app-book-listing *ngFor="let book of books" [book]="book"></app-book-listing>
-  <div (change)="this.onIntersectChange($event)" appIntersectionObserver class="intersection-observer"></div>
+<div class="fluid col center"
+     infiniteScroll
+     [infiniteScrollDistance]="2"
+     [infiniteScrollThrottle]="500"
+     (scrolled)="loadMore()"
+     [scrollWindow]="false"
+>
+  <span *ngIf="this.books !== null && this.books.length === 0">No books found matching '{{this.query}}'.</span>
+  <app-book-listing class="w-100 py-s" *ngFor="let book of books" [book]="book"></app-book-listing>
   <span *ngIf="this.err.length > 0" class="error">{{this.err}}</span>
 </div>

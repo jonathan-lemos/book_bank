@@ -12,8 +12,8 @@ import {faUpload} from '@fortawesome/free-solid-svg-icons';
   styleUrls: ['./file-uploader.component.sass']
 })
 export class FileUploaderComponent implements OnInit, AfterViewInit {
-  @ViewChild("file_input") file: ElementRef;
-  @ViewChild("pdf_preview") pdf: ElementRef;
+  @ViewChild("file_input") file: ElementRef | null = null;
+  @ViewChild("pdf_preview") pdf: ElementRef | null = null;
 
   filename: string = "";
   size: number | null = null;
@@ -25,7 +25,7 @@ export class FileUploaderComponent implements OnInit, AfterViewInit {
   }
 
   get uploadText(): string {
-    const [n, unit] = sizeUnit(this.size);
+    const [n, unit] = sizeUnit(this.size ?? 0);
     const nstr = round(n, 2);
     return this.size === null || this.filename === null ? "Upload" : `Upload ${this.filename} (${nstr} ${unit})`;
   }
@@ -34,12 +34,14 @@ export class FileUploaderComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+    if (this.file === null) {
+      return;
+    }
+
     const fileRef: HTMLInputElement = this.renderer.selectRootElement(this.file.nativeElement);
 
     const displayPdf = async () => {
-      if (fileRef.files === null || fileRef.files.length === 0) {
-        this.filename = null;
-        this.size = null;
+      if (fileRef.files === null || fileRef.files.length === 0 || this.pdf === null) {
         return;
       }
 
@@ -60,6 +62,10 @@ export class FileUploaderComponent implements OnInit, AfterViewInit {
 
       const viewport = cover.getViewport({scale: scale});
       const ctx = canvas.getContext("2d");
+      if (ctx === null) {
+        console.error("canvas.getContext('2d') returned null.")
+        return;
+      }
 
       cover.render({canvasContext: ctx, viewport: viewport});
 

@@ -14,7 +14,7 @@ import {faDownload, faEdit} from '@fortawesome/free-solid-svg-icons';
   styleUrls: ['./book-view.component.sass']
 })
 export class BookViewComponent implements OnInit {
-  @Input() book: Book;
+  @Input() book: Book | null = null;
   @Output() edit = new EventEmitter<void>();
 
   constructor(public auth: AuthService, library: FaIconLibrary) {
@@ -22,11 +22,11 @@ export class BookViewComponent implements OnInit {
   }
 
   get metadataList() {
-    return mapToList(this.book.metadata);
+    return mapToList(this.book?.metadata ?? {});
   }
 
   get size_string(): string {
-    let [num, unit] = sizeUnit(this.book.size);
+    let [num, unit] = sizeUnit(this.book?.size ?? 0);
     return [round(num, 2), unit].join(" ");
   }
 
@@ -34,6 +34,10 @@ export class BookViewComponent implements OnInit {
   }
 
   cover_url(): string {
-    return cover(this.book.id);
+    return cover(this.book?.id ?? "");
+  }
+
+  title(): string {
+    return this.book?.title ?? "";
   }
 }

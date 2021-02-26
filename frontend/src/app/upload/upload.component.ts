@@ -11,7 +11,7 @@ import {AuthService} from '../services/auth.service';
 })
 export class UploadComponent implements OnInit {
   title: string = "";
-  @ViewChild("upload_form") element: ElementRef;
+  @ViewChild("upload_form") element: ElementRef | null = null;
   promise: Promise<Result<string, string>> | null = null;
   progress: number | null = null;
   total: number | null = null;
@@ -24,13 +24,17 @@ export class UploadComponent implements OnInit {
   }
 
   get loadingPromise() {
-    return this.promise?.then(id => id.map_val(val => `New book id: ${val}`))
+    return this.promise?.then(id => id.map_val(val => `New book id: ${val}`)) ?? null;
   }
 
   ngOnInit(): void {
   }
 
   upload() {
+    if (this.element === null) {
+      return;
+    }
+
     const formEl = this.element.nativeElement;
     const fd = new FormData(formEl);
 
@@ -41,9 +45,13 @@ export class UploadComponent implements OnInit {
   }
 
   async onClose(): Promise<void> {
+    if (this.promise === null) {
+      return;
+    }
+
     await this.promise.then(async r => {
       if (r.isSuccess()) {
-        await this.router.navigate([`book/${r.value}`])
+        await this.router.navigate([`/book/${r.value}`]).catch(console.error);
       } else {
         console.log(r.value);
       }

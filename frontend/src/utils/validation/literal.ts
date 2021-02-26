@@ -13,7 +13,7 @@ export default class Literal extends Schema {
 
   public validate(a: any): Result<void, string> {
     if (a === this.value) {
-      return new Success(null);
+      return new Success(undefined);
     } else {
       return new Failure(`${JSON.stringify(a)} !== ${this.toString()}.`);
     }

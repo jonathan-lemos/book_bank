@@ -15,10 +15,10 @@ export class HomeComponent implements OnInit {
   }
 
   search(query: string) {
-    this.router.navigate(["/search", query]);
+    this.router.navigate([`/search/${query}`]).catch(console.error);
   }
 
   suggestion(book: Book) {
-    this.router.navigate(["/book", book.id])
+    this.router.navigate([`/book/${book.id}`]).catch(console.error);
   }
 }

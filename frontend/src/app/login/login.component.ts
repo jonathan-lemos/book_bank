@@ -13,12 +13,12 @@ export class LoginComponent implements OnInit {
   password: string = "";
   error: string = "";
 
-  constructor(private api: ApiService, private auth: AuthService, private router: Router, private av: ActivatedRoute) {
+  constructor(public api: ApiService, public auth: AuthService, public router: Router, private av: ActivatedRoute) {
   }
 
   ngOnInit(): void {
     if (this.auth.isAuthenticated() !== null) {
-      this.router.navigate(["home"]).catch(console.log);
+      this.router.navigate(["/home"]).catch(console.error);
     }
 
     this.username = this.av.snapshot.paramMap.get("username") ?? "";
@@ -28,7 +28,7 @@ export class LoginComponent implements OnInit {
     const res = await this.api.authenticate(this.username, this.password, this.auth);
     res.match(
       _ => {
-        this.router.navigate(["home"]);
+        this.router.navigate(["/home"]).catch(console.error);
       },
       failure => {
         this.error = failure;

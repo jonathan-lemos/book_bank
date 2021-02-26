@@ -29,7 +29,7 @@ export default class Record extends Schema {
       }
     }
 
-    return new Success(null);
+    return new Success(undefined);
   }
 
   public toString() {

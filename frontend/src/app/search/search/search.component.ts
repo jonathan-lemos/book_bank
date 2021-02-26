@@ -10,7 +10,7 @@ import {ActivatedRoute} from "@angular/router";
   styleUrls: ['./search.component.sass']
 })
 export class SearchComponent implements OnInit {
-  books: Book[] = [];
+  books: Book[] | null = null;
   err: string = "";
   query: string = "";
   page: number = 0;
@@ -35,10 +35,6 @@ export class SearchComponent implements OnInit {
     );
   }
 
-  async onIntersectChange(b: boolean): Promise<void> {
-    b && await this.loadMore();
-  }
-
   async loadMore(): Promise<void> {
     if (this.done) {
       return;
@@ -47,7 +43,7 @@ export class SearchComponent implements OnInit {
     const res = await this.api.search(this.query, this.auth, this.per_page_count, this.page);
     res.match(
       s => {
-        this.books.push(...s);
+        (this.books ?? (this.books = [])).push(...s);
         this.page++;
         if (s.length === 0) {
           this.done = true;

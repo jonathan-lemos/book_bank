@@ -6,4 +6,4 @@
   <app-file-uploader (newFilename)="this.title = $event" (upload)="this.upload()" class="w-100"></app-file-uploader>
 </form>
 <app-loading (closed)="this.onClose()" [progress]="this.progress"
-             [promise]="this.loadingPromise" [total]="this.total">
+             [promise]="this.loadingPromise" [total]="this.total"></app-loading>

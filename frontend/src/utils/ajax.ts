@@ -51,7 +51,7 @@ export default function fetchProgress(url: string, params: FetchProgressParams, 
     }
 
     xhr.onprogress = e => {
-      onprogress ?? onprogress(e.loaded, e.total);
+      onprogress && onprogress(e.loaded, e.total);
     }
 
     xhr.onreadystatechange = () => {
