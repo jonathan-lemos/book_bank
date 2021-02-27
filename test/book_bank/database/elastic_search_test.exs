@@ -8,6 +8,8 @@ defmodule BookBank.ElasticSearchTest do
   setup :verify_on_exit!
 
   setup do
+    :ok = BookBank.ElasticSearch.init()
+
     on_exit(fn ->
       :ok = delete_book_index()
     end)

@@ -226,7 +226,7 @@ defmodule BookBank.MongoDatabase do
           :ok
 
         {:error, e} ->
-          case Utils.insert(doc) do
+          case Utils.insert("books", doc) do
             {:ok, _id} ->
               {:error, "Failed to delete document from Elasticsearch: #{e}."}
 

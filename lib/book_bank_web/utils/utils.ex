@@ -145,20 +145,32 @@ defmodule BookBankWeb.Utils do
   end
 
   defp download_opts(conn, [{key, value} | tail]) do
-    conn = case key do
-      :content_type -> conn |> Plug.Conn.put_resp_content_type(value)
-      :disposition -> case value do
-        :inline -> conn |> Plug.Conn.put_resp_header("content-disposition", "inline")
-        {:attachment, filename} when is_binary(filename) -> conn |> Plug.Conn.put_resp_header("content-disposition", "attachment; filename=\"#{URI.encode(filename)}\"")
+    conn =
+      case key do
+        :content_type ->
+          conn |> Plug.Conn.put_resp_content_type(value)
+
+        :disposition ->
+          case value do
+            :inline ->
+              conn |> Plug.Conn.put_resp_header("content-disposition", "inline")
+
+            {:attachment, filename} when is_binary(filename) ->
+              conn
+              |> Plug.Conn.put_resp_header(
+                "content-disposition",
+                "attachment; filename=\"#{URI.encode(filename)}\""
+              )
+          end
       end
-    end
 
     download_opts(conn, tail)
   end
 
   defp with_valid_opts({:ok, conn, extra}, func) do
     send_stream = fn conn, stream ->
-      stream |> Enum.reduce_while(conn, fn (chunk, conn) ->
+      stream
+      |> Enum.reduce_while(conn, fn chunk, conn ->
         case conn |> @chunk_service.send_chunk(chunk) do
           {:ok, conn} -> {:cont, conn}
           {:error, _e} -> {:halt, conn}
@@ -168,16 +180,19 @@ defmodule BookBankWeb.Utils do
 
     try do
       case func.(conn, extra) do
-        {conn, {:ok, status, :stream, stream, list}} when is_list(list) and (is_atom(status) or is_integer(status)) ->
-          conn = conn
-          |> download_opts(list)
-          |> Plug.Conn.send_chunked(status)
+        {conn, {:ok, status, :stream, stream, list}}
+        when is_list(list) and (is_atom(status) or is_integer(status)) ->
+          conn =
+            conn
+            |> download_opts(list)
+            |> Plug.Conn.send_chunked(status)
 
           send_stream.(conn, stream)
 
         {conn, {:ok, status, :stream, stream}} when is_atom(status) or is_integer(status) ->
-          conn = conn
-          |> Plug.Conn.send_chunked(status)
+          conn =
+            conn
+            |> Plug.Conn.send_chunked(status)
 
           send_stream.(conn, stream)
 
@@ -186,7 +201,8 @@ defmodule BookBankWeb.Utils do
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.json(Map.merge(default_map(status), map))
 
-        {conn, {:ok, status, str}} when is_binary(str) and (is_atom(status) or is_integer(status)) ->
+        {conn, {:ok, status, str}}
+        when is_binary(str) and (is_atom(status) or is_integer(status)) ->
           conn
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.json(Map.put(default_map(status), "response", str))
@@ -201,12 +217,14 @@ defmodule BookBankWeb.Utils do
           |> Plug.Conn.put_status(:ok)
           |> Phoenix.Controller.json(default_map(:ok))
 
-        {conn, {:error, status, map}} when is_map(map) and (is_atom(status) or is_integer(status)) ->
+        {conn, {:error, status, map}}
+        when is_map(map) and (is_atom(status) or is_integer(status)) ->
           conn
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.json(Map.merge(default_map(status), map))
 
-        {conn, {:error, status, str}} when is_binary(str) and (is_atom(status) or is_integer(status)) ->
+        {conn, {:error, status, str}}
+        when is_binary(str) and (is_atom(status) or is_integer(status)) ->
           conn
           |> Plug.Conn.put_status(status)
           |> Phoenix.Controller.json(Map.put(default_map(status), "response", str))
@@ -219,17 +237,31 @@ defmodule BookBankWeb.Utils do
         {conn, res} ->
           conn
           |> Plug.Conn.put_status(:internal_server_error)
-          |> Phoenix.Controller.json(default_map(:internal_server_error) |> Map.put("message", "Function '#{Kernel.inspect func}' produced an invalid response '#{Kernel.inspect res}'. This is a bug."))
+          |> Phoenix.Controller.json(
+            default_map(:internal_server_error)
+            |> Map.put(
+              "message",
+              "Function '#{Kernel.inspect(func)}' produced an invalid response '#{
+                Kernel.inspect(res)
+              }'. This is a bug."
+            )
+          )
 
         _ ->
           conn
           |> Plug.Conn.put_status(:internal_server_error)
-          |> Phoenix.Controller.json(default_map(:internal_server_error) |> Map.put("message", "Function '#{Kernel.inspect func}' did not include the connection in the response. This is a bug."))
+          |> Phoenix.Controller.json(
+            default_map(:internal_server_error)
+            |> Map.put(
+              "message",
+              "Function '#{Kernel.inspect(func)}' did not include the connection in the response. This is a bug."
+            )
+          )
       end
     rescue
       e ->
         if Application.get_env(:book_bank, :testing) do
-          Kernel.reraise e, __STACKTRACE__
+          Kernel.reraise(e, __STACKTRACE__)
         end
 
         IO.inspect(e)
@@ -237,7 +269,11 @@ defmodule BookBankWeb.Utils do
         conn
         |> Plug.Conn.put_status(:internal_server_error)
         |> Phoenix.Controller.json(
-          Map.put(default_map(:internal_server_error), "message", "#{Exception.format(:error, e)}")
+          Map.put(
+            default_map(:internal_server_error),
+            "message",
+            "#{Exception.format(:error, e)}"
+          )
         )
     end
   end

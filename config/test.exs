@@ -7,7 +7,11 @@ config :book_bank, BookBankWeb.Endpoint,
   server: false
 
 config :book_bank, BookBank.MongoDatabase,
-  url: System.get_env("MONGO_TEST_CONNECTION_URL") || "mongodb://localhost:27017/test"
+  url: System.get_env("MONGO_CONNECTION_URL") || "mongodb://localhost:27017/test"
+
+config :book_bank, BookBank.ElasticSearch,
+  url: System.get_env("ELASTIC_CONNECTION_URL") || "http://localhost:9200",
+  index: System.get_env("ELASTIC_BOOK_INDEX") || "test"
 
 # dependency injection baby
 config :book_bank, :services, [

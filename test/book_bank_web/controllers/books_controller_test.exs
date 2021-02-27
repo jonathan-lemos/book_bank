@@ -7,7 +7,7 @@ defmodule BookBankWeb.BooksControllerTest do
 
   def expect_stream(list, db_func, keywords \\ []) do
     content_stream = list |> Stream.map(& &1)
-    Enum.each(list, &expect(BookBankWeb.Utils.MockChunk, :send_chunk, fn conn, ^&1 -> conn end))
+    Enum.each(list, &expect(BookBankWeb.Utils.MockChunk, :send_chunk, fn conn, ^&1 -> {:ok, conn} end))
 
     id = keywords[:id] || "1"
 
