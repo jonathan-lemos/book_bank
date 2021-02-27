@@ -23,7 +23,7 @@ defmodule BookBank.ElasticSearchTest do
       metadata: %{"Author" => "Dr. Seuss", "ISBN" => "1234567890"}
     }
 
-    insert_book(book)
+    assert :ok = insert_book(book)
     Process.sleep(1000)
     assert {:ok, [^book]} = search("Green Eggs", 1, 0)
   end
@@ -36,7 +36,7 @@ defmodule BookBank.ElasticSearchTest do
       metadata: %{"Author" => "Dr. Seuss", "ISBN" => "1234567890"}
     }
 
-    insert_book(book)
+    assert :ok = insert_book(book)
     Process.sleep(1000)
     assert {:ok, [^book]} = search("Grern Eggs", 1, 0)
   end
@@ -49,7 +49,7 @@ defmodule BookBank.ElasticSearchTest do
       metadata: %{"Author" => "Dr. Seuss", "ISBN" => "1234567890"}
     }
 
-    insert_book(book)
+    assert :ok = insert_book(book)
     Process.sleep(1000)
     assert {:ok, []} = search("Foo Bar", 1, 0)
   end
@@ -62,7 +62,7 @@ defmodule BookBank.ElasticSearchTest do
       metadata: %{"Author" => "Dr. Seuss", "ISBN" => "1234567890"}
     }
 
-    insert_book(book)
+    assert :ok = insert_book(book)
     Process.sleep(1000)
     assert {:ok, [^book]} = search("Dr. Seuss", 1, 0)
   end
@@ -89,9 +89,9 @@ defmodule BookBank.ElasticSearchTest do
       metadata: %{"Author" => "Dr. Seuss", "ISBN" => "1111111111"}
     }
 
-    insert_book(book1)
-    insert_book(book2)
-    insert_book(book3)
+    assert :ok = insert_book(book1)
+    assert :ok = insert_book(book2)
+    assert :ok = insert_book(book3)
 
     Process.sleep(1000)
 
@@ -120,9 +120,9 @@ defmodule BookBank.ElasticSearchTest do
       metadata: %{"Author" => "Dr. Seuss", "ISBN" => "1111111111"}
     }
 
-    insert_book(book1)
-    insert_book(book2)
-    insert_book(book3)
+    assert :ok = insert_book(book1)
+    assert :ok = insert_book(book2)
+    assert :ok = insert_book(book3)
 
     Process.sleep(1000)
 
@@ -151,9 +151,9 @@ defmodule BookBank.ElasticSearchTest do
       metadata: %{"Author" => "Dr. Seuss", "ISBN" => "1111111111"}
     }
 
-    insert_book(book1)
-    insert_book(book2)
-    insert_book(book3)
+    assert :ok = insert_book(book1)
+    assert :ok = insert_book(book2)
+    assert :ok = insert_book(book3)
 
     Process.sleep(1000)
 
