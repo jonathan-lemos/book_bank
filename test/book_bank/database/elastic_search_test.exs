@@ -24,7 +24,7 @@ defmodule BookBank.ElasticSearchTest do
     }
 
     assert :ok = insert_book(book)
-    Process.sleep(1000)
+    Process.sleep(3000)
     assert {:ok, [^book]} = search("Green Eggs", 1, 0)
   end
 
@@ -37,7 +37,7 @@ defmodule BookBank.ElasticSearchTest do
     }
 
     assert :ok = insert_book(book)
-    Process.sleep(1000)
+    Process.sleep(3000)
     assert {:ok, [^book]} = search("Grern Eggs", 1, 0)
   end
 
@@ -50,7 +50,7 @@ defmodule BookBank.ElasticSearchTest do
     }
 
     assert :ok = insert_book(book)
-    Process.sleep(1000)
+    Process.sleep(3000)
     assert {:ok, []} = search("Foo Bar", 1, 0)
   end
 
@@ -63,7 +63,7 @@ defmodule BookBank.ElasticSearchTest do
     }
 
     assert :ok = insert_book(book)
-    Process.sleep(1000)
+    Process.sleep(3000)
     assert {:ok, [^book]} = search("Dr. Seuss", 1, 0)
   end
 
@@ -93,7 +93,7 @@ defmodule BookBank.ElasticSearchTest do
     assert :ok = insert_book(book2)
     assert :ok = insert_book(book3)
 
-    Process.sleep(1000)
+    Process.sleep(3000)
 
     assert {:ok, [^book1, ^book2, ^book3]} = search("Seuss", 3, 0)
   end
@@ -124,7 +124,7 @@ defmodule BookBank.ElasticSearchTest do
     assert :ok = insert_book(book2)
     assert :ok = insert_book(book3)
 
-    Process.sleep(1000)
+    Process.sleep(3000)
 
     assert {:ok, [^book1, ^book3]} = search("green", 3, 0)
   end
@@ -155,7 +155,7 @@ defmodule BookBank.ElasticSearchTest do
     assert :ok = insert_book(book2)
     assert :ok = insert_book(book3)
 
-    Process.sleep(1000)
+    Process.sleep(3000)
 
     assert {:ok, [^book1, ^book2]} = search("Seuss", 2, 0)
     assert {:ok, [^book3]} = search("Seuss", 2, 1)
