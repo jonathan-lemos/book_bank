@@ -1,5 +1,4 @@
-
-matrix:
+jobs:
   include:
     - language: elixir
       elixir:
@@ -17,8 +16,8 @@ matrix:
         directories:
          - ./deps
 
-    - language: node.js
-      node.js:
+    - language: node_js
+      node_js:
         - 15.0
       install:
         - npm install
