@@ -13,7 +13,7 @@ defmodule BookBank.Auth.UserWhitelist do
     :mnesia.create_schema([])
     :mnesia.create_table(:user_whitelist_1, attributes: [:username, :valid_beyond, :valid_until])
     :mnesia.create_table(:user_whitelist_2, attributes: [:username, :valid_beyond, :valid_until])
-    :mnesia.wait_for_tables([:user_whitelist_1, :user_whitelist_2], 10000)
+    :mnesia.wait_for_tables([:user_whitelist_1, :user_whitelist_2], 10_000)
     Process.send_after(__MODULE__, :rotate_cache, ttl * 1000)
     {:ok, %{current: :user_whitelist_1, ttl_seconds: ttl, first_rotate: true}}
   end

@@ -24,31 +24,40 @@ defmodule BookBank.ElasticSearch do
     end
   end
 
-  defp hit_endpoint(method, endpoint, body \\ nil) do
-    with {:ok, json} <- Jason.encode(body) do
-      case HTTPoison.request(method, es_url(endpoint), json, [
-             {"Accept", "application/json"},
-             {"Content-Type", "application/json"}
-           ]) do
-        {:ok, %HTTPoison.Response{body: body, status_code: status}} ->
-          parse_response(status, body)
+  defp process_endpoint_result(result) do
+    case result do
+      {:ok, %HTTPoison.Response{body: body, status_code: status}} ->
+        parse_response(status, body)
 
-        {:error, %HTTPoison.Error{reason: r}} ->
-          r =
-            case r do
-              r when is_atom(r) -> Atom.to_string(r)
-              r -> r
-            end
+      {:error, %HTTPoison.Error{reason: r}} ->
+        r =
+          case r do
+            r when is_atom(r) -> Atom.to_string(r)
+            r -> r
+          end
 
-          {:error, :internal_server_error,
-           "Failed to connect to the Elasticsearch instance: #{r}"}
-      end
-    else
+        {:error, :internal_server_error, "Failed to connect to the Elasticsearch instance: #{r}"}
+    end
+  end
+
+  defp hit_endpoint(method, endpoint) do
+    HTTPoison.request(method, es_url(endpoint), "", [
+      {"Accept", "application/json"}
+    ])
+    |> process_endpoint_result()
+  end
+
+  defp hit_endpoint(method, endpoint, body) do
+    case Jason.encode(body) do
+      {:ok, json} ->
+        HTTPoison.request(method, es_url(endpoint), json, [
+          {"Accept", "application/json"},
+          {"Content-Type", "application/json"}
+        ])
+        |> process_endpoint_result()
+
       {:error, e} ->
-        {:error, "Failed to encode the body '#{Kernel.inspect(body)}' as JSON: #{e.message}"}
-
-      e ->
-        {:error, e.message}
+        {:error, e}
     end
   end
 
