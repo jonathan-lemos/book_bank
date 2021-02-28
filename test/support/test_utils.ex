@@ -1,4 +1,6 @@
 defmodule Test.Utils do
+  @moduledoc false
+
   @spec with_token(Plug.Conn.t(), :invalid) :: Plug.Conn.t()
   def with_token(conn, :invalid) do
     Mox.expect(BookBankWeb.Utils.MockJwt, :verify_token, fn _ ->
@@ -44,8 +46,8 @@ defmodule Test.Utils do
 
     body =
       (Enum.map(body, fn
-        {key, {content, filename: filename, content_type: content_type}} ->
-          "
+         {key, {content, filename: filename, content_type: content_type}} ->
+           "
 --12345\r
 Content-Disposition: form-data; name=\"#{key}\"; filename=\"#{filename}\"\r
 Content-Type: #{content_type}\r
@@ -53,14 +55,15 @@ Content-Type: #{content_type}\r
 #{content}\r
 " |> String.trim()
 
-        {key, content} ->
-          "
+         {key, content} ->
+           "
 --12345\r
 Content-Disposition: form-data; name=\"#{key}\"\r
 \r
 #{content}\r
           " |> String.trim()
-      end) |> Enum.join("\r\n")) <> "\r\n--12345--\r\n"
+       end)
+       |> Enum.join("\r\n")) <> "\r\n--12345--\r\n"
 
     apply(func, [conn, route, body])
   end

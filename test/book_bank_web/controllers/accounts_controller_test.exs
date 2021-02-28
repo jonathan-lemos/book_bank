@@ -10,7 +10,9 @@ defmodule BookBankWeb.AccountsControllerTest do
       {:ok, %BookBank.User{username: user, roles: ["admin"]}}
     end)
 
-    expect(BookBankWeb.Utils.MockJwt, :make_token, fn "admin", ["admin"] -> {:ok, "shit's good"} end)
+    expect(BookBankWeb.Utils.MockJwt, :make_token, fn "admin", ["admin"] ->
+      {:ok, "shit's good"}
+    end)
 
     conn =
       json_req(conn, &post/3, "/api/accounts/login", %{
@@ -149,7 +151,8 @@ defmodule BookBankWeb.AccountsControllerTest do
   end
 
   test "PATCH /api/accounts/users/roles/user1 success", %{conn: conn} do
-    expect(BookBank.MockAuth, :update_user, fn "user1", [add_roles: ["admin"], remove_roles: ["librarian"]] ->
+    expect(BookBank.MockAuth, :update_user, fn "user1",
+                                               [add_roles: ["admin"], remove_roles: ["librarian"]] ->
       :ok
     end)
 
@@ -167,13 +170,14 @@ defmodule BookBankWeb.AccountsControllerTest do
     expect(BookBank.MockAuth, :update_user, fn "user1", [set_password: "hunter2"] ->
       :ok
     end)
+
     expect(BookBank.Auth.MockUserWhitelist, :delete, fn "user1" -> :ok end)
 
     conn =
       with_token(conn, "user1")
-        |> json_req(&put/3, "/api/accounts/users/password/user1", %{
-          "password" => "hunter2"
-        })
+      |> json_req(&put/3, "/api/accounts/users/password/user1", %{
+        "password" => "hunter2"
+      })
 
     assert %{} = conn |> json_response(:ok)
   end
@@ -184,7 +188,7 @@ defmodule BookBankWeb.AccountsControllerTest do
 
     conn =
       with_token(conn, "admin", ["admin"])
-        |> delete("/api/accounts/users/user1")
+      |> delete("/api/accounts/users/user1")
 
     assert %{} = conn |> json_response(:ok)
   end

@@ -3,12 +3,12 @@ defmodule BookBank.Utils.Set do
   def minus(enumerable, without) do
     ms = without |> MapSet.new()
 
-    enumerable |> Enum.filter(& not MapSet.member?(ms, &1))
+    enumerable |> Enum.filter(&(not MapSet.member?(ms, &1)))
   end
 
   def union(enumerable, add) do
     existing = enumerable |> MapSet.new()
 
-    enumerable ++ (add |> Enum.filter(& not MapSet.member?(existing, &1)))
+    enumerable ++ (add |> Enum.filter(&(not MapSet.member?(existing, &1))))
   end
 end

@@ -1,0 +1,83 @@
+name: Elixir CI
+
+on: [ push, pull_request ]
+
+jobs:
+  test:
+    name: Compile, lint, and run tests for the backend.
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+      matrix:
+        elixir:
+          - 1.11.3
+        otp:
+          - 23.0
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          otp-version: ${{ matrix.otp }}
+          elixir-version: ${{ matrix.elixir }}
+
+      - name: Cache Mix dependencies
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-mix-deps
+        with:
+          path: |
+            deps
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+
+      - name: Install Mix dependencies
+        run: |
+          mix local.rebar --force
+          mix local.hex --force
+          mix deps.get
+
+      - name: Check if files are formatted properly
+        run: mix format --check-formatted
+
+      - name: Cache PLT
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-plt
+        with:
+          path: |
+            **/*.plt
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}
+
+      - name: Run Dialyzer
+        run: mix dialyzer
+
+      # - name: Run Credo
+      #   run: mix credo
+
+      - name: Configure sysctl limits for Elasticsearch
+        run: |
+          sudo swapoff -a
+          sudo sysctl -w vm.swappiness=1
+          sudo sysctl -w fs.file-max=262144
+          sudo sysctl -w vm.max_map_count=262144
+
+      - name: Starts Elasticsearch
+        uses: elastic/elastic-github-actions/elasticsearch@master
+        with:
+          stack-version: 7.11.1
+
+      - name: Starts MongoDB
+        uses: supercharge/mongodb-github-action@1.3.0
+        with:
+          mongodb-version: 4.4
+
+      - name: Run tests
+        run: mix test --include mongo --include elastic

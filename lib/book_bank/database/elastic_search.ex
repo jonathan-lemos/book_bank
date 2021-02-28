@@ -91,37 +91,40 @@ defmodule BookBank.ElasticSearch do
     end
   end
 
+  @spec init :: :ok | {:error, String.t()}
   def init() do
-      case hit_endpoint(:put, "/", %{
-        settings: %{
-          analysis: %{
-            analyzer: %{
-              autocomplete: %{
-                tokenizer: "lowercase",
-                filter: ["autocomplete_truncate", "autocomplete"]
-              }
-            },
-            filter: %{
-              autocomplete: %{
-                type: "edge_ngram",
-                min_gram: 3,
-                max_gram: 20,
-              },
-              autocomplete_truncate: %{
-                type: "truncate",
-                length: 20
-              }
-            }
-          }
-        }
-      }) do
-        {:ok, _} -> :ok
-        {:error, e} ->
-          if e |> String.contains?("resource_already_exists_exception") do
-            :ok
-          else
-            {:error, e}
-          end
+    case hit_endpoint(:put, "/", %{
+           settings: %{
+             analysis: %{
+               analyzer: %{
+                 autocomplete: %{
+                   tokenizer: "lowercase",
+                   filter: ["autocomplete_truncate", "autocomplete"]
+                 }
+               },
+               filter: %{
+                 autocomplete: %{
+                   type: "edge_ngram",
+                   min_gram: 3,
+                   max_gram: 20
+                 },
+                 autocomplete_truncate: %{
+                   type: "truncate",
+                   length: 20
+                 }
+               }
+             }
+           }
+         }) do
+      {:ok, _} ->
+        :ok
+
+      {:error, e} ->
+        if e |> String.contains?("resource_already_exists_exception") do
+          :ok
+        else
+          {:error, e}
+        end
     end
   end
 

@@ -7,7 +7,11 @@ defmodule BookBankWeb.BooksControllerTest do
 
   def expect_stream(list, db_func, keywords \\ []) do
     content_stream = list |> Stream.map(& &1)
-    Enum.each(list, &expect(BookBankWeb.Utils.MockChunk, :send_chunk, fn conn, ^&1 -> {:ok, conn} end))
+
+    Enum.each(
+      list,
+      &expect(BookBankWeb.Utils.MockChunk, :send_chunk, fn conn, ^&1 -> {:ok, conn} end)
+    )
 
     id = keywords[:id] || "1"
 
@@ -39,7 +43,7 @@ defmodule BookBankWeb.BooksControllerTest do
        %BookBank.Book{
          id: "1",
          title: "Green Eggs and Cum",
-         size: 12345,
+         size: 12_345,
          metadata: [
            %{"key" => "Author", "value" => "Mr. Seuss"},
            %{"key" => "ISBN-10", "value" => "1234567890"}
@@ -53,7 +57,7 @@ defmodule BookBankWeb.BooksControllerTest do
 
     assert %{
              "title" => "Green Eggs and Cum",
-             "size" => 12345,
+             "size" => 12_345,
              "metadata" => [
                %{"key" => "Author", "value" => "Mr. Seuss"},
                %{"key" => "ISBN-10", "value" => "1234567890"}
@@ -141,9 +145,9 @@ defmodule BookBankWeb.BooksControllerTest do
       assert list[:update_title] === "New Title"
 
       assert list[:update_metadata] === %{
-          "Rating" => "4.77",
-          "Test" => "Value"
-        }
+               "Rating" => "4.77",
+               "Test" => "Value"
+             }
 
       assert list[:remove] === ["Author", "ISBN-10"]
 

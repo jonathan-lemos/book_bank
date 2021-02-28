@@ -37,10 +37,12 @@ defmodule BookBank.Application do
       |> add_if(
         Application.get_env(:book_bank, :services)[BookBank.Auth.UserWhitelistBehavior] ===
           BookBank.Auth.UserWhitelist,
-          %{
-            id: BookBank.Auth.UserWhitelist,
-            start: {BookBank.Auth.UserWhitelist, :start_link, [[ttl_seconds: BookBankWeb.Utils.Jwt.Token.token_lifetime_seconds()]]}
-          }
+        %{
+          id: BookBank.Auth.UserWhitelist,
+          start:
+            {BookBank.Auth.UserWhitelist, :start_link,
+             [[ttl_seconds: BookBankWeb.Utils.Jwt.Token.token_lifetime_seconds()]]}
+        }
       )
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -49,10 +51,11 @@ defmodule BookBank.Application do
     res = Supervisor.start_link(children, opts)
 
     if Application.get_env(:book_bank, :services)[BookBank.AuthBehavior] === BookBank.MongoAuth do
-      :ok = BookBank.Utils.Mongo.init()
+      :ok = BookBank.Utils.Mongo.init!()
     end
 
-    if Application.get_env(:book_bank, :services)[BookBank.SearchBehavior] === BookBank.ElasticSearch do
+    if Application.get_env(:book_bank, :services)[BookBank.SearchBehavior] ===
+         BookBank.ElasticSearch do
       :ok = BookBank.ElasticSearch.init()
     end
 

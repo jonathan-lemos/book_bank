@@ -19,12 +19,16 @@ config :book_bank, BookBankWeb.Endpoint,
   secret_key_base: secret_key_base
 
 config :book_bank, BookBankWeb.Utils.Jwt,
-  secret: System.get_env("AUTH_SECRET") || raise """
-  environment variable AUTH_SECRET is missing.
-  """
+  secret:
+    System.get_env("AUTH_SECRET") ||
+      raise("""
+      environment variable AUTH_SECRET is missing.
+      """)
 
 config :book_bank, BookBank.MongoAuth,
-  default_credentials: {System.get_env("DEFAULT_USERNAME") || "admin", System.get_env("DEFAULT_PASSWORD") || "hunter2"}
+  default_credentials:
+    {System.get_env("DEFAULT_USERNAME") || "admin",
+     System.get_env("DEFAULT_PASSWORD") || "hunter2"}
 
 # ## Using releases (Elixir v1.9+)
 #

@@ -1,13 +1,14 @@
 defmodule BookBankWeb.SearchController do
   use BookBankWeb, :controller
-  @search_service Application.get_env(:book_bank, :services)[BookBank.SearchBehavior]
+
+  import BookBank.DI
 
   def get_query(conn, %{"query" => query, "count" => count, "page" => page}) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
       obj =
         with {:ok, count} <- BookBankWeb.Validation.validate_integer(count, lower: 1),
              {:ok, page} <- BookBankWeb.Validation.validate_integer(page, lower: 0) do
-          case @search_service.search(query, count, page) do
+          case search_service().search(query, count, page) do
             {:ok, hits} ->
               {:ok, :ok,
                %{
@@ -49,7 +50,7 @@ defmodule BookBankWeb.SearchController do
   def get_count(conn, %{"query" => query}) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
       obj =
-        case @search_service.search_count(query) do
+        case search_service().search_count(query) do
           {:ok, count} -> {:ok, :ok, %{"count" => count}}
           {:error, e} -> {:error, :internal_server_error, e}
         end

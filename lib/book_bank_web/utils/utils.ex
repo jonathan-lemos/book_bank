@@ -1,6 +1,6 @@
 defmodule BookBankWeb.Utils do
-  @jwt_service Application.get_env(:book_bank, :services)[BookBankWeb.Utils.JwtBehavior]
-  @chunk_service Application.get_env(:book_bank, :services)[BookBankWeb.Utils.ChunkBehavior]
+  require Logger
+  import BookBank.DI
 
   @type ok_status :: :ok | :created
   @type error_status ::
@@ -84,7 +84,7 @@ defmodule BookBankWeb.Utils do
   end
 
   defp verify_token(conn, jwt, type) do
-    case @jwt_service.verify_token(jwt) do
+    case jwt_service().verify_token(jwt) do
       {:ok, claims} ->
         case type do
           :any ->
@@ -171,7 +171,7 @@ defmodule BookBankWeb.Utils do
     send_stream = fn conn, stream ->
       stream
       |> Enum.reduce_while(conn, fn chunk, conn ->
-        case conn |> @chunk_service.send_chunk(chunk) do
+        case conn |> chunk_service().send_chunk(chunk) do
           {:ok, conn} -> {:cont, conn}
           {:error, _e} -> {:halt, conn}
         end
@@ -264,7 +264,7 @@ defmodule BookBankWeb.Utils do
           Kernel.reraise(e, __STACKTRACE__)
         end
 
-        IO.inspect(e)
+        Logger.error(Kernel.inspect(e))
 
         conn
         |> Plug.Conn.put_status(:internal_server_error)
@@ -301,13 +301,13 @@ defmodule BookBankWeb.Utils do
               | {:error, error_status()}
               | {:ok, ok_status(), %{any => any} | String.t()}
               | {:ok, ok_status()}
-              | {:ok, ok_status(), :stream, Stream.t(),
+              | {:ok, ok_status(), :stream, Enumerable.t(),
                  list(
                    {:content_type, String.t()}
                    | {:filename, String.t()}
                    | {:disposition, :attachment | :inline}
                  )}
-              | {:ok, ok_status(), :stream, Stream.t()}
+              | {:ok, ok_status(), :stream, Enumerable.t()}
               | :ok})
         ) :: Plug.Conn.t()
   def with(conn, opts, func) do

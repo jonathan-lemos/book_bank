@@ -15,7 +15,7 @@ defmodule BookBank.MongoDatabaseTest do
         url: Application.get_env(:book_bank, BookBank.MongoDatabase)[:url]
       )
 
-    BookBank.Utils.Mongo.init()
+    :ok = BookBank.Utils.Mongo.init!()
 
     on_exit(fn ->
       {:ok, _pid} =

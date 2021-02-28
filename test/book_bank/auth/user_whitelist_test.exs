@@ -6,7 +6,11 @@ defmodule BookBank.Auth.UserWhitelistTest do
   setup :verify_on_exit!
 
   setup do
-    {:ok, _pid} = GenServer.start_link(BookBank.Auth.UserWhitelist, [ttl_seconds: 10], name: BookBank.Auth.UserWhitelist)
+    {:ok, _pid} =
+      GenServer.start_link(BookBank.Auth.UserWhitelist, [ttl_seconds: 10],
+        name: BookBank.Auth.UserWhitelist
+      )
+
     Test.StubTime.set_current_time(0)
     on_exit(&uninit/0)
   end
@@ -39,14 +43,16 @@ defmodule BookBank.Auth.UserWhitelistTest do
     assert :ok = GenServer.call(BookBank.Auth.UserWhitelist, :rotate_cache)
     assert :ok = GenServer.call(BookBank.Auth.UserWhitelist, :rotate_cache)
 
-    assert {:atomic, list1} = :mnesia.transaction(fn ->
-      :mnesia.read({:user_whitelist_1, "user1"})
-    end)
+    assert {:atomic, list1} =
+             :mnesia.transaction(fn ->
+               :mnesia.read({:user_whitelist_1, "user1"})
+             end)
 
-    assert {:atomic, list2} = :mnesia.transaction(fn ->
-      :mnesia.read({:user_whitelist_2, "user1"})
-    end)
+    assert {:atomic, list2} =
+             :mnesia.transaction(fn ->
+               :mnesia.read({:user_whitelist_2, "user1"})
+             end)
 
-    assert length(list1 ++ list2) === 0
+    assert list1 ++ list2 === []
   end
 end

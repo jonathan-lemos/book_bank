@@ -15,24 +15,13 @@ config :book_bank, BookBankWeb.Endpoint,
   pubsub_server: BookBank.PubSub,
   live_view: [signing_salt: "HLswLhK+"]
 
-# dependency injection baby
-config :book_bank, :services, [
-  {BookBank.DatabaseBehavior, BookBank.MongoDatabase},
-  {BookBank.AuthBehavior, BookBank.MongoAuth},
-  {BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.Jwt},
-  {BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.UserWhitelist},
-  {BookBankWeb.Utils.ChunkBehavior, BookBankWeb.Utils.Chunk},
-  {BookBank.SearchBehavior, BookBank.ElasticSearch},
-  {BookBank.ThumbnailBehavior, BookBank.ImageMagickThumbnail}
-]
-
-config :book_bank, :testing, false
+config :book_bank, :env, Mix.env()
 
 config :book_bank, BookBankWeb.Utils.Jwt.Token, lifetime_seconds: 2 * 60 * 60
 
 config :book_bank, BookBank.MongoDatabase,
   url: System.get_env("MONGO_CONNECTION_URL") || "mongodb://localhost:27017/book_bank",
-  pool_size: (System.get_env("MONGO_POOL_SIZE") || "16") |> Integer.parse() |> elem(0)
+  pool_size: (System.get_env("MONGO_POOL_SIZE") || "16") |> String.to_integer()
 
 config :book_bank, BookBank.ElasticSearch,
   url: System.get_env("ELASTIC_CONNECTION_URL") || "http://localhost:9200",

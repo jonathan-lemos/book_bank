@@ -22,7 +22,8 @@ defmodule BookBank.MixProject do
       mod: {BookBank.Application, []},
       extra_applications: [:logger, :runtime_tools, :mnesia],
       env: [
-        db_connection_url: System.get_env("DB_CONNECTION_URL") || "mongodb://localhost:27017/book_bank"
+        db_connection_url:
+          System.get_env("DB_CONNECTION_URL") || "mongodb://localhost:27017/book_bank"
       ]
     ]
   end
@@ -51,7 +52,9 @@ defmodule BookBank.MixProject do
       {:mox, "~> 1.0", only: :test},
       {:joken, "~> 2.0"},
       {:httpoison, "~> 1.7"},
-      {:briefly, "~> 0.3.0"}
+      {:briefly, "~> 0.3.0"},
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false}
     ]
   end
 

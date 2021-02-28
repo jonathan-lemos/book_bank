@@ -13,17 +13,6 @@ config :book_bank, BookBank.ElasticSearch,
   url: System.get_env("ELASTIC_CONNECTION_URL") || "http://localhost:9200",
   index: System.get_env("ELASTIC_BOOK_INDEX") || "test"
 
-# dependency injection baby
-config :book_bank, :services, [
-  {BookBank.DatabaseBehavior, BookBank.MockDatabase},
-  {BookBank.AuthBehavior, BookBank.MockAuth},
-  {BookBankWeb.Utils.JwtBehavior, BookBankWeb.Utils.MockJwt},
-  {BookBank.Auth.UserWhitelistBehavior, BookBank.Auth.MockUserWhitelist},
-  {BookBankWeb.Utils.ChunkBehavior, BookBankWeb.Utils.MockChunk},
-  {BookBank.SearchBehavior, BookBank.MockSearch},
-  {BookBank.ThumbnailBehavior, BookBank.MockThumbnail}
-]
-
 config :book_bank, :testing, true
 
 config :book_bank, BookBankWeb.Utils.Jwt, secret: "hunter2"

@@ -1,16 +1,15 @@
 defmodule BookBankWeb.AccountsController do
-  @auth_service Application.get_env(:book_bank, :services)[BookBank.AuthBehavior]
-  @token_service Application.get_env(:book_bank, :services)[BookBankWeb.Utils.JwtBehavior]
-  @whitelist_service Application.get_env(:book_bank, :services)[BookBank.Auth.UserWhitelistBehavior]
+  import BookBank.DI
 
   use BookBankWeb, :controller
 
   @spec post_login(Plug.Conn.t(), %{String.t() => term()}) :: Plug.Conn.t()
-  def post_login(conn, %{"username" => un, "password" => pw}) when is_binary(un) and is_binary(pw) do
+  def post_login(conn, %{"username" => un, "password" => pw})
+      when is_binary(un) and is_binary(pw) do
     BookBankWeb.Utils.with(conn, [], fn conn, _extra ->
-      case @auth_service.authenticate_user(un, pw) do
+      case auth_service().authenticate_user(un, pw) do
         {:ok, %BookBank.User{username: username, roles: roles}} ->
-          {:ok, jwt} = @token_service.make_token(username, roles)
+          {:ok, jwt} = jwt_service().make_token(username, roles)
 
           conn =
             conn
@@ -37,7 +36,7 @@ defmodule BookBankWeb.AccountsController do
   end
 
   defp post_create_process(%{"username" => username, "password" => password, "roles" => roles}) do
-    case @auth_service.create_user(username, password, roles) do
+    case auth_service().create_user(username, password, roles) do
       {:ok, _} -> {:ok, :created}
       {:error, :user_exists} -> {:error, :conflict, "The user '#{username}' already exists."}
       {:error, msg} -> {:error, :conflict, msg}
@@ -73,8 +72,8 @@ defmodule BookBankWeb.AccountsController do
       obj =
         with %{"role" => role} <- params do
           if role in BookBank.AuthBehavior.roles() do
-            case @auth_service.users_with_role(role) do
-              {:ok, users} -> {:ok, :ok, %{"users" => users |> Enum.map(&(&1.username))}}
+            case auth_service().users_with_role(role) do
+              {:ok, users} -> {:ok, :ok, %{"users" => users |> Enum.map(& &1.username)}}
               {:error, reason} -> {:error, :internal_server_error, reason}
             end
           else
@@ -94,7 +93,7 @@ defmodule BookBankWeb.AccountsController do
       [authentication: [{:current_user, user}, "admin"]],
       fn conn, _extra ->
         obj =
-          with {:ok, %BookBank.User{roles: roles}} <- @auth_service.get_user(user) do
+          with {:ok, %BookBank.User{roles: roles}} <- auth_service().get_user(user) do
             {:ok, :ok, %{"roles" => roles}}
           else
             {:error, :does_not_exist} ->
@@ -116,7 +115,7 @@ defmodule BookBankWeb.AccountsController do
       else
         {:error,
          "The following contents of 'add' are not valid roles: #{
-           Kernel.inspect(Enum.filter(list, &(&1 not in BookBank.Auth.roles())))
+           Kernel.inspect(Enum.filter(list, &(&1 not in BookBank.AuthBehavior.roles())))
          }"}
       end
     else
@@ -147,7 +146,7 @@ defmodule BookBankWeb.AccountsController do
       else
         {:error,
          "The following contents of 'roles' are not valid roles: #{
-           Kernel.inspect(Enum.filter(list, &(&1 not in BookBank.Auth.roles())))
+           Kernel.inspect(Enum.filter(list, &(&1 not in BookBank.AuthBehavior.roles())))
          }"}
       end
     else
@@ -159,7 +158,7 @@ defmodule BookBankWeb.AccountsController do
     BookBankWeb.Utils.with(conn, [authentication: ["admin"]], fn conn, _extra ->
       obj =
         with {:ok, tup} <- set_user_roles_list(roles) do
-          case @auth_service.update_user(user, [tup]) do
+          case auth_service().update_user(user, [tup]) do
             :ok ->
               {:ok, :ok}
 
@@ -193,7 +192,7 @@ defmodule BookBankWeb.AccountsController do
           with {:ok, add} <- add_user_roles_list(add),
                {:ok, remove} <-
                  remove_user_roles_list(remove) do
-            case @auth_service.update_user(user, [add, remove]) do
+            case auth_service().update_user(user, [add, remove]) do
               :ok ->
                 {:ok, :ok}
 
@@ -228,11 +227,12 @@ defmodule BookBankWeb.AccountsController do
   end
 
   def put_user_password(conn, %{"username" => user, "password" => pw}) do
-    BookBankWeb.Utils.with(conn, [authentication: [{:current_user, user}, "admin"]], fn conn, _extra ->
+    BookBankWeb.Utils.with(conn, [authentication: [{:current_user, user}, "admin"]], fn conn,
+                                                                                        _extra ->
       obj =
-        case @auth_service.update_user(user, set_password: pw) do
+        case auth_service().update_user(user, set_password: pw) do
           :ok ->
-            @whitelist_service.delete(user)
+            whitelist_service().delete(user)
             {:ok, :ok}
 
           {:error, :does_not_exist} ->
@@ -247,20 +247,27 @@ defmodule BookBankWeb.AccountsController do
   end
 
   def put_user_password(conn, %{"username" => user}) do
-    BookBankWeb.Utils.with(conn, [authentication: [{:current_user, user}, "admin"]], fn conn, _extra ->
+    BookBankWeb.Utils.with(conn, [authentication: [{:current_user, user}, "admin"]], fn conn,
+                                                                                        _extra ->
       {conn, {:error, :bad_request, "The request object requires {'password': string}"}}
     end)
   end
 
   def delete_user(conn, %{"username" => user}) do
-    BookBankWeb.Utils.with(conn, [authentication: [{:current_user, user}, "admin"]], fn conn, _extra ->
-      obj = case @auth_service.delete_user(user) do
-        :ok ->
-          @whitelist_service.delete(user)
-          {:ok, :ok}
-        {:error, :does_not_exist} -> {:error, :not_found, "No such user with username '#{user}'"}
-        {:error, e} -> {:error, :internal_server_error, e}
-      end
+    BookBankWeb.Utils.with(conn, [authentication: [{:current_user, user}, "admin"]], fn conn,
+                                                                                        _extra ->
+      obj =
+        case auth_service().delete_user(user) do
+          :ok ->
+            whitelist_service().delete(user)
+            {:ok, :ok}
+
+          {:error, :does_not_exist} ->
+            {:error, :not_found, "No such user with username '#{user}'"}
+
+          {:error, e} ->
+            {:error, :internal_server_error, e}
+        end
 
       {conn, obj}
     end)

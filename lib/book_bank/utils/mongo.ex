@@ -1,6 +1,8 @@
 defmodule BookBank.Utils.Mongo do
-  @dialyzer {:no_contracts, :"init/0"}
-  def init() do
+  # create_indexes() has an incorrect spec. this function can throw, so suppress no_return
+  @dialyzer {[:no_fail_call, :no_return], init!: 0}
+  @spec init!() :: :ok
+  def init!() do
     Mongo.create_indexes(:mongo, "books", [
       [[key: [metadata: [key: 1]], unique: true]]
     ])
@@ -18,8 +20,11 @@ defmodule BookBank.Utils.Mongo do
     :ok
   end
 
-  @type read_concern :: %{level: String.t()}
-  @type write_concern :: %{w: non_neg_integer() | String.t()}
+  @type read_concern :: %{required(:level) => String.t(), optional(atom()) => any()}
+  @type write_concern :: %{
+          required(:w) => non_neg_integer() | String.t(),
+          optional(atom()) => any()
+        }
 
   @doc """
   A read concern specifying that data should be read from a single node regardless of how many nodes have acknowledged the data.
@@ -38,28 +43,29 @@ defmodule BookBank.Utils.Mongo do
   @doc """
   A write concern ensuring that a majority of the nodes have acknowledged the write.
   """
-  def write_concern_majority(timeout_ms \\ 10000) when timeout_ms >= 0 do
+  @spec write_concern_majority(non_neg_integer()) :: write_concern()
+  def write_concern_majority(timeout_ms \\ 10_000) when timeout_ms >= 0 do
     %{w: "majority", j: true, wtimeout: timeout_ms}
   end
 
   @doc """
   A write concern ensuring that at least one node has acknowledged the write.
   """
-  def write_concern_1(timeout_ms \\ 10000) when timeout_ms >= 0 do
+  def write_concern_1(timeout_ms \\ 10_000) when timeout_ms >= 0 do
     %{w: 1, j: true, wtimeout: timeout_ms}
   end
 
   @doc """
   A write concern ensuring that at least two nodes have acknowledged the write.
   """
-  def write_concern_2(timeout_ms \\ 10000) when timeout_ms >= 0 do
+  def write_concern_2(timeout_ms \\ 10_000) when timeout_ms >= 0 do
     %{w: 2, j: true, wtimeout: timeout_ms}
   end
 
   @doc """
   A write concern ensuring that at least three nodes have acknowledged the write.
   """
-  def write_concern_3(timeout_ms \\ 10000) when timeout_ms >= 0 do
+  def write_concern_3(timeout_ms \\ 10_000) when timeout_ms >= 0 do
     %{w: 3, j: true, wtimeout: timeout_ms}
   end
 
@@ -184,6 +190,8 @@ defmodule BookBank.Utils.Mongo do
     end
   end
 
+  # Mongo.find_one has an incorrect spec
+  @dialyzer {:no_match, find: 3}
   @spec find(
           String.t(),
           map(),
@@ -249,7 +257,7 @@ defmodule BookBank.Utils.Mongo do
       case Mongo.insert_one(:mongo, collection, object |> prepare_document(),
              write_concern: write_concern
            ) do
-        {:ok, %Mongo.InsertOneResult{acknowledged: true, inserted_id: id}} ->
+        {:ok, %Mongo.InsertOneResult{acknowledged: true, inserted_id: id}} when id !== nil ->
           {:ok, BSON.ObjectId.encode!(id)}
 
         {:ok, %Mongo.InsertOneResult{acknowledged: true}} ->
@@ -382,22 +390,26 @@ defmodule BookBank.Utils.Mongo do
     end
   end
 
-  @spec insert_file(Stream.t(), String.t(), String.t()) ::
+  @spec insert_file(Enumerable.t(), String.t(), String.t()) ::
           {:ok, BSON.ObjectId.t(), non_neg_integer()} | {:error, String.t()}
   def insert_file(file_stream, filename, bucket_name \\ "fs") do
-    bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
-    upload_stream = Mongo.GridFs.Upload.open_upload_stream(bucket, filename)
+    try do
+      bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
+      upload_stream = Mongo.GridFs.Upload.open_upload_stream(bucket, filename)
 
-    size =
-      file_stream
-      |> Stream.into(upload_stream)
-      |> Enum.reduce(0, fn chunk, acc -> acc + byte_size(chunk) end)
+      size =
+        file_stream
+        |> Stream.into(upload_stream)
+        |> Enum.reduce(0, fn chunk, acc -> acc + byte_size(chunk) end)
 
-    {:ok, upload_stream.id, size}
+      {:ok, upload_stream.id, size}
+    rescue
+      e -> {:error, Kernel.inspect(e)}
+    end
   end
 
   @spec download_file(BSON.ObjectId.t(), String.t()) ::
-          {:ok, Stream.t()} | {:error, :does_not_exist | String.t()}
+          {:ok, Enumerable.t()} | {:error, :does_not_exist | String.t()}
   def download_file(id, bucket_name \\ "fs") do
     bucket = Mongo.GridFs.Bucket.new(:mongo, name: bucket_name)
 
@@ -408,6 +420,8 @@ defmodule BookBank.Utils.Mongo do
     end
   end
 
+  # Mongo.GridFs.Bucket.delete has an incorrect spec
+  @dialyzer {:no_match, delete_file: 3}
   @spec delete_file(BSON.ObjectId.t(), String.t(), list({:retry_count, non_neg_integer()})) ::
           :ok | {:error, :does_not_exist | String.t()}
   def delete_file(id, bucket_name \\ "fs", opts \\ []) do
@@ -530,7 +544,7 @@ defmodule BookBank.Utils.Mongo do
   @spec insert_with_files(
           String.t(),
           map(),
-          list({list(String.t()), Stream.t(), String.t(), String.t()})
+          list({list(String.t()), Enumerable.t(), String.t(), String.t()})
         ) :: {:ok, String.t()} | {:error, String.t()}
   def insert_with_files(collection, document, files) do
     insert_with_files(collection, document, files, [])
@@ -590,7 +604,7 @@ defmodule BookBank.Utils.Mongo do
           map(),
           list(String.t()),
           list({:retry_count, non_neg_integer()} | {:read_concern, read_concern()})
-        ) :: {:ok, Stream.t()} | {:error, :does_not_exist | String.t()}
+        ) :: {:ok, Enumerable.t(), map()} | {:error, :does_not_exist | String.t()}
   def find_file(collection, filter, path, opts \\ []) do
     with {:ok, doc} <- find(collection, filter, opts),
          {:ok, id, bucket} <- get_file(doc, path) do

@@ -14,9 +14,6 @@ defmodule BookBank.MongoAuth do
 
       {:ok, _doc} ->
         {:error, :does_not_exist}
-
-      nil ->
-        {:error, :does_not_exist}
     end
   end
 

@@ -1,6 +1,5 @@
 defmodule BookBank.Auth.UserWhitelist do
   @behaviour BookBank.Auth.UserWhitelistBehavior
-  @time_service Application.get_env(:joken, :current_time_adapter)
 
   use GenServer
 
@@ -110,7 +109,7 @@ defmodule BookBank.Auth.UserWhitelist do
   defp check_read(table, user, iat) do
     case :mnesia.transaction(fn -> :mnesia.read({table, user}) end) |> transaction_result() do
       {:ok, [{^table, ^user, valid_beyond, valid_until}]} ->
-        ct = @time_service.current_time()
+        ct = BookBank.DI.time_service().current_time()
 
         cond do
           iat !== valid_beyond ->

@@ -16,7 +16,9 @@ end
 
 defmodule BookBankWeb.Utils.Jwt do
   @behaviour BookBankWeb.Utils.JwtBehavior
-  @whitelist_behavior Application.get_env(:book_bank, :services)[BookBank.Auth.UserWhitelistBehavior]
+
+  import BookBank.DI, only: [whitelist_service: 0]
+
   alias BookBankWeb.Utils.Jwt.Token, as: Token
 
   defp make_signer do
@@ -29,11 +31,11 @@ defmodule BookBankWeb.Utils.Jwt do
   def make_token(user, roles) do
     case Token.generate_and_sign(%{"sub" => user, "roles" => roles}, make_signer()) do
       {:ok, token, %{"iat" => iat}} ->
-        :ok = @whitelist_behavior.insert(user, iat)
+        :ok = whitelist_service().insert(user, iat)
         {:ok, token}
 
       {:error, error} ->
-        :ok = @whitelist_behavior.delete(user)
+        :ok = whitelist_service().delete(user)
         {:error, Kernel.inspect(error)}
     end
   end
@@ -41,7 +43,7 @@ defmodule BookBankWeb.Utils.Jwt do
   def verify_token(jwt) do
     case Token.verify_and_validate(jwt, make_signer()) do
       {:ok, %{"iat" => iat, "sub" => user, "roles" => roles} = claims} when is_list(roles) ->
-        if @whitelist_behavior.check(user, iat) do
+        if whitelist_service().check(user, iat) do
           {:ok, claims}
         else
           {:error, "This JWT cannot be used."}

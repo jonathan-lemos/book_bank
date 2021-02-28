@@ -1,12 +1,12 @@
 defmodule BookBankWeb.BooksController do
   use BookBankWeb, :controller
 
-  @database_service Application.get_env(:book_bank, :services)[BookBank.DatabaseBehavior]
+  import BookBank.DI
 
   def get_book_meta(conn, %{"id" => id}) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
       obj =
-        case @database_service.get_book_metadata(id) do
+        case database_service().get_book_metadata(id) do
           {:ok, %BookBank.Book{id: id, title: title, metadata: metadata, size: size}} ->
             {:ok, :ok, %{"id" => id, "title" => title, "metadata" => metadata, "size" => size}}
 
@@ -30,7 +30,7 @@ defmodule BookBankWeb.BooksController do
   def get_book_cover(conn, %{"id" => id}) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
       obj =
-        case @database_service.get_book_cover(id) do
+        case database_service().get_book_cover(id) do
           {:ok, stream, %BookBank.Book{}} ->
             {:ok, :ok, :stream, stream, disposition: :inline, content_type: "image/jpg"}
 
@@ -54,7 +54,7 @@ defmodule BookBankWeb.BooksController do
   def get_book_thumb(conn, %{"id" => id}) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
       obj =
-        case @database_service.get_book_thumb(id) do
+        case database_service().get_book_thumb(id) do
           {:ok, stream, %BookBank.Book{}} ->
             {:ok, :ok, :stream, stream, disposition: :inline, content_type: "image/jpg"}
 
@@ -78,7 +78,7 @@ defmodule BookBankWeb.BooksController do
   defp get_book(conn, %{"id" => id}, disposition) do
     BookBankWeb.Utils.with(conn, [authentication: :any], fn conn, _extra ->
       obj =
-        case @database_service.get_book_file(id) do
+        case database_service().get_book_file(id) do
           {:ok, stream, %BookBank.Book{title: title}} ->
             disposition =
               case disposition do
@@ -128,7 +128,7 @@ defmodule BookBankWeb.BooksController do
       when is_binary(title) do
     BookBankWeb.Utils.with(conn, [authentication: ["librarian", "admin"]], fn conn, _extra ->
       obj =
-        case @database_service.create_book(title, File.stream!(path, [], 4096), %{}) do
+        case database_service().create_book(title, File.stream!(path, [], 4096), %{}) do
           {:ok, %BookBank.Book{id: id}} ->
             {:ok, :created, %{"id" => id}}
 
@@ -149,7 +149,7 @@ defmodule BookBankWeb.BooksController do
   end
 
   def put_metadata_params_update_list([], acc) do
-    if length(acc) == 0 do
+    if acc == [] do
       {:error, "'title' and/or 'metadata' must be set."}
     else
       {:ok, acc}
@@ -170,8 +170,7 @@ defmodule BookBankWeb.BooksController do
              _ -> false
            end) do
           put_metadata_params_update_list(tail, [
-            {:set_metadata,
-             metadata |> Enum.map(fn {k, v} -> %{"key" => k, "value" => v} end)}
+            {:set_metadata, metadata |> Enum.map(fn {k, v} -> %{"key" => k, "value" => v} end)}
             | acc
           ])
         else
@@ -202,7 +201,7 @@ defmodule BookBankWeb.BooksController do
     BookBankWeb.Utils.with(conn, [authentication: ["librarian", "admin"]], fn conn, _extra ->
       obj =
         with {:ok, update_list} <- put_metadata_params_update_list(params) do
-          case @database_service.update_book(id, update_list) do
+          case database_service().update_book(id, update_list) do
             :ok -> {:ok, :ok}
             {:error, :does_not_exist} -> {:error, :not_found, "No such book with id #{id}"}
             {:error, str} -> {:error, :internal_server_error, str}
@@ -222,7 +221,7 @@ defmodule BookBankWeb.BooksController do
   end
 
   def patch_metadata_params_update_list([], acc) do
-    if length(acc) == 0 do
+    if acc === [] do
       {:error, "'title', 'add', or 'remove' must be given."}
     else
       {:ok, acc}
@@ -246,18 +245,23 @@ defmodule BookBankWeb.BooksController do
           end
 
         {"add", add} when is_list(add) ->
-            if Enum.all?(add, fn
-              %{"key" => k, "value" => v} when is_binary(k) and is_binary(v) -> true
-            _ -> false end) do
-              [{:update_metadata, add |> Enum.map(fn %{"key" => k, "value" => v} -> {k, v} end) |> Map.new()} | acc]
-            end
+          if Enum.all?(add, fn
+               %{"key" => k, "value" => v} when is_binary(k) and is_binary(v) -> true
+               _ -> false
+             end) do
+            [
+              {:update_metadata,
+               add |> Enum.map(fn %{"key" => k, "value" => v} -> {k, v} end) |> Map.new()}
+              | acc
+            ]
+          end
 
         {"add", _} ->
           {:error, "'add' must be { [string]: string }"}
 
         {"remove", remove} when is_list(remove) ->
           if Enum.all?(remove, &is_binary/1) do
-           [{:remove, remove} | acc]
+            [{:remove, remove} | acc]
           end
 
         {"remove", _} ->
@@ -281,7 +285,7 @@ defmodule BookBankWeb.BooksController do
     BookBankWeb.Utils.with(conn, [authentication: ["librarian", "admin"]], fn conn, _extra ->
       obj =
         with {:ok, update_list} <- patch_metadata_params_update_list(params) do
-          case @database_service.update_book(id, update_list) do
+          case database_service().update_book(id, update_list) do
             :ok -> {:ok, :ok}
             {:error, :does_not_exist} -> {:error, :not_found, "No such book with id '#{id}'."}
             {:error, str} -> {:error, :internal_server_error, str}
@@ -303,7 +307,7 @@ defmodule BookBankWeb.BooksController do
   def delete_book(conn, %{"id" => id}) do
     BookBankWeb.Utils.with(conn, [authentication: ["librarian", "admin"]], fn conn, _extra ->
       obj =
-        case @database_service.delete_book(id) do
+        case database_service().delete_book(id) do
           :ok -> {:ok, :ok}
           {:error, :does_not_exist} -> {:error, :not_found, "No such book with id #{id}."}
           {:error, e} when is_binary(e) -> {:error, :internal_server_error, e}

@@ -1,7 +1,9 @@
 ExUnit.configure(exclude: [:elastic, :mongo])
 ExUnit.start()
 
-Application.get_env(:book_bank, :services) |> Enum.each(fn {behavior, mock} -> Mox.defmock(mock, for: behavior) end)
+BookBank.DI.services()
+|> Enum.filter(fn {behavior, _} -> behavior !== Joken.CurrentTime end)
+|> Enum.each(fn {behavior, service} -> Mox.defmock(service, for: behavior) end)
 
 # Mox.defmock(BookBankWeb.Utils.MockJwtTime, for: Joken.CurrentTime)
 # Mox.stub_with(BookBankWeb.Utils.MockJwtTime, Test.StubTime)

@@ -7,17 +7,17 @@ defmodule BookBank.ImageMagickThumbnail do
     input |> Stream.into(File.stream!(file_in)) |> Stream.run()
 
     case System.cmd(
-      "convert",
-      [
-        "-resize",
-        "#{max_width}x#{max_height}>",
-        "pdf:#{file_in}[0]",
-        "jpeg:-"
-      ],
-      into: output,
-      stderr_to_stdout: true,
-      parallelism: true
-    ) do
+           "convert",
+           [
+             "-resize",
+             "#{max_width}x#{max_height}>",
+             "pdf:#{file_in}[0]",
+             "jpeg:-"
+           ],
+           into: output,
+           stderr_to_stdout: true,
+           parallelism: true
+         ) do
       {coll, 0} -> {:ok, coll}
       {coll, _} -> {:error, coll}
     end

@@ -15,7 +15,7 @@ defmodule BookBank.MongoAuthTest do
         url: Application.get_env(:book_bank, BookBank.MongoDatabase)[:url]
       )
 
-    BookBank.Utils.Mongo.init()
+    :ok = BookBank.Utils.Mongo.init!()
 
     on_exit(fn ->
       {:ok, _pid} =
@@ -45,7 +45,9 @@ defmodule BookBank.MongoAuthTest do
 
   test "Can authenticate created user" do
     assert_create_user("admin", ["admin"], "hunter2")
-    assert {:ok, %BookBank.User{username: "admin", roles: ["admin"]}} = authenticate_user("admin", "hunter2")
+
+    assert {:ok, %BookBank.User{username: "admin", roles: ["admin"]}} =
+             authenticate_user("admin", "hunter2")
   end
 
   test "Does not store raw password" do

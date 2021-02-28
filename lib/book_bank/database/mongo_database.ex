@@ -1,7 +1,7 @@
 defmodule BookBank.MongoDatabase do
   @behaviour BookBank.DatabaseBehavior
-  @search_service Application.get_env(:book_bank, :services)[BookBank.SearchBehavior]
-  @thumbnail_service Application.get_env(:book_bank, :services)[BookBank.ThumbnailBehavior]
+
+  import BookBank.DI, only: [search_service: 0, thumbnail_service: 0]
 
   alias BookBank.Utils.Mongo, as: Utils
 
@@ -18,7 +18,7 @@ defmodule BookBank.MongoDatabase do
 
     case BookBank.Utils.Parallel.invoke([
            fn ->
-             @thumbnail_service.create(
+             thumbnail_service().create(
                File.stream!(filename, [], 4096),
                File.stream!(cover, [], 4096),
                1000,
@@ -26,7 +26,7 @@ defmodule BookBank.MongoDatabase do
              )
            end,
            fn ->
-             @thumbnail_service.create(
+             thumbnail_service().create(
                File.stream!(filename, [], 4096),
                File.stream!(thumb, [], 4096),
                300,
@@ -68,7 +68,7 @@ defmodule BookBank.MongoDatabase do
          book <- %BookBank.Book{id: id, title: title, metadata: metadata, size: size},
          {:search, :ok, _id, book} <-
            {:search,
-            @search_service.insert_book(%BookBank.Book{
+            search_service().insert_book(%BookBank.Book{
               id: id,
               title: title,
               metadata: metadata,
@@ -84,7 +84,7 @@ defmodule BookBank.MongoDatabase do
 
       {:search, {:error, e}, id, _book} ->
         case Utils.delete("books", %{_id: id}) do
-          :ok ->
+          {:ok, _} ->
             {:error, "Failed to insert document into Elasticsearch: #{e}"}
 
           {:error, msg} ->
@@ -101,7 +101,7 @@ defmodule BookBank.MongoDatabase do
       {:ok, map} ->
         {:ok, %BookBank.Book{id: id, metadata: map, title: title, size: size}}
 
-      {:error, _} ->
+      :error ->
         {:error, "The 'metadata' field is malformed: #{Kernel.inspect(metadata)}."}
     end
   end
@@ -182,7 +182,7 @@ defmodule BookBank.MongoDatabase do
       with {:replace, :ok} <- {:replace, Utils.replace("books", id, new_document)},
            {:search, :ok} <-
              {:search,
-              @search_service.update_book(%BookBank.Book{
+              search_service().update_book(%BookBank.Book{
                 id: id,
                 metadata: metadata |> Utils.kvplist_to_kvpmap!(),
                 title: title,
@@ -221,7 +221,7 @@ defmodule BookBank.MongoDatabase do
   @impl true
   def delete_book(id) do
     with {:ok, doc} <- Utils.delete("books", %{_id: id}) do
-      case @search_service.delete_book(id) do
+      case search_service().delete_book(id) do
         :ok ->
           :ok
 

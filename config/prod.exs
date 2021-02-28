@@ -1,5 +1,7 @@
 use Mix.Config
 
+ssl_port = (System.get_env("PHOENIX_PORT") || "443") |> String.to_integer()
+
 # For production, don't forget to configure the url host
 # to something meaningful, Phoenix uses this information
 # when generating URLs.
@@ -10,7 +12,18 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :book_bank, BookBankWeb.Endpoint,
-  url: [host: System.get_env("PHOENIX_HOST"), port: (System.get_env("PHOENIX_PORT") || "80") |> Integer.parse],
+  url: [
+    host: System.get_env("PHOENIX_HOST") || "0.0.0.0",
+    port: ssl_port
+  ],
+  https: [
+    port: ssl_port,
+    cipher_suite: :strong,
+    keyfile: System.get_env("SSL_KEY_PATH") || "key.pem",
+    certfile: System.get_env("SSL_CERT_PATH") || "cert.pem",
+    transport_options: [socket_opts: [:inet6]]
+  ],
+  force_ssl: [hsts: true],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Do not print debug messages in production
