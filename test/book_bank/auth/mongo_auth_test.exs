@@ -8,26 +8,23 @@ defmodule BookBank.MongoAuthTest do
   setup :verify_on_exit!
 
   setup do
-    case Mongo.start_link(
-           name: :mongo,
-           database: "test",
-           url: Application.get_env(:book_bank, BookBank.MongoDatabase)[:url]
-         ) do
-      {:ok, _pid} -> :ok
-      {:error, {:already_started, _pid}} -> :ok
-    end
+    {:ok, _} =
+      start_supervised(
+        {Mongo,
+         name: :mongo,
+         database: "test",
+         url: Application.get_env(:book_bank, BookBank.MongoDatabase)[:url]}
+      )
 
     :ok = BookBank.Utils.Mongo.init!()
 
     on_exit(fn ->
-      case Mongo.start_link(
-             name: :mongo,
-             database: "test",
-             url: Application.get_env(:book_bank, BookBank.MongoDatabase)[:url]
-           ) do
-        {:ok, _pid} -> :ok
-        {:error, {:already_started, _pid}} -> :ok
-      end
+      {:ok, _pid} =
+        Mongo.start_link(
+          name: :mongo,
+          database: "test",
+          url: Application.get_env(:book_bank, BookBank.MongoDatabase)[:url]
+        )
 
       Mongo.drop_database(:mongo, "test")
     end)
