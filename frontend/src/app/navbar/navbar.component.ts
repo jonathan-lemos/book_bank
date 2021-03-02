@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
-import {ActivatedRoute, NavigationEnd, Router} from '@angular/router';
-import {routingEntries} from '../app-routing.module';
+import {NavigationEnd, Router} from '@angular/router';
+import {NavbarRender, routingEntries} from '../app-routing.module';
 import {AuthService} from '../services/auth.service';
 
 @Component({
@@ -10,10 +10,22 @@ import {AuthService} from '../services/auth.service';
 })
 export class NavbarComponent implements OnInit {
   links: { path: string, name: string, active: boolean }[] = [];
+  navbarState: NavbarRender = NavbarRender.Hidden;
+
+  get navbarClass() {
+    switch (this.navbarState) {
+      case NavbarRender.Normal:
+        return "normal";
+      case NavbarRender.Fixed:
+        return "fixed";
+      default:
+        return "hidden";
+    }
+  }
 
   url: string = "";
 
-  constructor(public auth: AuthService, public router: Router, private route: ActivatedRoute) {
+  constructor(public auth: AuthService, public router: Router) {
   }
 
   ngOnInit(): void {
@@ -31,13 +43,21 @@ export class NavbarComponent implements OnInit {
     this.auth.subscribe(this.updateState.bind(this));
   }
 
-  private updateState(): void {
+  updateState(): void {
     this.links = routingEntries
       .filter(x => x.auth && x.auth.putInNavbar && x.auth.roles && this.auth.allowed(x.auth.roles))
-      .map(x => ({
-        path: x.route.path.replace(/^(?!\/)/, "/"),
-        name: x.auth.name,
-        active: this.url.replace(/^\//, "").startsWith(x.route.path)
-      }));
+      .map(x => {
+        const currentIsActive = this.url.replace(/^\//, "").startsWith(x.route.path);
+
+        if (currentIsActive) {
+          this.navbarState = x.auth.navbarRender;
+        }
+
+        return {
+          path: x.route.path.replace(/^(?!\/)/, "/"),
+          name: x.auth.name,
+          active: currentIsActive
+        }
+      });
   }
 }

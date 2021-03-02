@@ -576,10 +576,12 @@ defmodule BookBank.Utils.Mongo do
 
   @spec delete_with_files(String.t(), map()) :: :ok | {:error, String.t()}
   def delete_with_files(collection, filter) do
-    with {:ok, doc} <- delete(collection, filter) do
-      delete_files_from_document(doc)
-    else
-      e -> e
+    case delete(collection, filter) do
+      {:ok, doc} ->
+        delete_files_from_document(doc)
+
+      e ->
+        e
     end
   end
 

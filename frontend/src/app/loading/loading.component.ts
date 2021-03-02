@@ -65,7 +65,7 @@ export class LoadingComponent implements OnInit {
   }
 
   get stateClass(): string {
-    return typeof this.state === "string" ? this.state : "";
+    return this.state;
   }
 
   setState(value: "not-loading" | "loading" | Result<string, string>) {

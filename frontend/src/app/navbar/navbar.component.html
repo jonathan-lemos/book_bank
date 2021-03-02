@@ -1,4 +1,4 @@
-<nav>
+<nav class="this.navbarClass">
   <a [routerLink]="['/home']" class="title flicker">book_bank</a>
   <app-link *ngFor="let link of links" [active]="link.active" [href]="link.path"
             [title]="link.name"></app-link>

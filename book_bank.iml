@@ -68,6 +68,15 @@
       <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/briefly" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/briefly" />
       <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/argon2_elixir" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/credo" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/credo" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/bunt" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/bunt" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/erlex" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/erlex" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/dialyxir" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/dialyxir" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/file_system" />
     </content>
     <orderEntry type="jdk" jdkName="Elixir 1.11.0" jdkType="Elixir SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -131,5 +140,7 @@
     <orderEntry type="library" name="httparrot" level="project" />
     <orderEntry type="library" name="ex2ms" level="project" />
     <orderEntry type="library" name="briefly" level="project" />
+    <orderEntry type="library" name="bunt" level="project" />
+    <orderEntry type="library" name="erlex" level="project" />
   </component>
 </module>

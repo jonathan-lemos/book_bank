@@ -49,33 +49,35 @@ defmodule BookBank.MongoAuth do
   end
 
   def update_user(username, updates) do
-    with {:ok,
-          %{"username" => username, "password" => password_hash, "roles" => roles, "_id" => id}}
-         when is_binary(username) and is_list(roles) <-
-           Utils.find("users", %{username: username}, read_concern: Utils.read_concern_majority()) do
-      roles =
-        roles
-        |> BookBank.Utils.Set.minus(updates[:remove_roles] || [])
-        |> BookBank.Utils.Set.union(updates[:add_roles] || [])
+    case Utils.find("users", %{username: username}, read_concern: Utils.read_concern_majority()) do
+      {:ok, %{"username" => username, "password" => password_hash, "roles" => roles, "_id" => id}}
+      when is_binary(username) and is_list(roles) ->
+        roles =
+          roles
+          |> BookBank.Utils.Set.minus(updates[:remove_roles] || [])
+          |> BookBank.Utils.Set.union(updates[:add_roles] || [])
 
-      password_hash =
-        if updates[:set_password] !== nil do
-          updates[:set_password] |> Argon2.hash_pwd_salt()
-        else
-          password_hash
-        end
+        password_hash =
+          if updates[:set_password] !== nil do
+            updates[:set_password] |> Argon2.hash_pwd_salt()
+          else
+            password_hash
+          end
 
-      username = updates[:set_username] || username
+        username = updates[:set_username] || username
 
-      Utils.replace(
-        "users",
-        id,
-        %{"_id" => id, "username" => username, "password" => password_hash, "roles" => roles},
-        write_concern: Utils.write_concern_majority()
-      )
-    else
-      {:ok, _doc} -> {:error, :does_not_exist}
-      e -> e
+        Utils.replace(
+          "users",
+          id,
+          %{"_id" => id, "username" => username, "password" => password_hash, "roles" => roles},
+          write_concern: Utils.write_concern_majority()
+        )
+
+      {:ok, _doc} ->
+        {:error, :does_not_exist}
+
+      e ->
+        e
     end
   end
 

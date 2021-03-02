@@ -200,14 +200,16 @@ defmodule BookBankWeb.BooksController do
   def put_metadata(conn, %{"id" => id} = params) when is_binary(id) do
     BookBankWeb.Utils.with(conn, [authentication: ["librarian", "admin"]], fn conn, _extra ->
       obj =
-        with {:ok, update_list} <- put_metadata_params_update_list(params) do
-          case database_service().update_book(id, update_list) do
-            :ok -> {:ok, :ok}
-            {:error, :does_not_exist} -> {:error, :not_found, "No such book with id #{id}"}
-            {:error, str} -> {:error, :internal_server_error, str}
-          end
-        else
-          {:error, e} -> {:error, :bad_request, e}
+        case put_metadata_params_update_list(params) do
+          {:ok, update_list} ->
+            case database_service().update_book(id, update_list) do
+              :ok -> {:ok, :ok}
+              {:error, :does_not_exist} -> {:error, :not_found, "No such book with id #{id}"}
+              {:error, str} -> {:error, :internal_server_error, str}
+            end
+
+          {:error, e} ->
+            {:error, :bad_request, e}
         end
 
       {conn, obj}
@@ -284,14 +286,16 @@ defmodule BookBankWeb.BooksController do
   def patch_metadata(conn, %{"id" => id} = params) when is_binary(id) do
     BookBankWeb.Utils.with(conn, [authentication: ["librarian", "admin"]], fn conn, _extra ->
       obj =
-        with {:ok, update_list} <- patch_metadata_params_update_list(params) do
-          case database_service().update_book(id, update_list) do
-            :ok -> {:ok, :ok}
-            {:error, :does_not_exist} -> {:error, :not_found, "No such book with id '#{id}'."}
-            {:error, str} -> {:error, :internal_server_error, str}
-          end
-        else
-          {:error, e} -> {:error, :bad_request, e}
+        case patch_metadata_params_update_list(params) do
+          {:ok, update_list} ->
+            case database_service().update_book(id, update_list) do
+              :ok -> {:ok, :ok}
+              {:error, :does_not_exist} -> {:error, :not_found, "No such book with id '#{id}'."}
+              {:error, str} -> {:error, :internal_server_error, str}
+            end
+
+          {:error, e} ->
+            {:error, :bad_request, e}
         end
 
       {conn, obj}

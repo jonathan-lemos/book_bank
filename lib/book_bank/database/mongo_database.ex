@@ -220,25 +220,27 @@ defmodule BookBank.MongoDatabase do
 
   @impl true
   def delete_book(id) do
-    with {:ok, doc} <- Utils.delete("books", %{_id: id}) do
-      case search_service().delete_book(id) do
-        :ok ->
-          :ok
+    case Utils.delete("books", %{_id: id}) do
+      {:ok, doc} ->
+        case search_service().delete_book(id) do
+          :ok ->
+            :ok
 
-        {:error, e} ->
-          case Utils.insert("books", doc) do
-            {:ok, _id} ->
-              {:error, "Failed to delete document from Elasticsearch: #{e}."}
+          {:error, e} ->
+            case Utils.insert("books", doc) do
+              {:ok, _id} ->
+                {:error, "Failed to delete document from Elasticsearch: #{e}."}
 
-            {:error, msg} ->
-              {:inconsistent,
-               "Failed to delete document from Elasticsearch: #{e}. Additionally failed to revert deletion in mongo: #{
-                 msg
-               }."}
-          end
-      end
-    else
-      {:error, e} -> {:error, "Failed to delete document from mongo: #{e}."}
+              {:error, msg} ->
+                {:inconsistent,
+                 "Failed to delete document from Elasticsearch: #{e}. Additionally failed to revert deletion in mongo: #{
+                   msg
+                 }."}
+            end
+        end
+
+      {:error, e} ->
+        {:error, "Failed to delete document from mongo: #{e}."}
     end
   end
 end

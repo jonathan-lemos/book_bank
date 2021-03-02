@@ -70,17 +70,19 @@ defmodule BookBankWeb.AccountsController do
   def get_role_accounts(conn, params) do
     BookBankWeb.Utils.with(conn, [authentication: ["admin"]], fn conn, _extra ->
       obj =
-        with %{"role" => role} <- params do
-          if role in BookBank.AuthBehavior.roles() do
-            case auth_service().users_with_role(role) do
-              {:ok, users} -> {:ok, :ok, %{"users" => users |> Enum.map(& &1.username)}}
-              {:error, reason} -> {:error, :internal_server_error, reason}
+        case params do
+          %{"role" => role} ->
+            if role in BookBank.AuthBehavior.roles() do
+              case auth_service().users_with_role(role) do
+                {:ok, users} -> {:ok, :ok, %{"users" => users |> Enum.map(& &1.username)}}
+                {:error, reason} -> {:error, :internal_server_error, reason}
+              end
+            else
+              {:error, :not_found}
             end
-          else
+
+          _ ->
             {:error, :not_found}
-          end
-        else
-          _ -> {:error, :not_found}
         end
 
       {conn, obj}
@@ -93,9 +95,10 @@ defmodule BookBankWeb.AccountsController do
       [authentication: [{:current_user, user}, "admin"]],
       fn conn, _extra ->
         obj =
-          with {:ok, %BookBank.User{roles: roles}} <- auth_service().get_user(user) do
-            {:ok, :ok, %{"roles" => roles}}
-          else
+          case auth_service().get_user(user) do
+            {:ok, %BookBank.User{roles: roles}} ->
+              {:ok, :ok, %{"roles" => roles}}
+
             {:error, :does_not_exist} ->
               {:error, :not_found, "The user '#{user}' does not exist."}
 
@@ -157,19 +160,21 @@ defmodule BookBankWeb.AccountsController do
   def put_user_roles(conn, %{"username" => user, "roles" => roles}) do
     BookBankWeb.Utils.with(conn, [authentication: ["admin"]], fn conn, _extra ->
       obj =
-        with {:ok, tup} <- set_user_roles_list(roles) do
-          case auth_service().update_user(user, [tup]) do
-            :ok ->
-              {:ok, :ok}
+        case set_user_roles_list(roles) do
+          {:ok, tup} ->
+            case auth_service().update_user(user, [tup]) do
+              :ok ->
+                {:ok, :ok}
 
-            {:error, :does_not_exist} ->
-              {:error, :not_found, "The user '#{user}' does not exist."}
+              {:error, :does_not_exist} ->
+                {:error, :not_found, "The user '#{user}' does not exist."}
 
-            {:error, e} ->
-              {:error, :bad_request, e}
-          end
-        else
-          {:error, e} -> {:error, :bad_request, e}
+              {:error, e} ->
+                {:error, :bad_request, e}
+            end
+
+          {:error, e} ->
+            {:error, :bad_request, e}
         end
 
       {conn, obj}
