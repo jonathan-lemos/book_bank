@@ -18,7 +18,7 @@ export class SearchComponent implements OnInit {
   max_count: number = 0;
   done: boolean = false;
 
-  constructor(private auth: AuthService, private api: ApiService, private av: ActivatedRoute) {
+  constructor(public auth: AuthService, public api: ApiService, public av: ActivatedRoute) {
   }
 
   async ngOnInit(): Promise<void> {
@@ -33,6 +33,8 @@ export class SearchComponent implements OnInit {
         this.done = true;
       }
     );
+
+    await this.loadMore();
   }
 
   async loadMore(): Promise<void> {
