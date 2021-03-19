@@ -11,6 +11,10 @@ import {mapToList} from 'src/utils/misc';
 export class BookListingComponent implements OnInit {
   @Input() book: Book | null = null;
 
+  get routerUrl() {
+    return `/book/${this.book?.id ?? ""}`
+  }
+
   constructor() {
   }
 

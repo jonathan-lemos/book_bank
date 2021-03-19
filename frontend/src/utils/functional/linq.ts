@@ -62,3 +62,12 @@ export function range(n: number, end?: number, step?: number): number[] {
 
   return ret;
 }
+
+export function zip<T1, T2>(first: T1[], second: T2[]): [T1, T2][] {
+  if (first.length > second.length) {
+    return second.map((e, i) => [first[i], e]);
+  }
+  else {
+    return first.map((e, i) => [e, second[i]]);
+  }
+}

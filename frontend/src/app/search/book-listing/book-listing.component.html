@@ -1,4 +1,4 @@
-<div class="w-100 row">
+<a class="w-100 row" [routerLink]="[this.routerUrl]">
   <div class="img-container">
     <img [src]="this.thumbnail()" alt="Thumbnail">
   </div>
@@ -6,4 +6,4 @@
     <b>{{this.title()}}</b>
     <span *ngFor="let kvp of this.metadataList">{{kvp.key}}: {{kvp.value}}</span>
   </div>
-</div>
+</a>
