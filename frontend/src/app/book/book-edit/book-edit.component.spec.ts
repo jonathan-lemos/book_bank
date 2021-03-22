@@ -5,8 +5,7 @@ import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome
 
 import {BookEditComponent} from './book-edit.component';
 import {KeyValueEditorComponent} from './key-value-editor/key-value-editor.component';
-import {elementExists, queryElement} from "../../../test/utils";
-import {query} from "@angular/animations";
+import {elementExists, queryElement} from "../../../test/dom";
 
 describe('BookEditComponent', () => {
   let component: BookEditComponent;

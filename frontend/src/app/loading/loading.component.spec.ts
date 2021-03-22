@@ -1,7 +1,7 @@
 import {ComponentFixture, fakeAsync, flush, TestBed, tick} from '@angular/core/testing';
 
 import {LoadingComponent} from './loading.component';
-import {queryElement} from "../../test/utils";
+import {queryElement} from "../../test/dom";
 import {Failure, Result, Success} from "../../utils/functional/result";
 import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 

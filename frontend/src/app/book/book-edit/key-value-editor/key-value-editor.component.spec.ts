@@ -1,13 +1,15 @@
-import {ComponentFixture, discardPeriodicTasks, fakeAsync, flush, TestBed, tick} from '@angular/core/testing';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {FormsModule} from '@angular/forms';
 import {By} from '@angular/platform-browser';
 import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 
 import {KeyValueEditorComponent} from './key-value-editor.component';
+import {waitForComponentChanges} from "../../../../test/dom";
 
 describe('KeyValueEditorComponent', () => {
   let component: KeyValueEditorComponent;
   let fixture: ComponentFixture<KeyValueEditorComponent>;
+
   let pairs = {
     Author: "Dr. Seuss",
     ISBN: "0123456789"
@@ -26,68 +28,8 @@ describe('KeyValueEditorComponent', () => {
     fixture = TestBed.createComponent(KeyValueEditorComponent);
     component = fixture.componentInstance;
     component.keyValuePairs = pairs;
-    fixture.detectChanges();
-    tick();
+    waitForComponentChanges(fixture);
   }));
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-
-  it('should echo', done => {
-    component.keyValuePairsChange.subscribe(value => {
-      expect(value).toEqual(pairs);
-      done();
-    });
-
-    component.outputInternalKeyValueListing();
-  });
-
-  it('should add a row', done => {
-    const expected = {...pairs, Test: "Value"};
-
-    component.addKvp();
-    const lastIndex = component.internalKeyValueListing.length - 1;
-
-    component.internalKeyValueListing[lastIndex].key = "Test";
-    component.internalKeyValueListing[lastIndex].value = "Value";
-
-    component.keyValuePairsChange.subscribe(value => {
-      expect(value).toEqual(expected);
-      done();
-    });
-
-    component.outputInternalKeyValueListing();
-  });
-
-  it('should remove a row', done => {
-    let remainingValue = component.internalKeyValueListing[1];
-    let expected = {[remainingValue.key]: remainingValue.value};
-
-    component.deleteKvp(0);
-
-    component.keyValuePairsChange.subscribe(value => {
-      expect(value).toEqual(expected);
-      done();
-    });
-
-    component.outputInternalKeyValueListing();
-  });
-
-  it('should not output blank row', done => {
-    const expected = pairs;
-
-    component.addKvp();
-    const lastIndex = component.internalKeyValueListing.length - 1;
-
-    component.keyValuePairsChange.subscribe(value => {
-      expect(value).toEqual(expected);
-      done();
-    });
-
-    component.internalKeyValueListing[lastIndex].key = "Test";
-    component.afterMutateKvp(lastIndex);
-  });
 
   const numRows = () => {
     const rows = [...fixture.debugElement.queryAll(By.css(".kvp-row"))];
@@ -121,6 +63,107 @@ describe('KeyValueEditorComponent', () => {
     fixture.detectChanges();
     tick();
   };
+
+  /*
+
+  keyValuePairAssertion((when, then) => {
+    let exp = {a: 4, b: 5};
+
+    when(() => {
+      let foo = 8 * 4;
+      setRow(0, {value: foo});
+      return foo;
+    });
+
+    then((pairs, value)) => {
+       expect(pairs[0].value).toBe(value);
+    });
+
+  })
+
+   */
+
+  function keyValuePairAssertion<T>(given: (when: (fn: () => T) => T, then: (fn: (pairs: typeof component.keyValuePairs, value?: T) => void) => void) => void) {
+    return (done: DoneFn) => fakeAsync(() => {
+      let whenResult: T | undefined;
+
+      let kvpChanges: (typeof component.keyValuePairs)[] = [];
+
+      component.keyValuePairsChange.subscribe(pairs => kvpChanges.push(pairs));
+
+      const whenHook = (fn: () => T): T => {
+        whenResult = fn();
+
+        waitForComponentChanges(fixture);
+        tick();
+
+        return whenResult;
+      };
+
+      const thenHook = (fn: (pairs: typeof component.keyValuePairs, value?: T) => void) => {
+        if (kvpChanges.length === 0) {
+          kvpChanges.push(component.keyValuePairs);
+        }
+
+        fn(kvpChanges[kvpChanges.length - 1], whenResult);
+        done();
+      };
+
+      given(whenHook, thenHook);
+    })();
+  }
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('should echo', keyValuePairAssertion((when, then) => {
+    when(() => component.outputInternalKeyValueListing());
+    then(value => expect(value).toEqual(pairs));
+  }));
+
+  it('should add a row', keyValuePairAssertion((when, then) => {
+    const [testKey, testValue] = ["Test", "Value"];
+
+    when(() => {
+      component.addKvp();
+
+      component.internalKeyValueListing.last.key = testKey;
+      component.internalKeyValueListing.last.value = testValue;
+
+      component.outputInternalKeyValueListing();
+    });
+
+    then(value => {
+      expect(value).toEqual({...pairs, [testKey]: testValue});
+    });
+  }));
+
+
+  it('should remove a row', keyValuePairAssertion((when, then) => {
+    let remainingValue = component.internalKeyValueListing[1];
+    let expected = {[remainingValue.key]: remainingValue.value};
+
+    when(() => {
+      component.deleteKvp(0);
+    });
+
+    then(value => {
+      expect(value).toEqual(expected);
+    });
+  }));
+
+  it('should not output blank row', keyValuePairAssertion((when, then) => {
+    const expected = pairs;
+
+    when(() => {
+      component.addKvp();
+      component.internalKeyValueListing.last.key = "Test";
+      component.afterMutateKvp(component.internalKeyValueListing.length - 1);
+    });
+
+    then(value => expect(value).toEqual(expected));
+  });
 
   it('should add new row upon modifying last row', fakeAsync(async () => {
     const numRowsStart = Object.keys(pairs).length + 1;

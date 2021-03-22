@@ -6,7 +6,7 @@ import {SearchComponent} from './search.component';
 import {InfiniteScrollModule} from "ngx-infinite-scroll";
 import {Success} from "../../../utils/functional/result";
 import {BookListingComponent} from "../book-listing/book-listing.component";
-import {queryElements} from "../../../test/utils";
+import {queryElements} from "../../../test/dom";
 import {zip} from "../../../utils/functional/linq";
 
 describe('SearchComponent', () => {
