@@ -64,25 +64,6 @@ describe('KeyValueEditorComponent', () => {
     tick();
   };
 
-  /*
-
-  keyValuePairAssertion((when, then) => {
-    let exp = {a: 4, b: 5};
-
-    when(() => {
-      let foo = 8 * 4;
-      setRow(0, {value: foo});
-      return foo;
-    });
-
-    then((pairs, value)) => {
-       expect(pairs[0].value).toBe(value);
-    });
-
-  })
-
-   */
-
   function keyValuePairAssertion<T>(given: (when: (fn: () => T) => T, then: (fn: (pairs: typeof component.keyValuePairs, value?: T) => void) => void) => void) {
     return (done: DoneFn) => fakeAsync(() => {
       let whenResult: T | undefined;
@@ -163,41 +144,47 @@ describe('KeyValueEditorComponent', () => {
     });
 
     then(value => expect(value).toEqual(expected));
-  });
+  }));
 
-  it('should add new row upon modifying last row', fakeAsync(async () => {
-    const numRowsStart = Object.keys(pairs).length + 1;
-    expect(numRows()).toBe(numRowsStart);
+  it('should add new row upon modifying last row', keyValuePairAssertion<number>((when, then) => {
+    when(() => {
+      const numRowsStart = Object.keys(pairs).length + 1;
+      expect(numRows()).toBe(numRowsStart);
 
-    setRowFields(lastRow(), {key: "Aids"});
+      setRowFields(lastRow(), {key: "Aids"});
+      waitForComponentChanges(fixture);
+      return numRowsStart;
+    });
 
-    expect(component.internalKeyValueListing[numRowsStart - 1].key).toEqual("Aids");
-    expect(numRows()).toBe(numRowsStart + 1);
+    then((_value, numRowsStart) => {
+      expect(component.internalKeyValueListing.slice(0, -1).last.key).toEqual("Aids");
+      expect(numRows()).toBe(numRowsStart! + 1);
+    });
   }));
 
   it('should delete row upon clicking delete button', fakeAsync(() => {
     const spy = spyOn(component, "deleteKvp");
 
-    getRow(1).querySelector<HTMLElement>("fa-icon")!.click();
+    const deleteButton = getRow(1).querySelector<HTMLElement>("fa-icon")!
 
+    deleteButton.click();
     tick();
 
     expect(spy).toHaveBeenCalledWith(1);
   }));
 
-  it('should modify a row correctly', done => fakeAsync(() => {
+  it('should modify a row correctly', keyValuePairAssertion((when, then) => {
     const spy = spyOn(component, "outputInternalKeyValueListing").and.callThrough();
 
-    setRowFields(getRow(1), {key: "ABC", value: "DEF"});
-
-    expect(spy).toHaveBeenCalled();
-
-    component.keyValuePairsChange.subscribe(value => {
-      expect(value["ABC"]).toBe("DEF");
-      expect(Object.keys(value).length).toBe(Object.keys(pairs).length);
-      done();
+    when(() => {
+      setRowFields(getRow(1), {key: "ABC", value: "DEF"});
     });
 
-    component.outputInternalKeyValueListing();
-  })());
+    then(value => {
+      expect(spy).toHaveBeenCalled();
+
+      expect(value["ABC"]).toBe("DEF");
+      expect(Object.keys(value).length).toBe(Object.keys(pairs).length);
+    });
+  }));
 });

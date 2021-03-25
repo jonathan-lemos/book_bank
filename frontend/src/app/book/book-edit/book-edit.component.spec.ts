@@ -5,7 +5,7 @@ import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome
 
 import {BookEditComponent} from './book-edit.component';
 import {KeyValueEditorComponent} from './key-value-editor/key-value-editor.component';
-import {elementExists, queryElement} from "../../../test/dom";
+import {elementExists, queryElement, waitForComponentChanges} from "../../../test/dom";
 
 describe('BookEditComponent', () => {
   let component: BookEditComponent;
@@ -57,9 +57,8 @@ describe('BookEditComponent', () => {
     fixture.detectChanges();
 
     queryElement(fixture, ".delete")!.click();
-    tick();
-    fixture.detectChanges();
-    tick();
+    waitForComponentChanges(fixture);
+
     queryElement(fixture, ".confirm-delete")!.click();
     tick();
 

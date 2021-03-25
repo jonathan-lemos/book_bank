@@ -7,7 +7,6 @@ import {InfiniteScrollModule} from "ngx-infinite-scroll";
 import {Success} from "../../../utils/functional/result";
 import {BookListingComponent} from "../book-listing/book-listing.component";
 import {queryElements} from "../../../test/dom";
-import {zip} from "../../../utils/functional/linq";
 
 describe('SearchComponent', () => {
   let component: SearchComponent;
@@ -117,7 +116,7 @@ describe('SearchComponent', () => {
     const elements = queryElements<HTMLElement>(fixture, "app-book-listing");
     expect(elements.length).toEqual(combined.length);
 
-    zip(elements, combined).forEach(([e, c]) => {
+    elements.zip(combined).forEach(([e, c]) => {
       expect(e.innerText).toContain(c.title);
     })
   }));

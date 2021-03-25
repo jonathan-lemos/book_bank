@@ -14,10 +14,6 @@ export function flatten<T>(a: NestedList<T>): T[] {
   return ret;
 }
 
-export function enumerate<T>(a: T[]): [number, T][] {
-  return a.map((e, i) => [i, e]);
-}
-
 export function range(n: number, end?: number, step?: number): number[] {
   if (end === undefined && step === undefined) {
     const ret = [];
@@ -63,19 +59,13 @@ export function range(n: number, end?: number, step?: number): number[] {
   return ret;
 }
 
-export function zip<T1, T2>(first: T1[], second: T2[]): [T1, T2][] {
-  if (first.length > second.length) {
-    return second.map((e, i) => [first[i], e]);
-  } else {
-    return first.map((e, i) => [e, second[i]]);
-  }
-}
-
 declare global {
   interface Array<T> {
     enumerate(): [Number, T][];
     first: T;
     last: T;
+    reversed(): T[];
+    sorted(compare?: (a: T, b: T) => number): T[];
     zip<TOther>(other: TOther[]): [T, TOther][];
   }
 }
@@ -122,10 +112,18 @@ Object.defineProperty(Array.prototype, "last", {
   }
 });
 
+Array.prototype.reversed = function() {
+  return [...this].reverse();
+};
+
+Array.prototype.sorted = function(fn) {
+  return [...this].sort(fn);
+};
+
 Array.prototype.zip = function <T1, T2>(other: T2[]): [T1, T2][] {
   if (this.length > other.length) {
     return other.map((e, i) => [this[i], e]);
   } else {
     return this.map((e, i) => [e, other[i]]);
   }
-}
+};
