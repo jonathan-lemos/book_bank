@@ -4,9 +4,10 @@ import {NavbarComponent} from 'src/app/navbar/navbar.component';
 
 import {SearchComponent} from './search.component';
 import {InfiniteScrollModule} from "ngx-infinite-scroll";
-import {Success} from "../../../utils/functional/result";
+import {Result, Success} from "../../../utils/functional/result";
 import {BookListingComponent} from "../book-listing/book-listing.component";
-import {queryElements} from "../../../test/dom";
+import {queryElements, waitForComponentChanges} from "../../../test/dom";
+import Book from "../../services/api/schemas/book";
 
 describe('SearchComponent', () => {
   let component: SearchComponent;
@@ -20,104 +21,83 @@ describe('SearchComponent', () => {
       .compileComponents();
   });
 
-  beforeEach(() => {
+  beforeEach(fakeAsync(() => {
     fixture = TestBed.createComponent(SearchComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+  }));
+
+  const searchResults = [
+    {id: "1", title: "Green Eggs and Ham", size: 99, metadata: {author: "Dr. Seuss"}},
+    {id: "2", title: "Book", size: 199, metadata: {author: "Dr. Seuss"}}
+  ];
+
+  const nextSearchResults = [
+    {id: "3", title: "Finding Religion with C++", size: 666, metadata: {author: "Dr. Seuss"}},
+    {id: "4", title: "Book2", size: 299, metadata: {author: "Dr. Seuss"}}
+  ];
+
+  const searchSpy = (results: Book[][]) => {
+    let searchSpy = spyOn(component.api, "search").and.returnValues(
+      ...results.map(result => Promise.resolve(new Success(result)) as Promise<Result<Book[], string>>)
+    );
+
+    let countSpy = spyOn(component.api, "search_count").and.returnValue(
+      Promise.resolve(new Success(
+        results.reduce((a, c) => a + c.length, 0))));
+
+    return {
+      expectToHaveBeenCalled: () => {
+        expect(countSpy).toHaveBeenCalled();
+        expect(searchSpy).toHaveBeenCalled();
+      },
+      entries: results.reduce((a, c) => a.concat(c)),
+      expectComponentBooksToEqualSearchResults: function () {
+        expect(component.books).toEqual(this.entries);
+      }
+    }
+  };
+
+  const initComponent = () => {
+    waitForComponentChanges(fixture);
+  };
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
   it('should add entries on create', fakeAsync(() => {
-    const entries = [
-      {id: "1", title: "Green Eggs and Ham", size: 99, metadata: {author: "Dr. Seuss"}},
-      {id: "2", title: "Book", size: 199, metadata: {author: "Dr. Seuss"}}
-    ]
+    const spy = searchSpy([searchResults]);
 
-    const spySearchCount = spyOn(component.api, "search_count").and.returnValue(Promise.resolve(new Success(entries.length)));
-    const spySearch = spyOn(component.api, "search").and.returnValue(Promise.resolve(new Success(entries)));
+    initComponent();
 
-    component.ngOnInit();
-    tick();
-    fixture.detectChanges();
-    tick();
-
-    expect(spySearchCount).toHaveBeenCalled();
-    expect(spySearch).toHaveBeenCalled();
-    expect(component.books).toEqual(entries);
+    spy.expectToHaveBeenCalled();
+    spy.expectComponentBooksToEqualSearchResults();
   }));
 
   it('should add more entries on loadMore twice', fakeAsync(() => {
-    const entries = [
-      {id: "1", title: "Green Eggs and Ham", size: 99, metadata: {author: "Dr. Seuss"}},
-      {id: "2", title: "Book", size: 199, metadata: {author: "Dr. Seuss"}}
-    ];
+    const spy = searchSpy([searchResults, nextSearchResults]);
 
-    const nextEntries = [
-      {id: "3", title: "Finding Religion with C++", size: 666, metadata: {author: "Dr. Seuss"}},
-      {id: "4", title: "Book2", size: 299, metadata: {author: "Dr. Seuss"}}
-    ];
-
-    const combined = entries.concat(nextEntries);
-
-    const spySearchCount = spyOn(component.api, "search_count").and.returnValue(Promise.resolve(new Success(combined.length)));
-    const spySearch = spyOn(component.api, "search").and.returnValues(
-      Promise.resolve(new Success(entries)),
-      Promise.resolve(new Success(nextEntries))
-    );
-
-    component.ngOnInit();
-    tick();
-    fixture.detectChanges();
-    tick();
+    initComponent();
     component.loadMore();
-    tick();
-    fixture.detectChanges();
-    tick();
+    waitForComponentChanges(fixture);
 
-    expect(spySearchCount).toHaveBeenCalled();
-    expect(spySearch).toHaveBeenCalled();
-    expect(component.books).toEqual(combined);
+    spy.expectToHaveBeenCalled();
+    spy.expectComponentBooksToEqualSearchResults();
   }));
 
   it('should display entries', fakeAsync(() => {
-    const entries = [
-      {id: "1", title: "Green Eggs and Ham", size: 99, metadata: {author: "Dr. Seuss"}},
-      {id: "2", title: "Book", size: 199, metadata: {author: "Dr. Seuss"}}
-    ];
+    const spy = searchSpy([searchResults, nextSearchResults]);
 
-    const nextEntries = [
-      {id: "3", title: "Finding Religion with C++", size: 666, metadata: {author: "Dr. Seuss"}},
-      {id: "4", title: "Book2", size: 299, metadata: {author: "Dr. Seuss"}}
-    ];
 
-    const combined = entries.concat(nextEntries);
-
-    const spySearchCount = spyOn(component.api, "search_count").and.returnValue(Promise.resolve(new Success(combined.length)));
-    const spySearch = spyOn(component.api, "search").and.returnValues(
-      Promise.resolve(new Success(entries)),
-      Promise.resolve(new Success(nextEntries))
-    );
-
-    component.ngOnInit();
-    tick();
-    fixture.detectChanges();
-    tick();
+    initComponent();
     component.loadMore();
-    tick();
-    fixture.detectChanges();
-    tick();
-
-    expect(spySearchCount).toHaveBeenCalled();
-    expect(spySearch).toHaveBeenCalled();
+    waitForComponentChanges(fixture);
 
     const elements = queryElements<HTMLElement>(fixture, "app-book-listing");
-    expect(elements.length).toEqual(combined.length);
+    expect(elements.length).toEqual(spy.entries.length);
 
-    elements.zip(combined).forEach(([e, c]) => {
+    elements.zip(spy.entries).forEach(([e, c]) => {
       expect(e.innerText).toContain(c.title);
-    })
+    });
   }));
 });

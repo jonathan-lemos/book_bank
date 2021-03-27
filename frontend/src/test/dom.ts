@@ -18,6 +18,12 @@ export function elementExists(fixture: ComponentFixture<any>, selector: string):
 }
 
 export function waitForComponentChanges(fixture: ComponentFixture<any>): void {
+  // angular fucking sucks
+
+  // the first one is to run ngOnInit()
+  tick();
+  fixture.detectChanges();
+  // the second one is to actually finish it
   tick();
   fixture.detectChanges();
 }
