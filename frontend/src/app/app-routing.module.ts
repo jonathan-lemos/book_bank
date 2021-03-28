@@ -51,6 +51,7 @@ export const routingEntries: RoutingEntry[] = [
       ...x.route,
       data: {
         animation: x.auth.name,
+        auth: x.auth
       }
     }
   }

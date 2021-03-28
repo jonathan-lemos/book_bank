@@ -38,11 +38,12 @@ export class AuthService implements CanActivate {
   }
 
   canActivate(av: ActivatedRouteSnapshot) {
-    if (av.data?.roles == null) {
+
+    if (av.data?.auth.roles == null) {
       return true;
     }
 
-    const roles: Roles = av.data.roles;
+    const roles: Roles = av.data.auth.roles;
     if (this.allowed(roles)) {
       return true;
     }

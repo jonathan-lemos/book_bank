@@ -44,8 +44,10 @@ export class NavbarComponent implements OnInit {
   }
 
   updateState(): void {
+    console.log(routingEntries);
+
     this.links = routingEntries
-      .filter(x => x.auth && x.auth.putInNavbar && x.auth.roles && this.auth.allowed(x.auth.roles))
+      .filter(x => x.auth && x.auth.putInNavbar && x.auth.roles !== undefined && this.auth.allowed(x.auth.roles))
       .map(x => {
         const currentIsActive = this.url.replace(/^\//, "").startsWith(x.route.path);
 

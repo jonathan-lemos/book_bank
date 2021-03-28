@@ -1,51 +1,5 @@
 @import "styles/prelude"
-
-$crt_opacity: 0.05
-$crt_cycle: 0.2s
-
-@keyframes crt-animation
-  0%
-    background: linear-gradient(rgba(255, 255, 255, $crt_opacity * 1) 50%, rgba(0, 0, 0, $crt_opacity * 1) 50%) 0 0, linear-gradient(#220822, #440822)
-    background-size: 100% 4px, 100%
-  25%
-    background: linear-gradient(rgba(255, 255, 255, $crt_opacity * 0.8) 50%, rgba(0, 0, 0, $crt_opacity * 0.8) 50%) 0 1px, linear-gradient(#220822, #440822)
-    background-size: 100% 4px, 100%
-  50%
-    background: linear-gradient(rgba(255, 255, 255, $crt_opacity * 1) 50%, rgba(0, 0, 0, $crt_opacity * 1) 50%) 0 2px, linear-gradient(#220822, #440822)
-    background-size: 100% 4px, 100%
-  75%
-    background: linear-gradient(rgba(255, 255, 255, $crt_opacity * 1) 50%, rgba(0, 0, 0, $crt_opacity * 0.8) 50%) 0 3px, linear-gradient(#220822, #440822)
-    background-size: 100% 4px, 100%
-  100%
-    background: linear-gradient(rgba(255, 255, 255, $crt_opacity * 1) 50%, rgba(0, 0, 0, $crt_opacity * 1) 50%) 0 4px, linear-gradient(#220822, #440822)
-    background-size: 100% 4px, 100%
-
-body
-  animation: crt-animation $crt_cycle linear infinite
-
-@keyframes vaporwave-flicker
-  0%
-    text-shadow: -.02em -.02em 0 #6BFFFF, .02em .02em 0 #FF819E
-  35%
-    text-shadow: -.02em -.02em 0 #6BFFFF, .02em .02em 0 #FF819E
-  40%
-    text-shadow: -.04em -.04em 0 #6BFFFF, .04em .04em 0 #FF819E
-  45%
-    text-shadow: -.02em -.02em 0 #6BFFFF, .02em .02em 0 #FF819E
-  100%
-    text-shadow: -.02em -.02em 0 #6BFFFF, .02em .02em 0 #FF819E
-
-.title
-  @extend .bold
-  font-family: 'VT323', 'Source Code Pro', monospace
-  letter-spacing: 0.1em
-  transform: scaleX(1.15)
-  color: white
-  text-shadow: -.02em -.02em 0 #6BFFFF, .02em .02em 0 #FF819E
-  user-select: none
-
-  &.flicker
-    animation: vaporwave-flicker 0.2s ease infinite
+@import "styles/vaporwave"
 
 .layout-80-20
   display: grid
@@ -61,3 +15,4 @@ router-outlet + *
   @extend .grow
   @extend .col
   @extend .center
+  position: relative

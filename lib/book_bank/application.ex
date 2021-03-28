@@ -27,7 +27,7 @@ defmodule BookBank.Application do
         # {BookBank.Worker, arg}
       ]
       |> add_if(
-        Application.get_env(:book_bank, :services)[BookBank.AuthBehavior] === BookBank.MongoAuth,
+        BookBank.DI.auth_service() === BookBank.MongoAuth,
         {Mongo,
          name: :mongo,
          database: "book_bank",
@@ -35,7 +35,7 @@ defmodule BookBank.Application do
          pool_size: 16}
       )
       |> add_if(
-        Application.get_env(:book_bank, :services)[BookBank.Auth.UserWhitelistBehavior] ===
+        BookBank.DI.whitelist_service() ===
           BookBank.Auth.UserWhitelist,
         %{
           id: BookBank.Auth.UserWhitelist,
@@ -50,11 +50,11 @@ defmodule BookBank.Application do
     opts = [strategy: :one_for_one, name: BookBank.Supervisor]
     res = Supervisor.start_link(children, opts)
 
-    if Application.get_env(:book_bank, :services)[BookBank.AuthBehavior] === BookBank.MongoAuth do
+    if BookBank.DI.auth_service() === BookBank.MongoAuth do
       :ok = BookBank.Utils.Mongo.init!()
     end
 
-    if Application.get_env(:book_bank, :services)[BookBank.SearchBehavior] ===
+    if BookBank.DI.search_service() ===
          BookBank.ElasticSearch do
       :ok = BookBank.ElasticSearch.init()
     end
