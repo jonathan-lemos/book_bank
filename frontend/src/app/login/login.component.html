@@ -1,12 +1,7 @@
 <div class="col w-50">
   <h1 class="vaporwave-title flicker size-350 my-s">book_bank</h1>
-  <label class="w-100">
-    <input [(ngModel)]="username" class="w-100 glow-fg-hover" name="username" placeholder="Username" type="text">
-  </label>
-  <label class="w-100">
-    <input (keydown)="this.keydown($event)" [(ngModel)]="password" class="w-100 glow-fg-hover" name="password" placeholder="Password"
-           type="password">
-  </label>
+  <app-text-input class="w-100" [(value)]="this.username" prompt="username> " autofocus></app-text-input>
+  <app-text-input class="w-100" [(value)]="this.password" prompt="password> " type="password"></app-text-input>
   <div class="col m-s">
     <button (click)="this.login()" class="border-fg glow-accent-hover mb-m">Login</button>
     <span *ngIf="this.error.length > 0" class="error">{{this.error}}</span>

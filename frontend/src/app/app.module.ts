@@ -20,6 +20,7 @@ import {UploadComponent} from './upload/upload.component';
 import {FileUploaderComponent} from './upload/file-uploader/file-uploader.component';
 import {KeyValueEditorComponent} from './book/book-edit/key-value-editor/key-value-editor.component';
 import {InfiniteScrollModule} from "ngx-infinite-scroll";
+import { TextInputComponent } from './form/text-input/text-input.component';
 
 @NgModule({
   declarations: [
@@ -38,6 +39,7 @@ import {InfiniteScrollModule} from "ngx-infinite-scroll";
     UploadComponent,
     FileUploaderComponent,
     KeyValueEditorComponent,
+    TextInputComponent,
   ],
     imports: [
         BrowserModule,

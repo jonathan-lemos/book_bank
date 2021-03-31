@@ -1,0 +1,34 @@
+@import "../../../styles/color"
+@import "../../../styles/container"
+@import "../../../styles/spacing"
+
+\:host
+  @extend .row
+
+  &:hover
+    cursor: pointer
+
+    span.prompt
+      color: fuchsia
+
+  &:focus, &:focus-within
+    span.prompt
+      color: fuchsia
+
+    input
+      color: tomato
+
+  span.prompt
+    @extend .mr-xs
+    height: 100%
+    user-select: none
+
+  input
+    width: 100%
+    border: none
+    background: none
+    margin: 0
+    height: 100%
+
+    &[type=password]
+      letter-spacing: 0.2em
