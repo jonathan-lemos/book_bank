@@ -14,6 +14,6 @@ export const AuthenticateResponseSchema: Schema = new Record({
   status: new Type("number"),
   response: new Type("string"),
   token: new Union(new Type("string"), new Literal(null))
-})
+});
 
 export default AuthenticateResponse;

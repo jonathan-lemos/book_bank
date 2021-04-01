@@ -1,8 +1,10 @@
-<span class="prompt">{{this.prompt}}</span>
-<input #inputElement
-       class="input"
-       [type]="this.type"
-       spellcheck=false
-       [(ngModel)]="this.value"
-       (keydown)="this.handleInput($event)">
+<label (click)="this.focusInput()">
+  <span class="prompt">{{this.prompt}}</span>
+  <input #inputElement
+         class="input"
+         [type]="this.type"
+         spellcheck=false
+         (keydown)="this.handleInput($event)"
+         [(ngModel)]="this.value">
+</label>
 

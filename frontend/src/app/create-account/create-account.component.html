@@ -4,6 +4,8 @@
                   (enter)="this.focusPassword()"></app-text-input>
   <app-text-input #passwordInput class="w-100 my-xs" [(value)]="this.password" prompt="password> "
                   type="password" (enter)="this.login()"></app-text-input>
+  <app-text-input #confirmPasswordInput class="w-100 my-xs" [(value)]="this.password" prompt="password> "
+                  type="password" (enter)="this.login()"></app-text-input>
   <div class="col m-s">
     <app-button (click)="this.login()" text="[login]" class="my-s">Login</app-button>
     <span *ngIf="this.error.length > 0" class="error">{{this.error}}</span>

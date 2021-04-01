@@ -1,19 +1,21 @@
 @import "../../../styles/color"
 @import "../../../styles/container"
+@import "../../../styles/sizing"
 @import "../../../styles/spacing"
 
-\:host
+label
   @extend .row
+  @extend .w-100
 
   &:hover
     cursor: pointer
 
     span.prompt
-      color: fuchsia
+      color: $color-accent
 
   &:focus, &:focus-within
     span.prompt
-      color: fuchsia
+      color: $color-accent
 
     input
       color: tomato

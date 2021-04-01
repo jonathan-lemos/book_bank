@@ -1,21 +1,23 @@
-import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
+import {TextInputComponent} from "../form/text-input/text-input.component";
 import {ApiService} from "../services/api/api.service";
 import {AuthService} from "../services/auth.service";
 import {ActivatedRoute, Router} from "@angular/router";
-import {TextInputComponent} from "../form/text-input/text-input.component";
 
 @Component({
-  selector: 'app-login',
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.sass']
+  selector: 'app-create-account',
+  templateUrl: './create-account.component.html',
+  styleUrls: ['./create-account.component.sass']
 })
-export class LoginComponent implements OnInit, AfterViewInit {
+export class CreateAccountComponent implements OnInit {
   username: string = "";
   password: string = "";
+  confirmPassword: string = "";
   error: string = "";
 
   @ViewChild("usernameInput") usernameRef: TextInputComponent | null = null;
   @ViewChild("passwordInput") passwordRef: TextInputComponent | null = null;
+  @ViewChild("confirmPasswordInput") confirmPasswordRef: TextInputComponent | null = null;
 
   constructor(public api: ApiService, public auth: AuthService, public router: Router, private av: ActivatedRoute) {
   }
@@ -40,7 +42,11 @@ export class LoginComponent implements OnInit, AfterViewInit {
     this.passwordRef?.focusInput();
   }
 
-  async login(): Promise<void> {
+  focusConfirmPassword(): void {
+    this.confirmPasswordRef?.focusInput();
+  }
+
+  async createAccount(): Promise<void> {
     const res = await this.api.authenticate(this.username, this.password, this.auth);
     res.match(
       _ => {

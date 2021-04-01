@@ -7,6 +7,7 @@ import {UploadComponent} from "./upload/upload.component";
 import {AuthService} from "./services/auth.service";
 import {Roles, RoleType} from './roles';
 import {BookComponent} from './book/book.component';
+import {CreateAccountComponent} from "./create-account/create-account.component";
 
 export enum NavbarRender {
   Hidden,
@@ -22,7 +23,11 @@ export type RoutingEntry = {
 export const routingEntries: RoutingEntry[] = [
   {
     route: {path: "login", component: LoginComponent, canActivate: [AuthService]},
-    auth: {name: "Login", putInNavbar: true, navbarRender: NavbarRender.Hidden, roles: RoleType.Unauthenticated}
+    auth: {name: "Login", putInNavbar: false, navbarRender: NavbarRender.Hidden, roles: RoleType.Unauthenticated}
+  },
+  {
+    route: {path: "create-account", component: CreateAccountComponent, canActivate: [AuthService]},
+    auth: {name: "Create Account", putInNavbar: false, navbarRender: NavbarRender.Hidden, roles: RoleType.Unauthenticated}
   },
   {
     route: {path: "home", component: HomeComponent, canActivate: [AuthService]},

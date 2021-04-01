@@ -6,11 +6,13 @@ import {sleep} from "../../../utils/misc";
   templateUrl: './text-input.component.html',
   styleUrls: ['./text-input.component.sass']
 })
-export class TextInputComponent implements OnInit, AfterViewInit {
+export class TextInputComponent implements OnInit {
   @Input() type: "text" | "password" = "text";
-  @Input() value: string = "";
   @Input() prompt: string = "password> ";
+
+  @Input() value: string = "";
   @Output() valueChange = new EventEmitter<string>();
+
   @Output() enter = new EventEmitter<void>();
 
   @ViewChild("inputElement") inputEl: ElementRef | undefined;
@@ -38,13 +40,5 @@ export class TextInputComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-  }
-
-  ngAfterViewInit(): void {
-    if (!(this.elRef.nativeElement instanceof HTMLElement)) {
-      return;
-    }
-
-    this.elRef.nativeElement.onclick = this.focusInput.bind(this);
   }
 }

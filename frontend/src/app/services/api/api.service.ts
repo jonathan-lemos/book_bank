@@ -8,6 +8,8 @@ import UploadResponse, {UploadResponseSchema} from './schemas/upload-response';
 import Schema from 'src/utils/validation/schema';
 import SearchResponse, {SearchResponseSchema} from './schemas/search-response';
 import SearchCountResponse, {SearchCountResponseSchema} from './schemas/search-count-response';
+import CreateAccountRequest from "./schemas/create-account-request";
+import CreateAccountResponse, {CreateAccountResponseSchema} from "./schemas/create-account-response";
 
 type ApiResponse = { type: "no response", reason: string } |
   { type: "json response", status: number, response: any } |
@@ -65,12 +67,21 @@ export class ApiService {
     }))
   }
 
+  async createAccount(username: string, password: string): Promise<Result<void, string>> {
+    return await this.post("/api/accounts", {
+      username,
+      password
+    } as CreateAccountRequest).then(this.postProcess(res => {
+      return validate<CreateAccountResponse>(res.response, CreateAccountResponseSchema).map_val(() => {});
+    }));
+  }
+
   async deleteBook(id: string, auth: AuthService): Promise<Result<void, string>> {
     if (id === "") {
       return new Failure("The id cannot be blank.");
     }
 
-    return await this.del(`/api/books/${id}`).then(this.postProcess(_ => new Success(undefined)));
+    return await this.del(`/api/books/${id}`, auth).then(this.postProcess(_ => new Success(undefined)));
   }
 
   async search(query: string, auth: AuthService, count: number = 5, page: number = 0): Promise<Result<Book[], string>> {
@@ -128,7 +139,7 @@ export class ApiService {
     const xhr = new XMLHttpRequest();
     xhr.open(method, apiUrl, true);
 
-    const headers: {[key: string]: string} = {"Accept": "application/json", ...(params.headers ?? {})};
+    const headers: { [key: string]: string } = {"Accept": "application/json", ...(params.headers ?? {})};
 
     for (const key in headers) {
       if (!headers.hasOwnProperty(key)) {
