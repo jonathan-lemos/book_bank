@@ -22,12 +22,20 @@ export class CreateAccountComponent implements OnInit {
   constructor(public api: ApiService, public auth: AuthService, public router: Router, private av: ActivatedRoute) {
   }
 
+  createAccountText() {
+    return `[create ${this.username}]`;
+  }
+
+  fieldsAreValid() {
+    return this.username !== "" && this.password !== "" && this.password === this.confirmPassword;
+  }
+
   ngOnInit(): void {
-    if (this.auth.isAuthenticated() !== null) {
+    if (this.auth.isAuthenticated()) {
       this.router.navigate(["/home"]).catch(console.error);
     }
 
-    this.username = this.av.snapshot.paramMap.get("username") ?? "";
+    this.username = this.av.snapshot.paramMap.get("username") ?? "pussyslayer69";
   }
 
   ngAfterViewInit(): void {
@@ -46,11 +54,19 @@ export class CreateAccountComponent implements OnInit {
     this.confirmPasswordRef?.focusInput();
   }
 
+  navigateToLogin(): void {
+    this.router.navigate(["/login"]).catch(console.error);
+  }
+
   async createAccount(): Promise<void> {
-    const res = await this.api.authenticate(this.username, this.password, this.auth);
+    if (!this.fieldsAreValid()) {
+      return;
+    }
+
+    const res = await this.api.createAccount(this.username, this.password);
     res.match(
       _ => {
-        this.router.navigate(["/home"]).catch(console.error);
+        this.navigateToLogin();
       },
       failure => {
         this.error = failure;

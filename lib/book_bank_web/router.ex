@@ -52,6 +52,7 @@ defmodule BookBankWeb.Router do
     pipe_through :browser
 
     get "/api", PageController, :index
+    get "/create-account", PageController, :index
     get "/book/:id", PageController, :index
     get "/home", PageController, :index
     get "/login", PageController, :index

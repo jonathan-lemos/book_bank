@@ -8,7 +8,8 @@ import {sleep} from "../../../utils/misc";
 })
 export class TextInputComponent implements OnInit {
   @Input() type: "text" | "password" = "text";
-  @Input() prompt: string = "password> ";
+  @Input() prompt: string = "> ";
+  @Input() disabled = false;
 
   @Input() value: string = "";
   @Output() valueChange = new EventEmitter<string>();
@@ -19,6 +20,10 @@ export class TextInputComponent implements OnInit {
 
   constructor(private elRef: ElementRef) { }
 
+  labelClass() {
+    return this.disabled ? "disabled" : "";
+  }
+
   handleInput(event: KeyboardEvent) {
     const ct = event?.currentTarget;
     if (!(ct instanceof HTMLElement)) {
@@ -28,6 +33,10 @@ export class TextInputComponent implements OnInit {
     if (event.key === "Enter") {
       this.enter.emit();
     }
+  }
+
+  handleKeyUp() {
+    this.valueChange.emit(this.value);
   }
 
   focusInput() {

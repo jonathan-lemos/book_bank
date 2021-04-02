@@ -3,11 +3,14 @@
   <app-text-input #usernameInput class="w-100 my-xs" [(value)]="this.username" prompt="username> "
                   (enter)="this.focusPassword()"></app-text-input>
   <app-text-input #passwordInput class="w-100 my-xs" [(value)]="this.password" prompt="password> "
-                  type="password" (enter)="this.login()"></app-text-input>
-  <app-text-input #confirmPasswordInput class="w-100 my-xs" [(value)]="this.password" prompt="password> "
-                  type="password" (enter)="this.login()"></app-text-input>
+                  type="password" (enter)="this.focusConfirmPassword()"></app-text-input>
+  <app-text-input #confirmPasswordInput class="w-100 my-xs" [(value)]="this.confirmPassword" prompt="&nbsp;confirm> "
+                  type="password" (enter)="this.createAccount()"></app-text-input>
   <div class="col m-s">
-    <app-button (click)="this.login()" text="[login]" class="my-s">Login</app-button>
+    <app-button (click)="this.createAccount()" text="[create account]" class="my-s" ></app-button>
+    <div class="row my-l">
+      or <app-button (click)="this.navigateToLogin()" text="[login]" class="my-s"></app-button>
+    </div>
     <span *ngIf="this.error.length > 0" class="error">{{this.error}}</span>
   </div>
 </div>

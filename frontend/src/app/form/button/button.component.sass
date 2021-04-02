@@ -10,5 +10,14 @@ button
   background: none
   cursor: pointer
 
+  &:disabled
+    color: $color-fg-muted
+    text-decoration: line-through
+    cursor: not-allowed
+
+    &:hover
+      color: $color-fg-muted
+
+
   &:hover
     color: $color-accent

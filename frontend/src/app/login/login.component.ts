@@ -21,7 +21,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    if (this.auth.isAuthenticated() !== null) {
+    if (this.auth.isAuthenticated()) {
       this.router.navigate(["/home"]).catch(console.error);
     }
 
@@ -32,6 +32,10 @@ export class LoginComponent implements OnInit, AfterViewInit {
     this.focusUsername.bind(this)();
   }
 
+  fieldsAreValid() {
+    return this.username !== "" && this.password !== "";
+  }
+
   focusUsername(): void {
     this.usernameRef?.focusInput();
   }
@@ -40,7 +44,15 @@ export class LoginComponent implements OnInit, AfterViewInit {
     this.passwordRef?.focusInput();
   }
 
+  navigateToCreateAccount(): void {
+    this.router.navigate(["/create-account"]).catch(console.error);
+  }
+
   async login(): Promise<void> {
+    if (!this.fieldsAreValid()) {
+      return;
+    }
+
     const res = await this.api.authenticate(this.username, this.password, this.auth);
     res.match(
       _ => {

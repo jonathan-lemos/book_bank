@@ -7,18 +7,31 @@ label
   @extend .row
   @extend .w-100
 
-  &:hover
+  &.disabled
+    cursor: not-allowed
+
+    span.prompt
+      color: $color-fg-muted
+      text-decoration: line-through
+
+    input
+      color: $color-fg-muted
+      text-decoration: line-through
+
+
+  &:hover:not(.disabled)
     cursor: pointer
 
     span.prompt
       color: $color-accent
 
   &:focus, &:focus-within
-    span.prompt
-      color: $color-accent
+    &:not(.disabled)
+      span.prompt
+        color: $color-accent
 
-    input
-      color: tomato
+      input
+        color: tomato
 
   span.prompt
     @extend .mr-xs

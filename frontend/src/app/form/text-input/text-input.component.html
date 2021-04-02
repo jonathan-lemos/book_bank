@@ -1,10 +1,12 @@
-<label (click)="this.focusInput()">
+<label (click)="this.focusInput()" [className]="this.labelClass()">
   <span class="prompt">{{this.prompt}}</span>
   <input #inputElement
          class="input"
          [type]="this.type"
          spellcheck=false
          (keydown)="this.handleInput($event)"
-         [(ngModel)]="this.value">
+         [(ngModel)]="this.value"
+         (ngModelChange)="this.handleKeyUp()"
+         [disabled]="this.disabled">
 </label>
 
